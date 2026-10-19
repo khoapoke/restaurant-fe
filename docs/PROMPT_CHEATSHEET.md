@@ -3,7 +3,7 @@
 ## MẪU 1: KHI BẮT ĐẦU MỘT MODULE MỚI (Ép AI lên kế hoạch và hỏi trước)
 Copy đoạn dưới đây, điền thông tin API/Nghiệp vụ vào ngoặc vuông rồi gửi cho Agent:
 
-> Hãy đọc kỹ quy tắc trong `@CLAUDE.md` (hoặc `@docs/AGENT_RULES.md`) và `@docs/FE_ARCHITECTURE.md`.
+> Hãy đọc kỹ quy tắc trong `@ANTIGRAVITY.md` (hoặc `@docs/AGENT_RULES.md`) và `@docs/FE_ARCHITECTURE.md`.
 > 
 > Tôi cần xây dựng phần Frontend cho module: **[Tên module, ví dụ: Quản lý Sản phẩm]**.
 > 
