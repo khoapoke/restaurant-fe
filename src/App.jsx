@@ -6,6 +6,8 @@ import RegisterPage from './features/auth/pages/RegisterPage'
 import CustomerProfilePage from './features/customer/profile/pages/CustomerProfilePage'
 import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
 import CustomerCartPage from './features/customer/cart/pages/CustomerCartPage'
+import CustomerCheckoutPage from './features/customer/order/pages/CustomerCheckoutPage'
+import CustomerOrdersPage from './features/customer/order/pages/CustomerOrdersPage'
 import Button from './components/ui/Button'
 import {
   UtensilsCrossed,
@@ -15,6 +17,7 @@ import {
   ArrowRight,
   Menu as MenuIcon,
   ShoppingBag,
+  Package,
 } from 'lucide-react'
 
 // Placeholder cho Customer Home Page
@@ -44,6 +47,15 @@ const HomePage = () => {
               <UtensilsCrossed className="w-3.5 h-3.5 text-amber-500" />
               <span>Thực đơn</span>
             </Link>
+            {isAuthenticated && (
+              <Link
+                to="/orders"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-300 hover:text-white hover:bg-gray-800/60 transition-colors flex items-center gap-1.5"
+              >
+                <Package className="w-3.5 h-3.5 text-amber-500" />
+                <span>Đơn hàng</span>
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -78,8 +90,13 @@ const HomePage = () => {
                 </p>
                 <p className="text-[10px] text-amber-400 uppercase font-mono">{user?.role}</p>
               </div>
+              <Link to="/orders">
+                <Button variant="outline" size="sm" icon={Package}>
+                  Đơn mua
+                </Button>
+              </Link>
               <Link to="/profile">
-                <Button variant="outline" size="sm" icon={User}>
+                <Button variant="ghost" size="sm" icon={User}>
                   Hồ sơ
                 </Button>
               </Link>
@@ -116,7 +133,7 @@ const HomePage = () => {
         </h1>
 
         <p className="text-gray-400 max-w-xl text-sm sm:text-base mb-8">
-          Module Auth, Hồ sơ khách hàng, Thực đơn & Giỏ hàng trực tuyến đã sẵn sàng phục vụ.
+          Module Auth, Hồ sơ khách hàng, Thực đơn, Giỏ hàng & Thanh toán QR đã sẵn sàng phục vụ.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
@@ -126,9 +143,9 @@ const HomePage = () => {
             </Button>
           </Link>
           {isAuthenticated ? (
-            <Link to="/cart">
-              <Button variant="outline" size="lg" icon={ShoppingBag}>
-                Giỏ hàng của bạn {totalQuantity > 0 ? `(${totalQuantity})` : ''}
+            <Link to="/orders">
+              <Button variant="outline" size="lg" icon={Package}>
+                Lịch sử Đơn hàng của bạn
               </Button>
             </Link>
           ) : (
@@ -218,6 +235,8 @@ function App() {
             <Route path="/profile" element={<CustomerProfilePage />} />
             <Route path="/menu" element={<CustomerMenuPage />} />
             <Route path="/cart" element={<CustomerCartPage />} />
+            <Route path="/checkout" element={<CustomerCheckoutPage />} />
+            <Route path="/orders" element={<CustomerOrdersPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

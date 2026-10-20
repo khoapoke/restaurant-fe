@@ -59,11 +59,7 @@ export const CustomerCartPage = () => {
   }
 
   const handleCheckoutClick = () => {
-    // Thông báo tạm thời theo yêu cầu người dùng
-    setToastMessage({
-      type: 'info',
-      text: 'Tính năng Đặt hàng & Thanh toán QR sẽ được hoàn thiện ở module tiếp theo.',
-    })
+    navigate('/checkout')
   }
 
   // UI STATE 1: LOADING
