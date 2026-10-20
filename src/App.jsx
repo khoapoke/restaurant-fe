@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
+import CustomerProfilePage from './features/customer/profile/pages/CustomerProfilePage'
 import Button from './components/ui/Button'
 import { UtensilsCrossed, LogOut, Shield, User, ArrowRight } from 'lucide-react'
 
@@ -31,6 +32,11 @@ const HomePage = () => {
                 </p>
                 <p className="text-[10px] text-amber-400 uppercase font-mono">{user?.role}</p>
               </div>
+              <Link to="/profile">
+                <Button variant="outline" size="sm" icon={User}>
+                  Hồ sơ
+                </Button>
+              </Link>
               <Button
                 variant="secondary"
                 size="sm"
@@ -64,14 +70,21 @@ const HomePage = () => {
         </h1>
 
         <p className="text-gray-400 max-w-xl text-sm sm:text-base mb-8">
-          Module Auth (Đăng nhập / Đăng ký) đã được tích hợp thành công với chuẩn xác thực Laravel Sanctum.
+          Module Auth & Hồ sơ khách hàng (Profile, Dị ứng thực phẩm, Sổ địa chỉ) đã hoàn thiện sẵn sàng.
         </p>
 
         {isAuthenticated ? (
-          <div className="w-full max-w-md bg-gray-900/80 border border-gray-800 rounded-2xl p-6 text-left space-y-3">
-            <h3 className="text-sm font-semibold text-amber-400 flex items-center gap-2">
-              <User className="w-4 h-4" /> Thông tin phiên đăng nhập
-            </h3>
+          <div className="w-full max-w-md bg-gray-900/80 border border-gray-800 rounded-2xl p-6 text-left space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-amber-400 flex items-center gap-2">
+                <User className="w-4 h-4" /> Phiên đăng nhập hiện tại
+              </h3>
+              <Link to="/profile">
+                <span className="text-xs text-amber-400 hover:text-amber-300 underline font-medium">
+                  Xem chi tiết
+                </span>
+              </Link>
+            </div>
             <div className="text-xs space-y-1.5 text-gray-300">
               <p><span className="text-gray-500">Tài khoản:</span> {user?.username}</p>
               <p><span className="text-gray-500">Họ và tên:</span> {user?.userProfile?.fullName || 'Chưa cập nhật'}</p>
@@ -79,6 +92,11 @@ const HomePage = () => {
               <p><span className="text-gray-500">Vai trò:</span> <span className="text-amber-400 font-mono font-bold">{user?.role}</span></p>
               <p><span className="text-gray-500">Trạng thái:</span> <span className="text-emerald-400 font-mono">{user?.status}</span></p>
             </div>
+            <Link to="/profile" className="block pt-2">
+              <Button variant="primary" size="md" className="w-full" icon={User}>
+                Vào trang Hồ sơ & Dị ứng
+              </Button>
+            </Link>
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-center gap-4">
@@ -149,6 +167,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/profile" element={<CustomerProfilePage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -89,6 +89,35 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const updateUserProfile = (updatedProfile) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const newAccount = {
+        ...prev,
+        email: updatedProfile.email || prev.email,
+        userProfile: {
+          ...(prev.userProfile || {}),
+          fullName:
+            updatedProfile.fullName !== undefined
+              ? updatedProfile.fullName
+              : prev.userProfile?.fullName,
+          phoneNumber:
+            updatedProfile.phoneNumber !== undefined
+              ? updatedProfile.phoneNumber
+              : prev.userProfile?.phoneNumber,
+          address:
+            updatedProfile.defaultAddress !== undefined
+              ? updatedProfile.defaultAddress
+              : prev.userProfile?.address,
+        },
+      }
+      const isRemember = !!localStorage.getItem(STORAGE_KEYS.ACCOUNT)
+      const targetStorage = isRemember ? localStorage : sessionStorage
+      targetStorage.setItem(STORAGE_KEYS.ACCOUNT, JSON.stringify(newAccount))
+      return newAccount
+    })
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -100,6 +129,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        updateUserProfile,
       }}
     >
       {children}
