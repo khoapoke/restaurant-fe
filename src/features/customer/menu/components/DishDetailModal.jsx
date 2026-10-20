@@ -5,7 +5,7 @@ import { getDishDetailApi } from '../services/menuService'
 import { FALLBACK_DISH_IMAGE } from '../constants'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { useCart } from '../../../../contexts/CartContext'
-import { AlertTriangle, CheckCircle2, ShoppingBag, Loader2, Info } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ShoppingBag, Loader2 } from 'lucide-react'
 
 export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
   const { isAuthenticated } = useAuth()
@@ -19,6 +19,7 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
   const [addedNotice, setAddedNotice] = useState(false)
   const [addError, setAddError] = useState(null)
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Modal state must reset and load when its selected dish changes. */
   useEffect(() => {
     if (!dishId || !isOpen) {
       setDish(null)
@@ -44,6 +45,7 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
 
     fetchDetail()
   }, [dishId, isOpen])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {

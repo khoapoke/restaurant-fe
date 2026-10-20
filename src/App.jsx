@@ -9,7 +9,15 @@ import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
 import CustomerCartPage from './features/customer/cart/pages/CustomerCartPage'
 import CustomerCheckoutPage from './features/customer/order/pages/CustomerCheckoutPage'
 import CustomerOrdersPage from './features/customer/order/pages/CustomerOrdersPage'
+import CustomerReservationsPage from './features/customer/reservation/pages/CustomerReservationsPage'
+import AdminShell from './features/admin/components/AdminShell'
 import AdminDashboard from './features/admin/pages/AdminDashboard'
+import AdminAccountsPage from './features/admin/pages/AdminAccountsPage'
+import AdminMenuPage from './features/admin/pages/AdminMenuPage'
+import AdminOrdersPage from './features/admin/pages/AdminOrdersPage'
+import AdminReservationsPage from './features/admin/pages/AdminReservationsPage'
+import AdminTablesPage from './features/admin/pages/AdminTablesPage'
+import AdminPaymentsPage from './features/admin/pages/AdminPaymentsPage'
 import PosFloorPage from './features/staff/pos/pages/PosFloorPage'
 import PosSessionPage from './features/staff/pos/pages/PosSessionPage'
 import KitchenBoardPage from './features/staff/pos/pages/KitchenBoardPage'
@@ -29,7 +37,16 @@ function App() {
               <Route path="/cart" element={<CustomerCartPage />} />
               <Route path="/checkout" element={<CustomerCheckoutPage />} />
               <Route path="/orders" element={<CustomerOrdersPage />} />
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/reservations" element={<CustomerReservationsPage />} />
+              <Route path="/admin" element={<AdminShell />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="accounts" element={<AdminAccountsPage />} />
+                <Route path="menu" element={<AdminMenuPage />} />
+                <Route path="orders" element={<AdminOrdersPage />} />
+                <Route path="reservations" element={<AdminReservationsPage />} />
+                <Route path="tables" element={<AdminTablesPage />} />
+                <Route path="payments" element={<AdminPaymentsPage />} />
+              </Route>
               <Route path="/staff/floor" element={<PosFloorPage />} />
               <Route path="/staff/sessions/:sessionId" element={<PosSessionPage />} />
               <Route path="/staff/kitchen" element={<KitchenBoardPage />} />

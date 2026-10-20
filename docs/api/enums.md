@@ -23,8 +23,8 @@
 
 ### Luồng trạng thái hợp lệ:
 ```
-PENDING_CONFIRMATION → CONFIRMED → PREPARING → READY → DELIVERING → COMPLETED
-                                                                   ↘ CANCELLED
+PENDING_CONFIRMATION → CONFIRMED → PREPARING → READY → COMPLETED
+                                                    ↘ CANCELLED
 ```
 
 | Value | Ý nghĩa | Ai chuyển? |
@@ -32,9 +32,8 @@ PENDING_CONFIRMATION → CONFIRMED → PREPARING → READY → DELIVERING → CO
 | `PENDING_CONFIRMATION` | Chờ xác nhận | Hệ thống (khi tạo đơn) |
 | `CONFIRMED` | Đã xác nhận | Admin |
 | `PREPARING` | Đang chuẩn bị | Admin |
-| `READY` | Sẵn sàng giao | Admin |
-| `DELIVERING` | Đang giao hàng | Admin |
-| `COMPLETED` | Hoàn thành | Admin |
+| `READY` | Bếp đã chuẩn bị xong, chờ bàn giao | Admin |
+| `COMPLETED` | Đã hoàn tất bàn giao | Hệ thống sau trạng thái giao nhận cuối |
 | `CANCELLED` | Đã hủy | Customer (chỉ khi PENDING) hoặc Admin (mọi lúc) |
 
 ---
@@ -43,8 +42,22 @@ PENDING_CONFIRMATION → CONFIRMED → PREPARING → READY → DELIVERING → CO
 | Value | Ý nghĩa |
 |-------|---------|
 | `DELIVERY` | Giao hàng tận nơi |
-| `DINE_IN` | Ăn tại nhà hàng |
-| `TAKEAWAY` | Mang đi |
+| `PICKUP` | Khách tự đến lấy |
+| `DINE_IN` | Ăn tại nhà hàng, chỉ tạo qua POS |
+
+Checkout online chỉ gửi `DELIVERY` hoặc `PICKUP`; `DINE_IN` không phải một lựa chọn checkout online.
+
+## FulfillmentStatus (Trạng thái bàn giao)
+| Value | Áp dụng | Ý nghĩa |
+|-------|---------|---------|
+| `PENDING` | DELIVERY, PICKUP | Chưa đến bước bàn giao |
+| `AWAITING_DRIVER` | DELIVERY | Món sẵn sàng, chờ tài xế |
+| `OUT_FOR_DELIVERY` | DELIVERY | Tài xế đang giao |
+| `DELIVERED` | DELIVERY | Khách đã nhận hàng |
+| `AWAITING_CUSTOMER` | PICKUP | Món sẵn sàng, chờ khách đến lấy |
+| `COLLECTED` | PICKUP | Khách đã nhận món |
+| `SERVING` | DINE_IN | Đang phục vụ tại bàn |
+| `SERVED` | DINE_IN | Phiên tại bàn đã hoàn tất |
 
 ---
 

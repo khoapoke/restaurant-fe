@@ -18,7 +18,7 @@ export const MocBrand = ({ light = false, compact = false }) => (
       <strong className="block moc-serif text-lg leading-none tracking-[0.16em] font-semibold">
         MỘC
       </strong>
-      <small className="block mt-1 text-[7px] leading-none tracking-[0.38em] opacity-65">
+      <small className="block mt-1 text-[10px] leading-none tracking-[0.28em] opacity-75">
         DINING
       </small>
     </span>

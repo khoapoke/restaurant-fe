@@ -16,6 +16,7 @@
   "recipientName": "Lê Hoàng Hùng",
   "recipientPhone": "0923456789",
   "shippingAddress": "789 Cách Mạng Tháng 8, Quận 3, TP.HCM",
+  "scheduledAt": null,
   "paymentMethod": "BANK_TRANSFER_QR",
   "orderNote": "Gọi điện khi tới sảnh"
 }
@@ -30,8 +31,16 @@
     "orderId": 4,
     "orderDate": "2026-06-10T10:15:00",
     "status": "PENDING_CONFIRMATION",
+    "fulfillmentType": "DELIVERY",
+    "fulfillmentStatus": "PENDING",
+    "itemsSubtotal": 650000.00,
+    "deliveryFee": 0.00,
     "totalAmount": 650000.00,
-    "shippingAddress": "[DELIVERY] Lê Hoàng Hùng - 0923456789 | 789 Cách Mạng Tháng 8, Quận 3, TP.HCM | Note: Gọi điện khi tới sảnh",
+    "recipientName": "Lê Hoàng Hùng",
+    "recipientPhone": "0923456789",
+    "shippingAddress": "789 Cách Mạng Tháng 8, Quận 3, TP.HCM",
+    "scheduledAt": null,
+    "orderNote": "Gọi điện khi tới sảnh",
     "payment": {
       "paymentId": 4,
       "amount": 650000.00,
@@ -66,7 +75,7 @@
   "errors": null
 }
 ```
-- **Ghi chú nghiệp vụ:** Thực thi trong `DB::transaction()`. Ghi chi tiết món vào `CHI_TIET_DON_HANG` bằng `$order->dishes()->attach($pivotData)`, tạo `Payment` (`THANH_TOAN`) và xóa sạch giỏ bằng `$cart->dishes()->detach()`.
+- **Ghi chú nghiệp vụ:** Checkout online chỉ nhận `DELIVERY` hoặc `PICKUP`. Với `PICKUP`, bỏ `shippingAddress` và có thể gửi `scheduledAt` trong tương lai; “lấy sớm nhất” gửi `scheduledAt: null`. `DINE_IN` đi qua đặt bàn và POS khi khách đến. Người nhận, điện thoại, địa chỉ, lịch nhận và ghi chú là các trường độc lập. Backend thực thi checkout trong `DB::transaction()`, snapshot giá món, tạo `Payment` và làm rỗng giỏ.
 
 ---
 

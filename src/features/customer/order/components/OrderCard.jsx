@@ -1,6 +1,7 @@
 import {
   ORDER_STATUS_CONFIG,
   FULFILLMENT_CONFIG,
+  FULFILLMENT_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
 } from '../constants'
 import Button from '../../../../components/ui/Button'
@@ -21,6 +22,10 @@ export const OrderCard = ({
 
   const paymentStatusConfig = PAYMENT_STATUS_CONFIG[order.payment?.status] || {
     label: order.payment?.status || 'Chưa thanh toán',
+    color: 'text-gray-400',
+  }
+  const fulfillmentStatusConfig = FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus] || {
+    label: order.fulfillmentStatus,
     color: 'text-gray-400',
   }
 
@@ -72,6 +77,12 @@ export const OrderCard = ({
               {paymentStatusConfig.label}
             </span>
           </div>
+          <p className={`text-[11px] font-semibold ${fulfillmentStatusConfig.color}`}>
+            {fulfillmentStatusConfig.label}
+            {order.fulfillmentType === 'PICKUP' && order.scheduledAt
+              ? ` · Hẹn ${new Date(order.scheduledAt).toLocaleString('vi-VN')}`
+              : ''}
+          </p>
         </div>
 
         {/* Tổng tiền */}

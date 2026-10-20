@@ -19,6 +19,25 @@ const login = async (username, password) => {
   return (await response.json()).data
 }
 
+const ensureCustomerCartHasItem = async (token) => {
+  const headers = { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` }
+  const cartResponse = await fetch(`${apiUrl}/customer/cart`, { headers })
+  const cart = await cartResponse.json()
+  if (cart.data?.items?.length) return
+
+  const dishesResponse = await fetch(`${apiUrl}/customer/dishes?perPage=1`, { headers })
+  const dishes = await dishesResponse.json()
+  const dishId = dishes.data?.items?.[0]?.dishId
+  if (!dishId) throw new Error('No available dish found for checkout audit')
+
+  const addResponse = await fetch(`${apiUrl}/customer/cart/items`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ dishId, quantity: 1 }),
+  })
+  if (!addResponse.ok) throw new Error(`Could not prepare checkout cart: ${addResponse.status}`)
+}
+
 const auditPage = async (context, name, route) => {
   const page = await context.newPage()
   const consoleErrors = []
@@ -120,13 +139,34 @@ const main = async () => {
   }
   await staff.close()
 
+  const customerAuth = await login('kh1', '123')
+  const customer = await browser.newContext({ viewport, deviceScaleFactor: 1 })
+  await customer.addInitScript(({ token, account }) => {
+    localStorage.setItem('restaurant_access_token', token)
+    localStorage.setItem('restaurant_account', JSON.stringify(account))
+  }, { token: customerAuth.accessToken, account: customerAuth.account })
+  await ensureCustomerCartHasItem(customerAuth.accessToken)
+  results.push(await auditPage(customer, 'customer-reservations', '/reservations'))
+  results.push(await auditPage(customer, 'customer-checkout', '/checkout'))
+  await customer.close()
+
   const adminAuth = await login('admin', '123')
   const admin = await browser.newContext({ viewport, deviceScaleFactor: 1 })
   await admin.addInitScript(({ token, account }) => {
     localStorage.setItem('restaurant_access_token', token)
     localStorage.setItem('restaurant_account', JSON.stringify(account))
   }, { token: adminAuth.accessToken, account: adminAuth.account })
-  results.push(await auditPage(admin, 'admin', '/admin'))
+  for (const [name, route] of [
+    ['admin-dashboard', '/admin'],
+    ['admin-menu', '/admin/menu'],
+    ['admin-orders', '/admin/orders'],
+    ['admin-reservations', '/admin/reservations'],
+    ['admin-tables', '/admin/tables'],
+    ['admin-accounts', '/admin/accounts'],
+    ['admin-payments', '/admin/payments'],
+  ]) {
+    results.push(await auditPage(admin, name, route))
+  }
   await admin.close()
 
   await browser.close()

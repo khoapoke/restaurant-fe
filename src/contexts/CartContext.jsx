@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- Context provider and hook intentionally share this module. */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
 import {
@@ -39,6 +40,7 @@ export const CartProvider = ({ children }) => {
     }
   }, [isCustomer])
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Authentication changes must hydrate or clear the server-backed cart. */
   useEffect(() => {
     if (isCustomer) {
       fetchCart()
@@ -52,6 +54,7 @@ export const CartProvider = ({ children }) => {
       })
     }
   }, [isCustomer, fetchCart])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Thêm món vào giỏ
   const addToCart = async (payload) => {

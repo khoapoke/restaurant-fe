@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LogOut, Menu, ShoppingBag, User, X } from 'lucide-react'
+import { CalendarDays, LogOut, Menu, ShoppingBag, User, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
 import MocBrand from '../brand/MocBrand'
@@ -37,9 +37,10 @@ export const MocSiteHeader = () => {
             )
           )}
           {isAuthenticated && (
-            <Link to="/orders" className="text-xs text-[#211b18] hover:text-[#6f1d32] transition-colors">
-              Đơn hàng
-            </Link>
+            <>
+              <Link to="/reservations" className="text-xs text-[#211b18] hover:text-[#6f1d32] transition-colors">Đặt bàn</Link>
+              <Link to="/orders" className="text-xs text-[#211b18] hover:text-[#6f1d32] transition-colors">Đơn hàng</Link>
+            </>
           )}
           {user?.role === 'ADMIN' && (
             <Link to="/admin" className="text-xs text-[#211b18] hover:text-[#6f1d32] transition-colors">
@@ -49,6 +50,11 @@ export const MocSiteHeader = () => {
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          {isAuthenticated && (
+            <Link to="/reservations" className="relative p-2.5 rounded-full hover:bg-[#6f1d32]/8" aria-label="Đặt bàn">
+              <CalendarDays className="w-[18px] h-[18px]" />
+            </Link>
+          )}
           {isAuthenticated && (
             <Link to="/cart" className="relative p-2.5 rounded-full hover:bg-[#6f1d32]/8" aria-label="Giỏ hàng">
               <ShoppingBag className="w-[18px] h-[18px]" />
@@ -98,6 +104,7 @@ export const MocSiteHeader = () => {
             {isAuthenticated ? (
               <>
                 <Link to="/orders" onClick={() => setIsOpen(false)} className="py-3 border-b border-[var(--moc-line)] moc-serif text-xl">Đơn hàng</Link>
+                <Link to="/reservations" onClick={() => setIsOpen(false)} className="py-3 border-b border-[var(--moc-line)] moc-serif text-xl">Đặt bàn</Link>
                 <Link to="/profile" onClick={() => setIsOpen(false)} className="py-3 border-b border-[var(--moc-line)] moc-serif text-xl">Hồ sơ</Link>
                 <button type="button" onClick={() => { logout(); setIsOpen(false) }} className="py-3 text-left text-[#6f1d32]">Đăng xuất</button>
               </>

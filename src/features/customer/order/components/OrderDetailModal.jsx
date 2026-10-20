@@ -5,6 +5,7 @@ import { getOrderDetailApi } from '../services/orderService'
 import {
   ORDER_STATUS_CONFIG,
   FULFILLMENT_CONFIG,
+  FULFILLMENT_STATUS_CONFIG,
   PAYMENT_METHOD_CONFIG,
   PAYMENT_STATUS_CONFIG,
 } from '../constants'
@@ -22,6 +23,7 @@ export const OrderDetailModal = ({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Modal state follows the selected order lifecycle. */
   useEffect(() => {
     if (!orderId || !isOpen) {
       setOrder(null)
@@ -44,12 +46,17 @@ export const OrderDetailModal = ({
 
     loadDetail()
   }, [orderId, isOpen])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const statusConfig = ORDER_STATUS_CONFIG[order?.status] || {
     label: order?.status,
     color: 'text-gray-300',
     bg: 'bg-gray-800',
     border: 'border-gray-700',
+  }
+  const fulfillmentStatusConfig = FULFILLMENT_STATUS_CONFIG[order?.fulfillmentStatus] || {
+    label: order?.fulfillmentStatus,
+    color: 'text-gray-400',
   }
 
   const isPending = order?.status === 'PENDING_CONFIRMATION'
@@ -107,16 +114,27 @@ export const OrderDetailModal = ({
             </div>
             <div>
               <span className="text-gray-500 block text-[10px]">Hình thức nhận món</span>
-              <span className="font-semibold text-gray-200">
+              <span className="block font-semibold text-gray-200">
                 {FULFILLMENT_CONFIG[order.fulfillmentType]?.label || order.fulfillmentType}
               </span>
-            </div>
-            <div className="sm:col-span-2">
-              <span className="text-gray-500 block text-[10px]">Địa chỉ giao</span>
-              <span className="text-gray-300 leading-relaxed">
-                {order.shippingAddress || '—'}
+              <span className={`mt-1 block text-[11px] font-semibold ${fulfillmentStatusConfig.color}`}>
+                {fulfillmentStatusConfig.label}
               </span>
             </div>
+            {order.fulfillmentType === 'DELIVERY' ? (
+              <div className="sm:col-span-2">
+                <span className="text-gray-500 block text-[10px]">Địa chỉ giao</span>
+                <span className="text-gray-300 leading-relaxed">{order.shippingAddress || '—'}</span>
+              </div>
+            ) : (
+              <div className="sm:col-span-2">
+                <span className="text-gray-500 block text-[10px]">Nhận tại nhà hàng</span>
+                <span className="text-gray-300 leading-relaxed">
+                  82 Nguyễn Du, Quận 1, TP.HCM
+                  {order.scheduledAt ? ` · Hẹn ${new Date(order.scheduledAt).toLocaleString('vi-VN')}` : ' · Lấy sớm nhất'}
+                </span>
+              </div>
+            )}
             {order.orderNote && (
               <div className="sm:col-span-2">
                 <span className="text-gray-500 block text-[10px]">Ghi chú đơn hàng</span>
@@ -159,6 +177,20 @@ export const OrderDetailModal = ({
 
           {/* Tổng tiền & Phương thức thanh toán */}
           <div className="p-4 rounded-xl bg-gray-950 border border-gray-800 space-y-2 text-xs">
+            <div className="flex justify-between text-gray-400">
+              <span>Tạm tính tiền món:</span>
+              <span className="text-gray-200 font-medium">
+                {Number(order.itemsSubtotal ?? order.totalAmount ?? 0).toLocaleString('vi-VN')} đ
+              </span>
+            </div>
+            {order.fulfillmentType === 'DELIVERY' && (
+              <div className="flex justify-between text-gray-400">
+                <span>Phí giao hàng:</span>
+                <span className="text-gray-200 font-medium">
+                  {Number(order.deliveryFee || 0).toLocaleString('vi-VN')} đ
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-gray-400">
               <span>Phương thức thanh toán:</span>
               <span className="text-gray-200 font-medium">

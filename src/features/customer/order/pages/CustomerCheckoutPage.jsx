@@ -5,8 +5,8 @@ import {
   QrCode,
   Banknote,
   Truck,
-  Utensils,
   ShoppingBag,
+  CalendarClock,
 } from 'lucide-react'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { useCart } from '../../../../contexts/CartContext'
@@ -23,12 +23,12 @@ import MocFooter from '../../../../components/navigation/MocFooter'
 export const CustomerCheckoutPage = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
-  const { cart, totalQuantity, estimatedTotalAmount, fetchCart } = useCart()
+  const { cart, loading: cartLoading, totalQuantity, estimatedTotalAmount, fetchCart } = useCart()
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/login')
-    else if (!cart.items || cart.items.length === 0) navigate('/cart')
-  }, [isAuthenticated, cart.items, navigate])
+    else if (!cartLoading && cart.cartId !== null && (!cart.items || cart.items.length === 0)) navigate('/cart')
+  }, [isAuthenticated, cart.cartId, cart.items, cartLoading, navigate])
 
   const [formData, setFormData] = useState({
     recipientName: user?.userProfile?.fullName || user?.username || '',
@@ -36,6 +36,8 @@ export const CustomerCheckoutPage = () => {
     shippingAddress: user?.userProfile?.address || '',
     fulfillmentType: FulfillmentType.DELIVERY,
     paymentMethod: PaymentMethod.BANK_TRANSFER_QR,
+    pickupTiming: 'ASAP',
+    scheduledAt: '',
     orderNote: '',
   })
 
@@ -44,6 +46,12 @@ export const CustomerCheckoutPage = () => {
   const [errorMessage, setErrorMessage] = useState(null)
   const [createdOrderId, setCreatedOrderId] = useState(null)
   const [showQrModal, setShowQrModal] = useState(false)
+  const [minimumScheduledAt] = useState(() => {
+    const earliestPickup = new Date()
+    earliestPickup.setMinutes(earliestPickup.getMinutes() + 30)
+    earliestPickup.setMinutes(earliestPickup.getMinutes() - earliestPickup.getTimezoneOffset())
+    return earliestPickup.toISOString().slice(0, 16)
+  })
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -57,6 +65,13 @@ export const CustomerCheckoutPage = () => {
     if (!formData.recipientPhone.trim()) errs.recipientPhone = 'Vui lòng nhập số điện thoại'
     if (formData.fulfillmentType === FulfillmentType.DELIVERY && !formData.shippingAddress.trim()) {
       errs.shippingAddress = 'Vui lòng nhập địa chỉ giao hàng chi tiết'
+    }
+    if (
+      formData.fulfillmentType === FulfillmentType.PICKUP &&
+      formData.pickupTiming === 'SCHEDULED' &&
+      !formData.scheduledAt
+    ) {
+      errs.scheduledAt = 'Vui lòng chọn thời gian dự kiến đến lấy món'
     }
     return errs
   }
@@ -79,7 +94,12 @@ export const CustomerCheckoutPage = () => {
         shippingAddress:
           formData.fulfillmentType === FulfillmentType.DELIVERY
             ? formData.shippingAddress.trim()
-            : `${formData.fulfillmentType} tại nhà hàng`,
+            : undefined,
+        scheduledAt:
+          formData.fulfillmentType === FulfillmentType.PICKUP &&
+          formData.pickupTiming === 'SCHEDULED'
+            ? formData.scheduledAt
+            : undefined,
         paymentMethod: formData.paymentMethod,
         orderNote: formData.orderNote.trim() || undefined,
       })
@@ -130,11 +150,10 @@ export const CustomerCheckoutPage = () => {
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Truck className="w-4 h-4 text-amber-500" /> Hình thức nhận món
               </h3>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   { type: FulfillmentType.DELIVERY, label: 'Giao hàng', icon: Truck },
-                  { type: FulfillmentType.DINE_IN, label: 'Ăn tại chỗ', icon: Utensils },
-                  { type: FulfillmentType.TAKEAWAY, label: 'Tự đến lấy', icon: ShoppingBag },
+                  { type: FulfillmentType.PICKUP, label: 'Tự đến lấy', icon: ShoppingBag },
                 ].map((item) => (
                   <button
                     key={item.type}
@@ -152,6 +171,13 @@ export const CustomerCheckoutPage = () => {
                   </button>
                 ))}
               </div>
+              <p className="text-xs leading-5 text-gray-400">
+                Muốn dùng bữa tại nhà hàng?{' '}
+                <Link to="/reservations" className="font-semibold text-amber-400 hover:text-amber-300">
+                  Đặt bàn trước
+                </Link>
+                ; nhân viên sẽ mở phiên phục vụ POS khi bạn đến.
+              </p>
             </div>
 
             {/* Khung 2: Thông tin người nhận */}
@@ -187,6 +213,52 @@ export const CustomerCheckoutPage = () => {
                     />
                   </div>
                 )}
+                {formData.fulfillmentType === FulfillmentType.PICKUP && (
+                  <div className="sm:col-span-2 space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-100">Nhận món tại Mộc Dining</p>
+                        <p className="mt-1 text-[11px] leading-5 text-gray-400">
+                          82 Nguyễn Du, Quận 1, TP.HCM · Vui lòng đọc mã đơn khi nhận món.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData((current) => ({ ...current, pickupTiming: 'ASAP', scheduledAt: '' }))}
+                        className={`min-h-10 border px-3 text-xs font-semibold ${formData.pickupTiming === 'ASAP' ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-gray-800 bg-gray-950 text-gray-400'}`}
+                      >
+                        Lấy sớm nhất
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((current) => ({ ...current, pickupTiming: 'SCHEDULED' }))}
+                        className={`min-h-10 border px-3 text-xs font-semibold ${formData.pickupTiming === 'SCHEDULED' ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-gray-800 bg-gray-950 text-gray-400'}`}
+                      >
+                        Hẹn giờ đến lấy
+                      </button>
+                    </div>
+                    {formData.pickupTiming === 'SCHEDULED' && (
+                      <label className="block text-xs font-medium text-gray-300">
+                        <span className="mb-1.5 flex items-center gap-2">
+                          <CalendarClock className="h-4 w-4 text-amber-400" /> Thời gian dự kiến
+                        </span>
+                        <input
+                          type="datetime-local"
+                          name="scheduledAt"
+                          value={formData.scheduledAt}
+                          min={minimumScheduledAt}
+                          onChange={handleChange}
+                          className="min-h-11 w-full border border-gray-800 bg-gray-950 px-3.5 text-sm text-gray-100 outline-none focus:border-amber-500"
+                          required
+                        />
+                        {errors.scheduledAt && <span className="mt-1 block text-[11px] text-red-400">{errors.scheduledAt}</span>}
+                      </label>
+                    )}
+                  </div>
+                )}
                 <div className="sm:col-span-2">
                   <label className="text-xs font-medium text-gray-300 block mb-1">
                     Ghi chú cho nhà hàng / tài xế
@@ -196,7 +268,7 @@ export const CustomerCheckoutPage = () => {
                     value={formData.orderNote}
                     onChange={handleChange}
                     rows={2}
-                    placeholder="Ví dụ: Gọi điện trước khi giao, ít cay, không hành..."
+                    placeholder={formData.fulfillmentType === FulfillmentType.DELIVERY ? 'Ví dụ: Gọi điện trước khi giao, ít cay...' : 'Ví dụ: Ít cay, không hành, đóng gói riêng...'}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-gray-950 border border-gray-800 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-amber-500 transition-colors resize-none"
                   />
                 </div>
@@ -215,7 +287,7 @@ export const CustomerCheckoutPage = () => {
                   className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer
                     ${
                       formData.paymentMethod === PaymentMethod.BANK_TRANSFER_QR
-                        ? 'bg-amber-500/10 border-amber-500 text-amber-300 ring-1 ring-amber-500/30'
+                        ? 'moc-inverse bg-amber-500/10 border-amber-500 text-amber-300 ring-1 ring-amber-500/30'
                         : 'bg-gray-950 border-gray-800 text-gray-400 hover:border-gray-700'
                     }`}
                 >
@@ -234,7 +306,7 @@ export const CustomerCheckoutPage = () => {
                   className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer
                     ${
                       formData.paymentMethod === PaymentMethod.CASH
-                        ? 'bg-amber-500/10 border-amber-500 text-amber-300 ring-1 ring-amber-500/30'
+                        ? 'moc-inverse bg-amber-500/10 border-amber-500 text-amber-300 ring-1 ring-amber-500/30'
                         : 'bg-gray-950 border-gray-800 text-gray-400 hover:border-gray-700'
                     }`}
                 >
@@ -285,10 +357,17 @@ export const CustomerCheckoutPage = () => {
                 <span>Tạm tính tiền món:</span>
                 <span className="font-mono">{Number(estimatedTotalAmount).toLocaleString('vi-VN')} đ</span>
               </div>
-              <div className="flex justify-between">
-                <span>Phí giao hàng:</span>
-                <span className="text-emerald-400">Miễn phí</span>
-              </div>
+              {formData.fulfillmentType === FulfillmentType.DELIVERY ? (
+                <div className="flex justify-between">
+                  <span>Phí giao hàng:</span>
+                  <span className="text-emerald-400">Miễn phí</span>
+                </div>
+              ) : (
+                <div className="flex justify-between">
+                  <span>Nhận tại nhà hàng:</span>
+                  <span className="text-emerald-400">Không phụ phí</span>
+                </div>
+              )}
               <div className="pt-2 border-t border-gray-800 flex items-center justify-between">
                 <span className="text-sm font-bold text-white">Tổng thanh toán:</span>
                 <span className="text-xl font-extrabold text-amber-400 font-mono">

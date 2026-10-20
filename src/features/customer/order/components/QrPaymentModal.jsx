@@ -34,6 +34,7 @@ export const QrPaymentModal = ({
   const countdownTimerRef = useRef(null)
 
   // 1. Sinh mã QR khi mở Modal
+  /* eslint-disable react-hooks/set-state-in-effect -- Opening or closing the payment modal owns QR state initialization. */
   useEffect(() => {
     if (!orderId || !isOpen) {
       setQrData(null)
@@ -60,6 +61,7 @@ export const QrPaymentModal = ({
 
     loadQr()
   }, [orderId, isOpen])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // 2. Countdown timer
   useEffect(() => {
@@ -91,7 +93,9 @@ export const QrPaymentModal = ({
           clearInterval(pollingTimerRef.current)
           onPaymentSuccess?.(orderId)
         }
-      } catch {}
+      } catch {
+        // Bỏ qua một lần polling lỗi; chu kỳ kế tiếp sẽ tự thử lại.
+      }
     }, 3500)
 
     return () => clearInterval(pollingTimerRef.current)

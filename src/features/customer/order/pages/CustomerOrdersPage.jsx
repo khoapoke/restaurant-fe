@@ -54,9 +54,11 @@ export const CustomerOrdersPage = () => {
     }
   }, [])
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Authentication enables the initial server-side order fetch. */
   useEffect(() => {
     if (isAuthenticated) fetchOrders()
   }, [isAuthenticated, fetchOrders])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const filteredOrders = orders.filter((o) => {
     if (selectedStatus === 'ALL') return true

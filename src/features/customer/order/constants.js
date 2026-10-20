@@ -8,7 +8,6 @@ export const OrderStatus = {
   CONFIRMED: 'CONFIRMED',
   PREPARING: 'PREPARING',
   READY: 'READY',
-  DELIVERING: 'DELIVERING',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
 }
@@ -42,13 +41,6 @@ export const ORDER_STATUS_CONFIG = {
     border: 'border-cyan-500/30',
     step: 4,
   },
-  DELIVERING: {
-    label: 'Đang giao hàng',
-    color: 'text-purple-400',
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/30',
-    step: 5,
-  },
   COMPLETED: {
     label: 'Hoàn thành',
     color: 'text-emerald-400',
@@ -67,14 +59,24 @@ export const ORDER_STATUS_CONFIG = {
 
 export const FulfillmentType = {
   DELIVERY: 'DELIVERY',
-  DINE_IN: 'DINE_IN',
-  TAKEAWAY: 'TAKEAWAY',
+  PICKUP: 'PICKUP',
 }
 
 export const FULFILLMENT_CONFIG = {
   DELIVERY: { label: 'Giao hàng tận nơi' },
+  PICKUP: { label: 'Tự đến lấy tại Mộc' },
   DINE_IN: { label: 'Ăn tại nhà hàng' },
-  TAKEAWAY: { label: 'Tự đến mang về' },
+}
+
+export const FULFILLMENT_STATUS_CONFIG = {
+  PENDING: { label: 'Chờ nhà hàng xử lý', color: 'text-gray-400' },
+  AWAITING_DRIVER: { label: 'Chờ bàn giao tài xế', color: 'text-amber-400' },
+  OUT_FOR_DELIVERY: { label: 'Đang giao đến bạn', color: 'text-purple-400' },
+  DELIVERED: { label: 'Đã giao hàng', color: 'text-emerald-400' },
+  AWAITING_CUSTOMER: { label: 'Sẵn sàng để đến lấy', color: 'text-cyan-400' },
+  COLLECTED: { label: 'Khách đã nhận món', color: 'text-emerald-400' },
+  SERVING: { label: 'Đang phục vụ tại bàn', color: 'text-amber-400' },
+  SERVED: { label: 'Đã phục vụ', color: 'text-emerald-400' },
 }
 
 export const PaymentMethod = {

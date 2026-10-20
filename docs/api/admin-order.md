@@ -13,6 +13,7 @@
 |-----------|-------------|
 | Danh sách đơn hàng (`ORD-07`) | `GET /api/v1/admin/orders?status=PENDING_CONFIRMATION&page=1` |
 | Chuyển trạng thái đơn (`ORD-08` → `ORD-11`) | `PATCH /api/v1/admin/orders/{orderId}/status` |
+| Cập nhật trạng thái bàn giao | `PATCH /api/v1/admin/orders/{orderId}/fulfillment-status` |
 | Hủy đơn kèm lý do (`ORD-12`) | `POST /api/v1/admin/orders/{orderId}/cancel` |
 
 ### Request Body (`PATCH /api/v1/admin/orders/{orderId}/status`)
@@ -47,7 +48,24 @@
 ```
 
 ### Ghi chú nghiệp vụ
-Kiểm tra tính hợp lệ của luồng trạng thái thông qua hàm `OrderStatus::canTransitionTo($newStatus)`.
+Kiểm tra tính hợp lệ của luồng trạng thái thông qua hàm `OrderStatus::canTransitionTo($newStatus)`. Luồng bếp dừng ở `READY`; không gửi trực tiếp `COMPLETED`.
+
+### Luồng bàn giao sau khi bếp sẵn sàng
+
+| Loại phục vụ | Khi vào `READY` | Các bước tiếp theo |
+|---------------|-----------------|--------------------|
+| `DELIVERY` | `AWAITING_DRIVER` | `OUT_FOR_DELIVERY → DELIVERED` |
+| `PICKUP` | `AWAITING_CUSTOMER` | `COLLECTED` |
+| `DINE_IN` | Do POS quản lý | `SERVING → SERVED` |
+
+Request cập nhật bàn giao:
+```json
+{
+  "targetStatus": "OUT_FOR_DELIVERY"
+}
+```
+
+Khi đạt `DELIVERED` hoặc `COLLECTED`, backend tự đổi đơn sang `COMPLETED`. Đơn QR phải thanh toán trước lúc giao cho tài xế hoặc hoàn tất bàn giao; đơn tiền mặt được ghi nhận thanh toán tại thời điểm bàn giao cuối.
 
 ---
 

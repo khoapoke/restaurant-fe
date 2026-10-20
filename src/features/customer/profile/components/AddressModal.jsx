@@ -19,6 +19,7 @@ export const AddressModal = ({
 
   const [errors, setErrors] = useState({})
 
+  /* eslint-disable react-hooks/set-state-in-effect -- The editor form is initialized from the address selected by its parent. */
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -37,6 +38,7 @@ export const AddressModal = ({
     }
     setErrors({})
   }, [initialData, isOpen])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target

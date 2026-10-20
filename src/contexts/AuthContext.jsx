@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+/* eslint-disable react-refresh/only-export-components -- Context provider and hook intentionally share this module. */
+import { createContext, useContext, useState } from 'react'
 import { STORAGE_KEYS } from '../features/auth/constants'
 import { loginApi, registerApi, logoutApi } from '../features/auth/services/authService'
 

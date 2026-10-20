@@ -89,7 +89,9 @@ export const CustomerMenuPage = () => {
               DEFAULT_COORDINATES.lon
             )
             setWeatherData(fallbackRes.data)
-          } catch {}
+          } catch {
+            // Thời tiết chỉ là gợi ý bổ sung; thực đơn vẫn hoạt động khi dịch vụ tạm lỗi.
+          }
         } finally {
           setWeatherLoading(false)
         }
@@ -138,9 +140,11 @@ export const CustomerMenuPage = () => {
     }
   }, [debouncedKeyword, selectedCategoryId, filters, page])
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Filter changes intentionally trigger a server-side menu refresh. */
   useEffect(() => {
     fetchDishes()
   }, [fetchDishes])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSelectCategory = (catId) => {
     setSelectedCategoryId(catId)

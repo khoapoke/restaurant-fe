@@ -78,9 +78,11 @@ export const CustomerProfilePage = () => {
     }
   }, [])
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Authentication enables the initial server-side profile fetch. */
   useEffect(() => {
     if (isAuthenticated) fetchProfile()
   }, [isAuthenticated, fetchProfile])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Handlers cho Tab 1
   const handleInfoChange = (e) => {

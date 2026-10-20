@@ -1,55 +1,71 @@
-import { BarChart3, BookOpen, LogOut, ShoppingBag, TableProperties, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../../contexts/AuthContext'
-import MocBrand from '../../../components/brand/MocBrand'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { CalendarDays, RefreshCw, ShoppingBag, TableProperties, WalletCards } from 'lucide-react'
 import Button from '../../../components/ui/Button'
+import AdminDataState from '../components/AdminDataState'
+import { formatCurrency } from '../constants'
+import { getDashboardReportApi } from '../services/adminService'
 
-const modules = [
-  { label: 'Thực đơn', description: 'Danh mục, món ăn và trạng thái còn bán', icon: BookOpen },
-  { label: 'Đơn hàng', description: 'Theo dõi đơn online và tiến độ phục vụ', icon: ShoppingBag },
-  { label: 'Bàn & đặt chỗ', description: 'Sơ đồ bàn, lịch đặt và công suất', icon: TableProperties },
-  { label: 'Khách hàng', description: 'Tài khoản, hồ sơ và lịch sử trải nghiệm', icon: Users },
-]
+const Metric = ({ label, value, hint, icon: Icon }) => (
+  <article className="moc-panel p-5 sm:p-6">
+    <div className="flex items-start justify-between gap-4"><span className="text-xs font-bold tracking-[0.12em] text-[#766e68] uppercase">{label}</span><Icon className="h-5 w-5 text-[#6f1d32]" /></div>
+    <p className="mt-5 moc-serif text-3xl font-medium tracking-[-0.03em]">{value}</p>
+    <p className="mt-2 text-sm text-[#625a55]">{hint}</p>
+  </article>
+)
 
 export const AdminDashboard = () => {
-  const { user, logout } = useAuth()
+  const [report, setReport] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null)
+    try { setReport((await getDashboardReportApi()).data) }
+    catch (err) { setError(err.response?.data?.message || 'Không thể tải báo cáo vận hành.') }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    getDashboardReportApi()
+      .then((response) => { if (active) setReport(response.data) })
+      .catch((err) => { if (active) setError(err.response?.data?.message || 'Không thể tải báo cáo vận hành.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [])
+
+  const maxRevenue = useMemo(() => Math.max(...(report?.revenue?.dailySeries || []).map((item) => Number(item.amount)), 1), [report])
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[260px_1fr] bg-[#f3eee6]">
-      <aside className="moc-inverse p-7 lg:min-h-screen flex flex-col bg-[#251b19] text-[#f7eee7]">
-        <MocBrand light />
-        <span className="mt-3 text-[9px] tracking-[0.18em] uppercase text-[#b9aaa3]">Mộc Operations</span>
-        <nav className="mt-12 flex flex-col gap-2">
-          <button type="button" className="px-4 py-3.5 text-left border-l-2 border-[#d8a8b4] bg-white/7 text-sm">Tổng quan hôm nay</button>
-          {modules.map(({ label }) => <button key={label} type="button" className="px-4 py-3.5 text-left border-l-2 border-transparent text-[#bdb1ab] hover:text-white hover:bg-white/5 text-sm transition-colors">{label}</button>)}
-        </nav>
-        <div className="mt-auto pt-8">
-          <p className="text-xs text-[#bdb1ab]">{user?.username || 'Quản trị viên'}</p>
-          <button type="button" onClick={logout} className="mt-3 w-full min-h-10 px-4 flex items-center justify-center gap-2 border border-white/20 text-xs text-[#e8ddd7] hover:bg-white/5"><LogOut className="w-4 h-4" /> Đăng xuất</button>
-        </div>
-      </aside>
+    <div className="max-w-[1500px] mx-auto">
+      <header className="flex flex-wrap items-end justify-between gap-5">
+        <div><span className="moc-eyebrow">MỘC OPERATIONS</span><h1 className="mt-3 moc-serif text-4xl sm:text-5xl font-medium tracking-[-0.04em]">Tổng quan vận hành</h1><p className="mt-3 text-sm text-[#625a55]">Dữ liệu doanh thu, đơn hàng, đặt chỗ và công suất bàn theo thời gian thực.</p></div>
+        <Button variant="outline" icon={RefreshCw} onClick={load}>Làm mới</Button>
+      </header>
 
-      <main className="min-w-0 p-6 sm:p-10 lg:p-14">
-        <header className="flex flex-wrap items-end justify-between gap-5">
-          <div><span className="moc-eyebrow">MỘC OPERATIONS</span><h1 className="mt-3 moc-serif text-4xl font-medium tracking-[-0.03em]">Tổng quan hôm nay</h1><p className="mt-2 text-sm text-[#766e68]">Các module quản trị sẽ được kết nối dần với API Laravel hiện có.</p></div>
-          <Link to="/"><Button variant="outline" size="sm">Về trang nhà hàng</Button></Link>
-        </header>
+      <div className="mt-9"><AdminDataState loading={loading} error={error} onRetry={load} empty={!report}>
+        {report && <div className="grid gap-6">
+          <section className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <Metric label="Doanh thu" value={formatCurrency(report.revenue.totalPaidRevenue)} hint="Giao dịch đã thanh toán" icon={WalletCards} />
+            <Metric label="Đơn hàng" value={report.orders.totalCount} hint={`${report.orders.completedCount} đơn hoàn thành`} icon={ShoppingBag} />
+            <Metric label="Đặt chỗ" value={report.reservations.totalBookings} hint={`${report.reservations.pendingBookings} lượt chờ duyệt`} icon={CalendarDays} />
+            <Metric label="Bàn đang phục vụ" value={report.operations.tables.occupied} hint={`${report.operations.activeSessions} phiên POS đang mở`} icon={TableProperties} />
+          </section>
 
-        <section className="mt-9 grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {[['Đơn hôm nay', '—'], ['Bàn đang phục vụ', '—'], ['Đặt chỗ sắp tới', '—'], ['Doanh thu', '—']].map(([label, value]) => (
-            <article key={label} className="p-6 bg-[#fffdf8] border border-[var(--moc-line)]"><span className="text-[10px] tracking-[0.12em] uppercase text-[#766e68]">{label}</span><strong className="block mt-4 moc-serif text-4xl font-medium text-[#6f1d32]">{value}</strong><small className="text-[#766e68]">Chờ dữ liệu API</small></article>
-          ))}
-        </section>
-
-        <section className="mt-5 p-6 sm:p-8 bg-[#fffdf8] border border-[var(--moc-line)]">
-          <div className="flex items-center justify-between gap-4"><div><span className="moc-eyebrow">PHÂN HỆ</span><h2 className="mt-2 moc-serif text-2xl font-medium">Không gian vận hành</h2></div><BarChart3 className="w-6 h-6 text-[#6f1d32]" /></div>
-          <div className="mt-7 grid md:grid-cols-2 gap-3">
-            {modules.map(({ label, description, icon: Icon }) => (
-              <article key={label} className="p-5 flex gap-4 border border-[var(--moc-line)] hover:border-[#6f1d32]/45 transition-colors"><span className="w-11 h-11 shrink-0 grid place-items-center rounded-full bg-[#6f1d32]/8 text-[#6f1d32]"><Icon className="w-5 h-5" /></span><div><h3 className="moc-serif text-lg font-medium">{label}</h3><p className="mt-1 text-xs leading-5 text-[#766e68]">{description}</p></div></article>
-            ))}
-          </div>
-        </section>
-      </main>
+          <section className="grid xl:grid-cols-[1.4fr_1fr] gap-5">
+            <article className="moc-panel p-6">
+              <div className="flex items-end justify-between gap-4"><div><span className="moc-eyebrow">7 NGÀY</span><h2 className="mt-3 moc-serif text-2xl">Nhịp doanh thu</h2></div><span className="text-xs text-[#625a55]">{report.period.fromDate} — {report.period.toDate}</span></div>
+              <div className="mt-8 grid grid-cols-7 items-end gap-2 h-52">
+                {report.revenue.dailySeries.map((item) => <div key={item.date} className="h-full flex flex-col justify-end gap-2 text-center"><span className="text-xs text-[#625a55]">{Number(item.amount) > 0 ? `${Math.round(Number(item.amount) / 1000)}k` : '0'}</span><div className="min-h-1 bg-[#6f1d32]" style={{ height: `${Math.max(Number(item.amount) / maxRevenue * 100, 2)}%` }} /><span className="text-xs text-[#766e68]">{item.date.slice(5)}</span></div>)}
+              </div>
+            </article>
+            <article className="moc-panel p-6">
+              <span className="moc-eyebrow">BÁN CHẠY</span><h2 className="mt-3 moc-serif text-2xl">Món được yêu thích</h2>
+              <div className="mt-6 divide-y divide-[var(--moc-line)]">{report.topSellingDishes.length ? report.topSellingDishes.map((dish, index) => <div key={dish.dishId} className="flex items-center gap-4 py-4"><span className="moc-serif text-2xl text-[#6f1d32]">0{index + 1}</span><div className="min-w-0 flex-1"><p className="font-semibold truncate">{dish.dishName}</p><p className="mt-1 text-xs text-[#625a55]">{dish.totalSold} phần · {formatCurrency(dish.revenue)}</p></div></div>) : <p className="py-10 text-sm text-[#625a55]">Chưa có món hoàn thành trong kỳ.</p>}</div>
+            </article>
+          </section>
+        </div>}
+      </AdminDataState></div>
     </div>
   )
 }
