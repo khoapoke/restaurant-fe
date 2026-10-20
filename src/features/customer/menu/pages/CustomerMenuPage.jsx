@@ -7,6 +7,7 @@ import {
   RefreshCw,
   SearchX,
   Sparkles,
+  ShoppingBag,
 } from 'lucide-react'
 import {
   getCategoriesApi,
@@ -14,6 +15,7 @@ import {
   getWeatherRecommendationsApi,
 } from '../services/menuService'
 import { DEFAULT_COORDINATES, DEFAULT_PAGE_SIZE } from '../constants'
+import { useCart } from '../../../../contexts/CartContext'
 import WeatherRecommendationAccordion from '../components/WeatherRecommendationAccordion'
 import MenuFilterBar from '../components/MenuFilterBar'
 import DishCard from '../components/DishCard'
@@ -23,6 +25,7 @@ import Button from '../../../../components/ui/Button'
 import Skeleton from '../../../../components/ui/Skeleton'
 
 export const CustomerMenuPage = () => {
+  const { totalQuantity } = useCart()
   // State danh mục & món ăn
   const [categories, setCategories] = useState([])
   const [dishes, setDishes] = useState([])
@@ -190,11 +193,26 @@ export const CustomerMenuPage = () => {
             </div>
           </div>
 
-          <Link to="/profile">
-            <Button variant="outline" size="sm">
-              Xem sở thích dị ứng
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/cart"
+              className="relative p-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+              title="Xem giỏ hàng"
+            >
+              <ShoppingBag className="w-5 h-5 text-amber-500" />
+              {totalQuantity > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-gray-950 font-bold text-[10px] flex items-center justify-center shadow-md">
+                  {totalQuantity}
+                </span>
+              )}
+            </Link>
+
+            <Link to="/profile">
+              <Button variant="outline" size="sm">
+                Xem sở thích dị ứng
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 

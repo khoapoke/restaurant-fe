@@ -3,14 +3,21 @@ import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
 import { getDishDetailApi } from '../services/menuService'
 import { FALLBACK_DISH_IMAGE } from '../constants'
+import { useAuth } from '../../../../contexts/AuthContext'
+import { useCart } from '../../../../contexts/CartContext'
 import { AlertTriangle, CheckCircle2, ShoppingBag, Loader2, Info } from 'lucide-react'
 
 export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
+  const { isAuthenticated } = useAuth()
+  const { addToCart } = useCart()
+
   const [dish, setDish] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
   const [addedNotice, setAddedNotice] = useState(false)
+  const [addError, setAddError] = useState(null)
 
   useEffect(() => {
     if (!dishId || !isOpen) {
@@ -18,6 +25,7 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
       setError(null)
       setQuantity(1)
       setAddedNotice(false)
+      setAddError(null)
       return
     }
 
@@ -37,9 +45,28 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
     fetchDetail()
   }, [dishId, isOpen])
 
-  const handleAddToCart = () => {
-    setAddedNotice(true)
-    setTimeout(() => setAddedNotice(false), 2500)
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      setAddError('Vui lòng đăng nhập tài khoản để thêm món vào giỏ hàng.')
+      return
+    }
+
+    setIsAdding(true)
+    setAddError(null)
+    try {
+      await addToCart({
+        dishId: dish.dishId,
+        quantity,
+      })
+      setAddedNotice(true)
+      setTimeout(() => setAddedNotice(false), 3000)
+    } catch (err) {
+      setAddError(
+        err.response?.data?.message || 'Không thể thêm món vào giỏ hàng. Vui lòng thử lại.'
+      )
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   const priceNumber = Number(dish?.price || 0)
@@ -164,6 +191,14 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
             </div>
           )}
 
+          {/* Thông báo lỗi khi thêm giỏ hàng */}
+          {addError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{addError}</span>
+            </div>
+          )}
+
           {/* Footer Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-800">
             {/* Bộ chọn số lượng */}
@@ -173,7 +208,7 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={!isAvailable || quantity <= 1}
+                  disabled={!isAvailable || quantity <= 1 || isAdding}
                   className="px-3 py-1.5 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-30 cursor-pointer"
                 >
                   -
@@ -184,7 +219,7 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => q + 1)}
-                  disabled={!isAvailable}
+                  disabled={!isAvailable || isAdding}
                   className="px-3 py-1.5 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-30 cursor-pointer"
                 >
                   +
@@ -193,14 +228,15 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-              <Button variant="ghost" size="md" onClick={onClose}>
+              <Button variant="ghost" size="md" onClick={onClose} disabled={isAdding}>
                 Đóng
               </Button>
               <Button
                 variant="primary"
                 size="md"
                 icon={ShoppingBag}
-                disabled={!isAvailable}
+                isLoading={isAdding}
+                disabled={!isAvailable || isAdding}
                 onClick={handleAddToCart}
               >
                 Thêm vào giỏ hàng • {(priceNumber * quantity).toLocaleString('vi-VN')} đ

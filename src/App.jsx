@@ -1,15 +1,26 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { CartProvider, useCart } from './contexts/CartContext'
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
 import CustomerProfilePage from './features/customer/profile/pages/CustomerProfilePage'
 import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
+import CustomerCartPage from './features/customer/cart/pages/CustomerCartPage'
 import Button from './components/ui/Button'
-import { UtensilsCrossed, LogOut, Shield, User, ArrowRight, Menu as MenuIcon } from 'lucide-react'
+import {
+  UtensilsCrossed,
+  LogOut,
+  Shield,
+  User,
+  ArrowRight,
+  Menu as MenuIcon,
+  ShoppingBag,
+} from 'lucide-react'
 
 // Placeholder cho Customer Home Page
 const HomePage = () => {
   const { user, isAuthenticated, logout } = useAuth()
+  const { totalQuantity } = useCart()
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-gray-100 flex flex-col">
@@ -42,6 +53,22 @@ const HomePage = () => {
               Menu
             </Button>
           </Link>
+
+          {/* Cart Badge Button */}
+          {isAuthenticated && (
+            <Link
+              to="/cart"
+              className="relative p-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+              title="Xem giỏ hàng"
+            >
+              <ShoppingBag className="w-5 h-5 text-amber-500" />
+              {totalQuantity > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-gray-950 font-bold text-[10px] flex items-center justify-center shadow-md">
+                  {totalQuantity}
+                </span>
+              )}
+            </Link>
+          )}
 
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
@@ -89,7 +116,7 @@ const HomePage = () => {
         </h1>
 
         <p className="text-gray-400 max-w-xl text-sm sm:text-base mb-8">
-          Module Auth, Hồ sơ khách hàng & Thực đơn trực tuyến (gợi ý thời tiết, lọc dị ứng) đã sẵn sàng.
+          Module Auth, Hồ sơ khách hàng, Thực đơn & Giỏ hàng trực tuyến đã sẵn sàng phục vụ.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
@@ -99,9 +126,9 @@ const HomePage = () => {
             </Button>
           </Link>
           {isAuthenticated ? (
-            <Link to="/profile">
-              <Button variant="outline" size="lg" icon={User}>
-                Quản lý Hồ sơ & Dị ứng
+            <Link to="/cart">
+              <Button variant="outline" size="lg" icon={ShoppingBag}>
+                Giỏ hàng của bạn {totalQuantity > 0 ? `(${totalQuantity})` : ''}
               </Button>
             </Link>
           ) : (
@@ -182,17 +209,20 @@ const AdminDashboard = () => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/profile" element={<CustomerProfilePage />} />
-          <Route path="/menu" element={<CustomerMenuPage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/profile" element={<CustomerProfilePage />} />
+            <Route path="/menu" element={<CustomerMenuPage />} />
+            <Route path="/cart" element={<CustomerCartPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </CartProvider>
     </AuthProvider>
   )
 }
