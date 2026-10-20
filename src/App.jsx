@@ -3,8 +3,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
 import CustomerProfilePage from './features/customer/profile/pages/CustomerProfilePage'
+import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
 import Button from './components/ui/Button'
-import { UtensilsCrossed, LogOut, Shield, User, ArrowRight } from 'lucide-react'
+import { UtensilsCrossed, LogOut, Shield, User, ArrowRight, Menu as MenuIcon } from 'lucide-react'
 
 // Placeholder cho Customer Home Page
 const HomePage = () => {
@@ -13,17 +14,35 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-[#0d1117] text-gray-100 flex flex-col">
       <header className="border-b border-gray-800 bg-gray-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-gray-950 font-bold">
-            <UtensilsCrossed className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-bold tracking-wider text-white">LUMIÈRE</span>
-            <span className="text-[10px] block text-amber-400 tracking-widest uppercase">Restaurant</span>
-          </div>
+        <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-gray-950 font-bold">
+              <UtensilsCrossed className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-bold tracking-wider text-white">LUMIÈRE</span>
+              <span className="text-[10px] block text-amber-400 tracking-widest uppercase">Restaurant</span>
+            </div>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-1">
+            <Link
+              to="/menu"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-300 hover:text-white hover:bg-gray-800/60 transition-colors flex items-center gap-1.5"
+            >
+              <UtensilsCrossed className="w-3.5 h-3.5 text-amber-500" />
+              <span>Thực đơn</span>
+            </Link>
+          </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Link to="/menu" className="md:hidden">
+            <Button variant="ghost" size="sm" icon={MenuIcon}>
+              Menu
+            </Button>
+          </Link>
+
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
@@ -70,46 +89,47 @@ const HomePage = () => {
         </h1>
 
         <p className="text-gray-400 max-w-xl text-sm sm:text-base mb-8">
-          Module Auth & Hồ sơ khách hàng (Profile, Dị ứng thực phẩm, Sổ địa chỉ) đã hoàn thiện sẵn sàng.
+          Module Auth, Hồ sơ khách hàng & Thực đơn trực tuyến (gợi ý thời tiết, lọc dị ứng) đã sẵn sàng.
         </p>
 
-        {isAuthenticated ? (
-          <div className="w-full max-w-md bg-gray-900/80 border border-gray-800 rounded-2xl p-6 text-left space-y-4">
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
+          <Link to="/menu">
+            <Button variant="primary" size="lg" icon={UtensilsCrossed}>
+              Khám phá Thực đơn & Món ngon
+            </Button>
+          </Link>
+          {isAuthenticated ? (
+            <Link to="/profile">
+              <Button variant="outline" size="lg" icon={User}>
+                Quản lý Hồ sơ & Dị ứng
+              </Button>
+            </Link>
+          ) : (
+            <Link to="/login">
+              <Button variant="secondary" size="lg" icon={ArrowRight}>
+                Đăng nhập tài khoản
+              </Button>
+            </Link>
+          )}
+        </div>
+
+        {isAuthenticated && (
+          <div className="w-full max-w-md bg-gray-900/80 border border-gray-800 rounded-2xl p-6 text-left space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-amber-400 flex items-center gap-2">
                 <User className="w-4 h-4" /> Phiên đăng nhập hiện tại
               </h3>
               <Link to="/profile">
                 <span className="text-xs text-amber-400 hover:text-amber-300 underline font-medium">
-                  Xem chi tiết
+                  Chi tiết
                 </span>
               </Link>
             </div>
-            <div className="text-xs space-y-1.5 text-gray-300">
+            <div className="text-xs space-y-1 text-gray-300">
               <p><span className="text-gray-500">Tài khoản:</span> {user?.username}</p>
               <p><span className="text-gray-500">Họ và tên:</span> {user?.userProfile?.fullName || 'Chưa cập nhật'}</p>
-              <p><span className="text-gray-500">Email:</span> {user?.email}</p>
               <p><span className="text-gray-500">Vai trò:</span> <span className="text-amber-400 font-mono font-bold">{user?.role}</span></p>
-              <p><span className="text-gray-500">Trạng thái:</span> <span className="text-emerald-400 font-mono">{user?.status}</span></p>
             </div>
-            <Link to="/profile" className="block pt-2">
-              <Button variant="primary" size="md" className="w-full" icon={User}>
-                Vào trang Hồ sơ & Dị ứng
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link to="/login">
-              <Button variant="primary" size="lg" icon={ArrowRight}>
-                Trải nghiệm Đăng nhập
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="outline" size="lg">
-                Tạo tài khoản mới
-              </Button>
-            </Link>
           </div>
         )}
       </main>
@@ -168,6 +188,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<CustomerProfilePage />} />
+          <Route path="/menu" element={<CustomerMenuPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
