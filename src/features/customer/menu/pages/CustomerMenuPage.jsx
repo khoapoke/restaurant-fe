@@ -1,13 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import {
   UtensilsCrossed,
-  ArrowLeft,
   AlertTriangle,
   RefreshCw,
   SearchX,
-  Sparkles,
-  ShoppingBag,
 } from 'lucide-react'
 import {
   getCategoriesApi,
@@ -15,7 +11,6 @@ import {
   getWeatherRecommendationsApi,
 } from '../services/menuService'
 import { DEFAULT_COORDINATES, DEFAULT_PAGE_SIZE } from '../constants'
-import { useCart } from '../../../../contexts/CartContext'
 import WeatherRecommendationAccordion from '../components/WeatherRecommendationAccordion'
 import MenuFilterBar from '../components/MenuFilterBar'
 import DishCard from '../components/DishCard'
@@ -23,9 +18,10 @@ import DishDetailModal from '../components/DishDetailModal'
 import Pagination from '../../../../components/ui/Pagination'
 import Button from '../../../../components/ui/Button'
 import Skeleton from '../../../../components/ui/Skeleton'
+import MocSiteHeader from '../../../../components/navigation/MocSiteHeader'
+import MocFooter from '../../../../components/navigation/MocFooter'
 
 export const CustomerMenuPage = () => {
-  const { totalQuantity } = useCart()
   // State danh mục & món ăn
   const [categories, setCategories] = useState([])
   const [dishes, setDishes] = useState([])
@@ -170,54 +166,18 @@ export const CustomerMenuPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-gray-100 flex flex-col">
-      {/* Top Header */}
-      <header className="border-b border-gray-800/80 bg-gray-950/70 backdrop-blur-md sticky top-0 z-20 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              title="Quay lại Trang chủ"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide flex items-center gap-2">
-                <UtensilsCrossed className="w-5 h-5 text-amber-500" />
-                Thực đơn nhà hàng
-              </h1>
-              <p className="text-[11px] text-gray-400 tracking-wider">
-                LUMIÈRE FINE DINING & CULINARY
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/cart"
-              className="relative p-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
-              title="Xem giỏ hàng"
-            >
-              <ShoppingBag className="w-5 h-5 text-amber-500" />
-              {totalQuantity > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-gray-950 font-bold text-[10px] flex items-center justify-center shadow-md">
-                  {totalQuantity}
-                </span>
-              )}
-            </Link>
-
-            <Link to="/profile">
-              <Button variant="outline" size="sm">
-                Xem sở thích dị ứng
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="moc-page-shell flex flex-col">
+      <MocSiteHeader />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-8 space-y-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-5 sm:px-8 py-10 space-y-7">
+        <header className="pb-3 grid lg:grid-cols-[1fr_0.55fr] items-end gap-6">
+          <div>
+            <span className="moc-eyebrow">THỰC ĐƠN CỦA MỘC</span>
+            <h1 className="moc-section-title mt-4 flex items-center gap-4"><UtensilsCrossed className="hidden sm:block w-9 h-9 text-[#6f1d32]" /> Món Việt, cách kể mới.</h1>
+          </div>
+          <p className="moc-serif text-sm leading-7 text-[#766e68]">Tìm món theo khẩu vị, mức giá và lưu ý dị ứng. Hình ảnh được gắn đúng với từng món trong dữ liệu.</p>
+        </header>
         {/* Accordion Gợi ý Thời tiết */}
         <WeatherRecommendationAccordion
           weatherData={weatherData}
@@ -240,7 +200,7 @@ export const CustomerMenuPage = () => {
 
         {/* UI STATE 1: LOADING */}
         {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="p-4 rounded-2xl bg-gray-900/40 border border-gray-800 space-y-3">
                 <Skeleton className="aspect-[4/3] w-full rounded-xl" />
@@ -288,7 +248,7 @@ export const CustomerMenuPage = () => {
         {/* UI STATE 4: DATA LIST */}
         {!loading && !fetchError && dishes.length > 0 && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {dishes.map((dish) => (
                 <DishCard
                   key={dish.dishId}
@@ -316,6 +276,7 @@ export const CustomerMenuPage = () => {
         isOpen={!!selectedDishId}
         onClose={() => setSelectedDishId(null)}
       />
+      <MocFooter />
     </div>
   )
 }

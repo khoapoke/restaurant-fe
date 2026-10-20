@@ -16,25 +16,27 @@ export const Button = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-60 disabled:cursor-not-allowed select-none'
+    'inline-flex items-center justify-center font-semibold tracking-[0.06em] transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#f5f0e7] disabled:opacity-60 disabled:cursor-not-allowed select-none'
 
   const sizeStyles = {
-    sm: 'px-3 py-1.5 text-xs gap-1.5',
-    md: 'px-4 py-2.5 text-sm gap-2',
-    lg: 'px-6 py-3.5 text-base gap-2.5 font-semibold',
+    sm: 'min-h-9 px-3.5 py-1.5 text-[11px] gap-1.5',
+    md: 'min-h-11 px-5 py-2.5 text-xs gap-2',
+    lg: 'min-h-12 px-6 py-3 text-sm gap-2.5',
   }
 
   const variantStyles = {
     primary:
-      'bg-amber-500 hover:bg-amber-400 text-gray-950 font-semibold shadow-lg shadow-amber-500/20 active:scale-[0.98] focus:ring-amber-500',
+      'moc-inverse bg-[#6f1d32] hover:bg-[#49101f] text-white shadow-lg shadow-[#6f1d32]/15 active:scale-[0.98] focus:ring-[#6f1d32]',
     secondary:
-      'bg-gray-800 hover:bg-gray-700 text-gray-100 border border-gray-700 active:scale-[0.98] focus:ring-gray-600',
+      'moc-inverse bg-[#251b19] hover:bg-[#3a2a27] text-[#fff8ed] border border-[#251b19] active:scale-[0.98] focus:ring-[#6f1d32]',
+    light:
+      'bg-[#fff8ed] hover:bg-white text-[#251b19] border border-[#fff8ed] active:scale-[0.98] focus:ring-[#d7b074]',
     outline:
-      'border border-amber-500/50 text-amber-400 hover:bg-amber-500/10 active:scale-[0.98] focus:ring-amber-500',
+      'border border-[#6f1d32]/45 text-[#6f1d32] hover:bg-[#6f1d32] hover:text-white active:scale-[0.98] focus:ring-[#6f1d32]',
     ghost:
-      'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 focus:ring-gray-700',
+      'text-[#766e68] hover:text-[#6f1d32] hover:bg-[#6f1d32]/7 focus:ring-[#6f1d32]',
     danger:
-      'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20 active:scale-[0.98] focus:ring-red-500',
+      'moc-inverse bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20 active:scale-[0.98] focus:ring-red-500',
   }
 
   return (

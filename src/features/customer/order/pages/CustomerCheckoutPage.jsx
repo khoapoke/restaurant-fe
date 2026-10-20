@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
-  ShieldCheck,
   QrCode,
   Banknote,
   Truck,
   Utensils,
   ShoppingBag,
-  CheckCircle2,
 } from 'lucide-react'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { useCart } from '../../../../contexts/CartContext'
@@ -19,6 +17,8 @@ import QrPaymentModal from '../components/QrPaymentModal'
 import Input from '../../../../components/ui/Input'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
+import MocSiteHeader from '../../../../components/navigation/MocSiteHeader'
+import MocFooter from '../../../../components/navigation/MocFooter'
 
 export const CustomerCheckoutPage = () => {
   const navigate = useNavigate()
@@ -105,20 +105,19 @@ export const CustomerCheckoutPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-gray-100 flex flex-col">
-      <header className="border-b border-gray-800/80 bg-gray-950/70 backdrop-blur-md sticky top-0 z-20 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link
-            to="/cart"
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors"
-          >
+    <div className="moc-page-shell flex flex-col">
+      <MocSiteHeader />
+
+      <main className="flex-1 max-w-7xl mx-auto w-full px-5 sm:px-8 py-12 lg:py-16">
+        <section className="mb-10 border-b border-[var(--moc-line)] pb-8">
+          <Link to="/cart" className="inline-flex items-center gap-2 text-xs text-[#766e68] hover:text-[#6f1d32] transition-colors">
             <ArrowLeft className="w-4 h-4" /> Quay lại giỏ hàng
           </Link>
-          <span className="text-sm font-bold tracking-wider text-white">CHECKOUT • ĐẶT HÀNG</span>
-        </div>
-      </header>
+          <span className="moc-eyebrow mt-7">BƯỚC CUỐI CÙNG</span>
+          <h1 className="moc-section-title mt-4">Xác nhận bữa ngon.</h1>
+          <p className="mt-4 text-sm text-[#766e68]">Kiểm tra thông tin nhận món và phương thức thanh toán trước khi gửi bếp.</p>
+        </section>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-8">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Cột trái (7/12): Form thông tin & Phương thức */}
           <div className="lg:col-span-7 space-y-6">
@@ -310,6 +309,8 @@ export const CustomerCheckoutPage = () => {
           </div>
         </form>
       </main>
+
+      <MocFooter />
 
       <QrPaymentModal
         orderId={createdOrderId}

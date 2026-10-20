@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   User,
   ShieldAlert,
   MapPin,
   Save,
-  ArrowLeft,
   RefreshCw,
   AlertTriangle,
 } from 'lucide-react'
@@ -17,6 +16,8 @@ import SavedAddressesTab from '../components/SavedAddressesTab'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
+import MocSiteHeader from '../../../../components/navigation/MocSiteHeader'
+import MocFooter from '../../../../components/navigation/MocFooter'
 
 export const CustomerProfilePage = () => {
   const navigate = useNavigate()
@@ -210,18 +211,21 @@ export const CustomerProfilePage = () => {
   // UI STATE 1: LOADING
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-gray-100 p-6 sm:p-10 max-w-4xl mx-auto space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-12 w-full rounded-2xl" />
-        <div className="space-y-4 p-8 bg-gray-900/40 rounded-2xl border border-gray-800">
-          <Skeleton className="h-6 w-1/3" />
-          <div className="grid grid-cols-2 gap-4">
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
+      <div className="moc-page-shell flex flex-col">
+        <MocSiteHeader />
+        <main className="flex-1 w-full max-w-5xl mx-auto p-6 sm:p-10 space-y-6">
+          <Skeleton className="h-14 w-72" />
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <div className="space-y-4 p-8 bg-gray-900/40 rounded-2xl border border-gray-800">
+            <Skeleton className="h-6 w-1/3" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     )
   }
@@ -229,41 +233,32 @@ export const CustomerProfilePage = () => {
   // UI STATE 2: ERROR
   if (fetchError) {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-gray-100 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mb-4">
-          <AlertTriangle className="w-7 h-7" />
-        </div>
-        <h2 className="text-xl font-bold text-white mb-1">Không thể tải hồ sơ</h2>
-        <p className="text-xs text-gray-400 max-w-md mb-6">{fetchError}</p>
-        <Button variant="primary" size="md" icon={RefreshCw} onClick={fetchProfile}>
-          Thử lại
-        </Button>
+      <div className="moc-page-shell flex flex-col">
+        <MocSiteHeader />
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mb-4">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <h2 className="moc-serif text-3xl font-medium mb-2">Không thể tải hồ sơ</h2>
+          <p className="text-sm text-[#766e68] max-w-md mb-6">{fetchError}</p>
+          <Button variant="primary" size="md" icon={RefreshCw} onClick={fetchProfile}>Thử lại</Button>
+        </main>
       </div>
     )
   }
 
   // UI STATE 4: SUCCESS / DATA VIEW
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-gray-100 flex flex-col">
-      {/* Top Header */}
-      <header className="border-b border-gray-800/80 bg-gray-950/70 backdrop-blur-md sticky top-0 z-20 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              title="Quay lại Trang chủ"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide">
-                Hồ sơ cá nhân
-              </h1>
-              <p className="text-xs text-amber-400 font-mono">@{formData.username}</p>
-            </div>
-          </div>
+    <div className="moc-page-shell flex flex-col">
+      <MocSiteHeader />
 
+      <main className="flex-1 max-w-5xl mx-auto w-full px-5 sm:px-8 py-12 lg:py-16 space-y-8">
+        <section className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 border-b border-[var(--moc-line)] pb-8">
+          <div>
+            <span className="moc-eyebrow">KHÔNG GIAN CỦA BẠN</span>
+            <h1 className="moc-section-title mt-4">Hồ sơ cá nhân.</h1>
+            <p className="mt-3 text-sm text-[#766e68]">@{formData.username}</p>
+          </div>
           <Button
             variant="primary"
             size="md"
@@ -275,11 +270,8 @@ export const CustomerProfilePage = () => {
           >
             Lưu toàn bộ hồ sơ
           </Button>
-        </div>
-      </header>
+        </section>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-4xl mx-auto w-full p-6 sm:p-8 space-y-6">
         {alertInfo && (
           <Alert
             type={alertInfo.type}
@@ -388,6 +380,8 @@ export const CustomerProfilePage = () => {
           )}
         </div>
       </main>
+
+      <MocFooter />
     </div>
   )
 }

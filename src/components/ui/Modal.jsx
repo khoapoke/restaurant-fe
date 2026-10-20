@@ -32,23 +32,23 @@ export const Modal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-[#211b18]/65 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Content */}
       <div
-        className={`relative w-full ${maxWidth} bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150`}
+        className={`relative w-full ${maxWidth} bg-[#fffdf8] border border-[var(--moc-line)] shadow-[var(--moc-shadow)] overflow-hidden z-10 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150`}
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800/80 bg-gray-950/50">
-          <h3 className="text-base font-bold text-white tracking-wide">{title}</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--moc-line)] bg-[#f5f0e7]/80">
+          <h3 className="moc-serif text-xl font-medium text-[#211b18]">{title}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-gray-800 cursor-pointer"
+            className="text-[#766e68] hover:text-[#6f1d32] transition-colors p-1.5 rounded-full hover:bg-[#6f1d32]/7 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

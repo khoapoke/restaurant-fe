@@ -63,6 +63,8 @@ export const LoginForm = () => {
       const role = result.data?.account?.role
       if (role === Role.ADMIN) {
         navigate('/admin')
+      } else if (role === Role.STAFF) {
+        navigate('/staff/floor')
       } else {
         navigate('/')
       }

@@ -5,6 +5,7 @@
 
 export const Role = {
   ADMIN: 'ADMIN',
+  STAFF: 'STAFF',
   CUSTOMER: 'CUSTOMER',
 }
 

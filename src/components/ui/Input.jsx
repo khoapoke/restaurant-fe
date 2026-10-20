@@ -26,7 +26,7 @@ export const Input = ({
       {label && (
         <label
           htmlFor={inputId}
-          className="text-xs font-medium text-gray-300 flex items-center gap-1 select-none"
+          className="text-[10px] font-bold tracking-[0.09em] uppercase text-[#766e68] flex items-center gap-1 select-none"
         >
           {label}
           {required && <span className="text-amber-500">*</span>}
@@ -49,15 +49,15 @@ export const Input = ({
           placeholder={placeholder}
           disabled={disabled}
           required={required}
-          className={`w-full rounded-xl bg-gray-900/80 border text-gray-100 placeholder-gray-500 text-sm py-2.5 transition-all duration-150 outline-none
+          className={`w-full bg-white border text-[#211b18] placeholder-[#9d938d] text-sm py-3 transition-all duration-150 outline-none
             ${Icon ? 'pl-10' : 'pl-3.5'}
             ${rightElement ? 'pr-11' : 'pr-3.5'}
             ${
               error
                 ? 'border-red-500/80 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-                : 'border-gray-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+                : 'border-[var(--moc-line)] focus:border-[#6f1d32] focus:ring-2 focus:ring-[#6f1d32]/10'
             }
-            ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-950' : 'hover:border-gray-700'}
+            ${disabled ? 'opacity-50 cursor-not-allowed bg-[#eee6dc]' : 'hover:border-[#6f1d32]/45'}
           `}
           {...props}
         />
@@ -74,7 +74,7 @@ export const Input = ({
           <span>•</span> {Array.isArray(error) ? error[0] : error}
         </p>
       ) : helperText ? (
-        <p className="text-xs text-gray-500 mt-0.5">{helperText}</p>
+        <p className="text-xs text-[#766e68] mt-0.5">{helperText}</p>
       ) : null}
     </div>
   )

@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   ShoppingBag,
-  ArrowLeft,
   AlertTriangle,
   RefreshCw,
-  CheckCircle2,
   Trash2,
 } from 'lucide-react'
 import { useAuth } from '../../../../contexts/AuthContext'
@@ -17,6 +15,8 @@ import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
 import Skeleton from '../../../../components/ui/Skeleton'
 import Alert from '../../../../components/ui/Alert'
+import MocSiteHeader from '../../../../components/navigation/MocSiteHeader'
+import MocFooter from '../../../../components/navigation/MocFooter'
 
 export const CustomerCartPage = () => {
   const navigate = useNavigate()
@@ -40,7 +40,7 @@ export const CustomerCartPage = () => {
 
   const [deleteModalItem, setDeleteModalItem] = useState(null)
   const [toastMessage, setToastMessage] = useState(null)
-  const [fetchError, setFetchError] = useState(null)
+  const [fetchError] = useState(null)
 
   const items = cart.items || []
   const hasUnavailableItems = items.some((i) => i.isAvailable === false)
@@ -65,56 +65,43 @@ export const CustomerCartPage = () => {
   // UI STATE 1: LOADING
   if (loading && items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#0a0d14] text-gray-100 p-6 sm:p-10 max-w-7xl mx-auto space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 space-y-4">
-            <Skeleton className="h-24 w-full rounded-2xl" />
-            <Skeleton className="h-24 w-full rounded-2xl" />
-            <Skeleton className="h-24 w-full rounded-2xl" />
+      <div className="moc-page-shell flex flex-col">
+        <MocSiteHeader />
+        <main className="flex-1 w-full max-w-7xl mx-auto p-6 sm:p-10 space-y-6">
+          <Skeleton className="h-12 w-72" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8 space-y-4">
+              <Skeleton className="h-28 w-full rounded-2xl" />
+              <Skeleton className="h-28 w-full rounded-2xl" />
+              <Skeleton className="h-28 w-full rounded-2xl" />
+            </div>
+            <div className="lg:col-span-4">
+              <Skeleton className="h-72 w-full rounded-2xl" />
+            </div>
           </div>
-          <div className="lg:col-span-4">
-            <Skeleton className="h-72 w-full rounded-2xl" />
-          </div>
-        </div>
+        </main>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-gray-100 flex flex-col">
-      {/* Top Header */}
-      <header className="border-b border-gray-800/80 bg-gray-950/70 backdrop-blur-md sticky top-0 z-20 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/menu"
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              title="Quay lại Thực đơn"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-amber-500" />
-                Giỏ hàng của bạn
-              </h1>
-              <p className="text-[11px] text-gray-400">
-                {items.length > 0 ? `${totalQuantity} món đang chọn` : 'Chưa có món'}
-              </p>
-            </div>
-          </div>
-
-          <Link to="/menu">
-            <Button variant="ghost" size="sm">
-              Xem thực đơn
-            </Button>
-          </Link>
-        </div>
-      </header>
+    <div className="moc-page-shell flex flex-col">
+      <MocSiteHeader />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-8 space-y-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-5 sm:px-8 py-12 lg:py-16 space-y-8">
+        <section className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 border-b border-[var(--moc-line)] pb-8">
+          <div>
+            <span className="moc-eyebrow">LỰA CHỌN CỦA BẠN</span>
+            <h1 className="moc-section-title mt-4 flex items-center gap-4">
+              <ShoppingBag className="w-8 h-8 sm:w-10 sm:h-10 text-[#6f1d32]" />
+              Giỏ món hôm nay.
+            </h1>
+          </div>
+          <p className="text-sm text-[#766e68]">
+            {items.length > 0 ? `${totalQuantity} phần đang chờ bạn xác nhận` : 'Chưa có món nào được chọn'}
+          </p>
+        </section>
         {/* Toast Notification */}
         {toastMessage && (
           <Alert
@@ -175,6 +162,8 @@ export const CustomerCartPage = () => {
           </div>
         )}
       </main>
+
+      <MocFooter />
 
       {/* Modal Xác nhận Xóa món */}
       <Modal

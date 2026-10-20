@@ -1,0 +1,64 @@
+import { ChefHat, Clock3, LayoutGrid, LogOut, RefreshCw, UserRound } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import MocBrand from '../../../../components/brand/MocBrand'
+import { useAuth } from '../../../../contexts/AuthContext'
+
+export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều hành tại bàn', subtitle = 'POS · Ca phục vụ hiện tại' }) => {
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-[var(--moc-line)] bg-[#fffdf8]/95 backdrop-blur-xl">
+      <div className="max-w-[1500px] mx-auto min-h-[82px] px-5 lg:px-8 flex items-center justify-between gap-5">
+        <div className="flex items-center gap-6">
+          <MocBrand />
+          <div className="hidden md:block h-8 w-px bg-[var(--moc-line)]" />
+          <div className="hidden md:block">
+            <p className="text-base font-semibold text-[#211b18]">{title}</p>
+            <p className="mt-1 text-sm text-[#766e68]">{subtitle}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-4">
+          <nav className="hidden md:flex items-center border border-[var(--moc-line)] bg-white/60 p-1">
+            <NavLink to="/staff/floor" className={({ isActive }) => `h-9 px-3 inline-flex items-center gap-2 text-sm font-semibold ${isActive ? 'bg-[#6f1d32] text-white moc-inverse' : 'text-[#766e68] hover:text-[#6f1d32]'}`}>
+              <LayoutGrid className="w-4 h-4" /> Bàn
+            </NavLink>
+            <NavLink to="/staff/kitchen" className={({ isActive }) => `h-9 px-3 inline-flex items-center gap-2 text-sm font-semibold ${isActive ? 'bg-[#6f1d32] text-white moc-inverse' : 'text-[#766e68] hover:text-[#6f1d32]'}`}>
+              <ChefHat className="w-4 h-4" /> Bếp
+            </NavLink>
+          </nav>
+          <div className="hidden lg:flex items-center gap-2 text-sm text-[#766e68]">
+            <Clock3 className="w-4 h-4" />
+            {syncedAt ? `Đồng bộ ${new Date(syncedAt).toLocaleTimeString('vi-VN')}` : 'Chưa đồng bộ'}
+          </div>
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={refreshing}
+              className="h-10 px-3 inline-flex items-center gap-2 border border-[var(--moc-line)] text-sm font-semibold hover:border-[#6f1d32]/50 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Làm mới</span>
+            </button>
+          )}
+          <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-[var(--moc-line)]">
+            <UserRound className="w-4 h-4 text-[#6f1d32]" />
+            <span className="text-sm font-semibold">{user?.userProfile?.fullName || user?.username}</span>
+          </div>
+          <button type="button" onClick={handleLogout} className="w-10 h-10 grid place-items-center hover:bg-[#6f1d32]/7" aria-label="Đăng xuất">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+export default PosHeader

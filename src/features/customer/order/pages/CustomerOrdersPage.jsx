@@ -2,11 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Package,
-  ArrowLeft,
   RefreshCw,
   AlertTriangle,
   Inbox,
-  CheckCircle2,
 } from 'lucide-react'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { getOrdersApi } from '../services/orderService'
@@ -18,6 +16,8 @@ import CancelOrderModal from '../components/CancelOrderModal'
 import Button from '../../../../components/ui/Button'
 import Skeleton from '../../../../components/ui/Skeleton'
 import Alert from '../../../../components/ui/Alert'
+import MocSiteHeader from '../../../../components/navigation/MocSiteHeader'
+import MocFooter from '../../../../components/navigation/MocFooter'
 
 export const CustomerOrdersPage = () => {
   const navigate = useNavigate()
@@ -74,33 +74,23 @@ export const CustomerOrdersPage = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-gray-100 flex flex-col">
-      <header className="border-b border-gray-800/80 bg-gray-950/70 backdrop-blur-md sticky top-0 z-20 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              title="Về Trang chủ"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-amber-500" /> Lịch sử đơn hàng
-              </h1>
-              <p className="text-[11px] text-gray-400">Theo dõi tiến độ chế biến và giao món</p>
-            </div>
+    <div className="moc-page-shell flex flex-col">
+      <MocSiteHeader />
+
+      <main className="flex-1 max-w-6xl mx-auto w-full px-5 sm:px-8 py-12 lg:py-16 space-y-8">
+        <section className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 border-b border-[var(--moc-line)] pb-8">
+          <div>
+            <span className="moc-eyebrow">HÀNH TRÌNH MÓN ĂN</span>
+            <h1 className="moc-section-title mt-4 flex items-center gap-4">
+              <Package className="w-8 h-8 sm:w-10 sm:h-10 text-[#6f1d32]" />
+              Đơn hàng của bạn.
+            </h1>
+            <p className="mt-4 text-sm text-[#766e68]">Theo dõi từ lúc nhà hàng xác nhận đến khi món được phục vụ.</p>
           </div>
           <Link to="/menu">
-            <Button variant="outline" size="sm">
-              Gọi thêm món
-            </Button>
+            <Button variant="outline" size="md">Gọi thêm món</Button>
           </Link>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-5xl mx-auto w-full p-4 sm:p-8 space-y-6">
+        </section>
         {bannerNotice && (
           <Alert
             type="success"
@@ -185,6 +175,8 @@ export const CustomerOrdersPage = () => {
           </div>
         )}
       </main>
+
+      <MocFooter />
 
       <OrderDetailModal
         orderId={detailOrderId}

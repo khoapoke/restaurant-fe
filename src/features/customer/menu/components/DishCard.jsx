@@ -1,4 +1,4 @@
-import { Eye, AlertTriangle } from 'lucide-react'
+import { Eye, AlertTriangle, Plus } from 'lucide-react'
 import { FALLBACK_DISH_IMAGE } from '../constants'
 
 export const DishCard = ({ dish, onSelect }) => {
@@ -8,17 +8,17 @@ export const DishCard = ({ dish, onSelect }) => {
   return (
     <div
       onClick={() => onSelect(dish.dishId)}
-      className={`group flex flex-col justify-between rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden
+      className={`group flex flex-col justify-between border transition-all duration-300 cursor-pointer overflow-hidden
         ${
           isAvailable
-            ? 'bg-gray-900/60 border-gray-800/80 hover:border-amber-500/50 hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-0.5'
-            : 'bg-gray-950/60 border-gray-800/40 opacity-70'
+            ? 'bg-[#fffdf8] border-[var(--moc-line)] hover:border-[#6f1d32]/35 hover:shadow-[var(--moc-shadow)] hover:-translate-y-1'
+            : 'bg-[#eee6dc] border-[var(--moc-line)] opacity-70'
         }
       `}
     >
       <div>
         {/* Image Container */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-950">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#e4ddd3]">
           <img
             src={dish.imageUrl || FALLBACK_DISH_IMAGE}
             alt={dish.dishName}
@@ -32,7 +32,7 @@ export const DishCard = ({ dish, onSelect }) => {
 
           {/* Badge danh mục */}
           {dish.categoryName && (
-            <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-950/80 text-gray-200 backdrop-blur-md border border-gray-800">
+            <span className="absolute top-3 left-3 px-2.5 py-1 text-[9px] font-bold tracking-[0.12em] uppercase bg-[#fffdf8]/90 text-[#6f1d32] backdrop-blur-md">
               {dish.categoryName}
             </span>
           )}
@@ -48,7 +48,7 @@ export const DishCard = ({ dish, onSelect }) => {
 
           {/* Nút overlay xem nhanh */}
           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-gray-950 text-xs font-bold shadow-lg shadow-black/40">
+            <span className="moc-inverse inline-flex items-center gap-1.5 px-4 py-2 bg-[#6f1d32] text-white text-[10px] font-semibold tracking-[0.1em] uppercase shadow-lg shadow-black/20">
               <Eye className="w-3.5 h-3.5" />
               Xem chi tiết
             </span>
@@ -56,21 +56,21 @@ export const DishCard = ({ dish, onSelect }) => {
         </div>
 
         {/* Nội dung text */}
-        <div className="p-4 space-y-2">
+        <div className="p-5 space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm sm:text-base font-bold text-gray-100 group-hover:text-amber-400 transition-colors line-clamp-1">
+            <h3 className="moc-serif text-xl font-medium text-[#211b18] group-hover:text-[#6f1d32] transition-colors line-clamp-1">
               {dish.dishName}
             </h3>
           </div>
 
-          <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed min-h-[2rem]">
+          <p className="text-xs text-[#766e68] line-clamp-2 leading-relaxed min-h-[2.4rem]">
             {dish.description || 'Hương vị hảo hạng được chế biến từ những nguyên liệu tươi ngon nhất.'}
           </p>
 
           {/* Nhãn cảnh báo dị ứng */}
           {dish.allergens && dish.allergens.length > 0 && (
             <div className="flex flex-wrap items-center gap-1 pt-1">
-              <span className="text-[10px] text-amber-400/90 flex items-center gap-0.5">
+              <span className="text-[10px] text-[#6f1d32] flex items-center gap-0.5">
                 <AlertTriangle className="w-2.5 h-2.5" /> Chứa:
               </span>
               {dish.allergens.map((allergen) => (
@@ -87,10 +87,10 @@ export const DishCard = ({ dish, onSelect }) => {
       </div>
 
       {/* Footer: Giá & Nút */}
-      <div className="p-4 pt-0 mt-2 border-t border-gray-800/40 flex items-center justify-between">
+      <div className="mx-5 py-4 mt-1 border-t border-[var(--moc-line)] flex items-center justify-between">
         <div>
-          <span className="text-[10px] text-gray-500 block">Giá niêm yết</span>
-          <span className="text-base font-bold text-amber-400 font-mono">
+          <span className="text-[9px] tracking-[0.08em] uppercase text-[#766e68] block">Giá niêm yết</span>
+          <span className="moc-serif text-lg font-semibold text-[#6f1d32]">
             {priceNumber.toLocaleString('vi-VN')} đ
           </span>
         </div>
@@ -98,15 +98,16 @@ export const DishCard = ({ dish, onSelect }) => {
         <button
           type="button"
           disabled={!isAvailable}
-          className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer
+          className={`w-9 h-9 grid place-items-center rounded-full border transition-all cursor-pointer
             ${
               isAvailable
-                ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-gray-950 border border-amber-500/30'
-                : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                ? 'bg-transparent text-[#6f1d32] hover:bg-[#6f1d32] hover:text-white border-[#6f1d32]'
+                : 'bg-[#e4ddd3] text-[#9d938d] border-[var(--moc-line)] cursor-not-allowed'
             }
           `}
+          aria-label={isAvailable ? `Chọn ${dish.dishName}` : `${dish.dishName} đã hết`}
         >
-          {isAvailable ? 'Chọn món' : 'Hết hàng'}
+          {isAvailable ? <Plus className="w-4 h-4" /> : <span className="text-[9px]">Hết</span>}
         </button>
       </div>
     </div>
