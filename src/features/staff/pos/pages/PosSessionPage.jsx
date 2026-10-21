@@ -12,6 +12,7 @@ import DishPicker from '../components/DishPicker'
 import InvoiceReceiptModal from '../components/InvoiceReceiptModal'
 import PosHeader from '../components/PosHeader'
 import PosOrderPanel from '../components/PosOrderPanel'
+import SessionLivePanel from '../components/SessionLivePanel'
 import {
   addPosOrderItemApi,
   cancelPosSessionApi,
@@ -81,7 +82,7 @@ export const PosSessionPage = () => {
 
     const timer = window.setInterval(() => {
       getPosSessionApi(sessionId).then((response) => active && setSession(response.data)).catch(() => {})
-    }, 8000)
+    }, 4000)
     return () => { active = false; window.clearInterval(timer) }
   }, [sessionId])
 
@@ -219,6 +220,8 @@ export const PosSessionPage = () => {
             {session.reservation.note && <span className="text-[#625a55]">Ghi chú: {session.reservation.note}</span>}
           </div>
         )}
+
+        {['OPEN', 'AWAITING_PAYMENT'].includes(session.status) && <SessionLivePanel session={session} onChanged={() => loadSession({ quiet: true })} />}
 
         {error && <Alert type="error" message={error} onClose={() => setError(null)} className="mb-5" />}
         {notice && <Alert type="success" message={notice} onClose={() => setNotice(null)} className="mb-5" />}

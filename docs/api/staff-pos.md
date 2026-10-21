@@ -78,3 +78,14 @@ Món đã gửi bếp không sửa/xóa trực tiếp. Có thể gọi thêm mó
 - Hóa đơn `OPEN` trả về khối `qr` (`qrImageUrl`, `transferContent = "HD{invoiceId} THANH TOAN"`, tài khoản nhận).
 - Thanh toán: `{ "method": "CASH" | "BANK_TRANSFER_QR", "amount": 203000, "transactionCode": "FT26..." }` — `amount` phải bằng tổng hóa đơn; `transactionCode` lưu mã giao dịch ngân hàng khi chuyển khoản.
 - Đóng phiên: hóa đơn `PAID`, mọi món `READY/SERVED`; `expectedVersion` chống ghi đè đồng thời. Kết quả: món `SERVED`, đơn `COMPLETED/SERVED`, bàn `CLEANING`, lượt đặt liên kết `COMPLETED`.
+
+## 5. Live Dining (QR tại bàn)
+
+Chi tiết tại [`live-dining.md`](./live-dining.md).
+
+- `GET /staff/live/queue`: hàng đợi check-in QR và yêu cầu phục vụ (thanh toán ưu tiên).
+- `POST /staff/live/check-ins/{visitId}/accept|reject`, `POST /staff/live/service-requests/{id}/acknowledge|complete`, `GET /staff/live/tables/{tableId}/qr`.
+- `GET /staff/pos/tables` bổ sung `pendingCheckIn` và `activeSession.live` (tạm tính, món chờ, món trễ, yêu cầu mở, xin thanh toán, số thiết bị QR).
+- `GET /staff/pos/sessions/{id}` bổ sung `serviceRequests`, `liveDining`; mỗi món có `source` (`POS`/`TABLE_QR`), `sentAt`, `statusChangedAt`.
+- `GET /staff/kitchen/items` bổ sung `sla { warningMinutes, lateMinutes }`; mỗi món có `source` (`POS`/`TABLE_QR`/`ONLINE`), `sentAt`.
+- Lập hóa đơn → yêu cầu thanh toán `ACKNOWLEDGED`; thanh toán → `COMPLETED`; đóng/hủy phiên → yêu cầu mở `CANCELLED`.

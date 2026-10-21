@@ -152,3 +152,12 @@ Checkout online chỉ gửi `DELIVERY` hoặc `PICKUP`; `DINE_IN` không phải 
 | Value | `ma_vai_tro` | Ý nghĩa |
 |-------|-------------|---------|
 | `STAFF` | 2 | Nhân viên POS/bếp |
+
+## Live Dining (ADR-020)
+
+| Enum | Giá trị | Ý nghĩa |
+|---|---|---|
+| `TableVisitStatus` | `PENDING`, `ACTIVE`, `REJECTED`, `CANCELLED`, `EXPIRED` | Thiết bị khách tại bàn: chờ nhận bàn → đã gắn phiên / bị từ chối / tự hủy / hết hạn (15 phút) |
+| `ServiceRequestType` | `CALL_STAFF`, `WATER`, `CUTLERY`, `CLEAN_TABLE`, `PAYMENT`, `OTHER` | Gọi nhân viên, xin nước, dụng cụ, dọn bàn, thanh toán (ưu tiên), khác (bắt buộc ghi chú) |
+| `ServiceRequestStatus` | `NEW`, `ACKNOWLEDGED`, `COMPLETED`, `CANCELLED` | Mới → nhân viên đang đến → xong / đã hủy |
+| `KitchenTicketSource` | `POS`, `TABLE_QR` | Nguồn lượt gọi món; KDS trả thêm `ONLINE` cho đơn giao/tự lấy |

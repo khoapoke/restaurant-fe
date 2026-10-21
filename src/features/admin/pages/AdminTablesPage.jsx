@@ -1,13 +1,14 @@
 import { useCallback, useMemo, useState } from 'react'
-import { MapPin, Pencil, Plus, RefreshCw, Users, Wrench } from 'lucide-react'
+import { MapPin, Pencil, Plus, QrCode, RefreshCw, Users, Wrench } from 'lucide-react'
 import Button from '../../../components/ui/Button'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
+import TableQrModal from '../../../components/ui/TableQrModal'
 import FeedbackBanner from '../../../components/ui/FeedbackBanner'
 import { useApiResource } from '../../../lib/useApiResource'
 import AdminDataState from '../components/AdminDataState'
 import TableEditorModal from '../components/TableEditorModal'
 import { TABLE_STATUS_LABEL } from '../constants'
-import { createTableApi, getAdminTablesApi, updateTableApi } from '../services/adminService'
+import { createTableApi, getAdminTablesApi, rotateTableQrApi, updateTableApi } from '../services/adminService'
 
 const STATUS_STYLE = {
   AVAILABLE: 'bg-emerald-100 text-emerald-900',
@@ -22,11 +23,25 @@ export const AdminTablesPage = () => {
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [dialog, setDialog] = useState(null)
+  const [qrTable, setQrTable] = useState(null)
 
   const loader = useCallback(() => getAdminTablesApi().then((response) => response.data.items || []), [])
   const { data, loading, refreshing, error, reload } = useApiResource(loader, { fallbackError: 'Không thể tải cấu hình bàn.' })
   const tables = useMemo(() => data || [], [data])
   const summary = useMemo(() => tables.reduce((counts, table) => ({ ...counts, [table.status]: (counts[table.status] || 0) + 1 }), {}), [tables])
+
+  const confirmRotate = (table) => setDialog({
+    title: `Tạo mã QR mới · ${table.tableName}`,
+    tone: 'danger',
+    description: 'Mã QR đang in trên bàn sẽ ngừng hoạt động ngay. Khách đang ngồi cần quét mã mới; yêu cầu nhận bàn đang chờ sẽ hết hạn.',
+    confirmLabel: 'Tạo mã mới',
+    onConfirm: async () => {
+      const response = await rotateTableQrApi(table.tableId)
+      setQrTable(response.data)
+      setFeedback({ tone: 'success', message: `Đã tạo mã QR mới cho ${table.tableName}. Hãy in lại mã đặt trên bàn.` })
+      reload({ quiet: true })
+    },
+  })
 
   const save = async (payload) => {
     setSaving(true)
@@ -90,7 +105,10 @@ export const AdminTablesPage = () => {
                       <span className={`inline-flex px-2.5 py-1 text-xs font-bold ${STATUS_STYLE[table.status] || 'bg-[#eee6dc]'}`}>{TABLE_STATUS_LABEL[table.status] || table.status}</span>
                       <h2 className="mt-4 moc-serif text-2xl">{table.tableName}</h2>
                     </div>
-                    <button type="button" onClick={() => setEditor(table)} className="p-2 text-[#6f1d32] hover:bg-[#6f1d32]/8" aria-label={`Sửa ${table.tableName}`}><Pencil className="h-4 w-4" /></button>
+                    <div className="flex gap-1">
+                      <button type="button" onClick={() => setQrTable(table)} className="grid h-11 w-11 place-items-center text-[#6f1d32] hover:bg-[#6f1d32]/8" aria-label={`Mã QR ${table.tableName}`} title="Mã QR gọi món"><QrCode className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => setEditor(table)} className="grid h-11 w-11 place-items-center text-[#6f1d32] hover:bg-[#6f1d32]/8" aria-label={`Sửa ${table.tableName}`}><Pencil className="h-4 w-4" /></button>
+                    </div>
                   </div>
                   <div className="mt-5 grid gap-2 text-sm text-[#625a55]">
                     <p className="flex items-center gap-2"><Users className="h-4 w-4" /> {table.capacity} khách</p>
@@ -111,6 +129,7 @@ export const AdminTablesPage = () => {
 
       {editor !== undefined && <TableEditorModal key={editor?.tableId || 'new'} table={editor} saving={saving} onClose={() => !saving && setEditor(undefined)} onSave={save} />}
       {dialog && <ConfirmDialog key={dialog.title} isOpen {...dialog} onClose={() => setDialog(null)} />}
+      <TableQrModal isOpen={!!qrTable && !dialog} onClose={() => setQrTable(null)} tableName={qrTable?.tableName} url={qrTable?.qr?.url} issuedAt={qrTable?.qr?.issuedAt} onRotate={qrTable ? () => confirmRotate(qrTable) : undefined} />
     </div>
   )
 }

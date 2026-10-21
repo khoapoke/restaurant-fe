@@ -51,6 +51,7 @@
 | File | Module | Endpoints chính |
 |------|--------|----------------|
 | [`api/staff-pos.md`](./api/staff-pos.md) | Sơ đồ bàn, phiên phục vụ, KDS, hóa đơn | `/staff/pos/*`, `/staff/kitchen/items`, `/staff/invoices/{id}/payments` |
+| [`api/live-dining.md`](./api/live-dining.md) | **Mộc Live Dining** — QR tại bàn, check-in, gọi món, theo dõi, yêu cầu phục vụ, hóa đơn | `/public/dine/{tableToken}/*`, `/staff/live/*`, `POST /admin/tables/{id}/qr-token` |
 
 ---
 

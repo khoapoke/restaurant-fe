@@ -244,6 +244,60 @@
   }
 }
 
+/* Mộc Live Dining — chuyển động nhẹ, tự tắt khi prefers-reduced-motion. */
+@keyframes moc-pop {
+  0% { transform: scale(0.86); opacity: 0.4; }
+  60% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes moc-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes moc-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes moc-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(111, 29, 50, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(111, 29, 50, 0.16); }
+}
+
+@keyframes moc-ring {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+
+@keyframes moc-check-draw {
+  from { stroke-dashoffset: 48; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes moc-bump {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-5px); }
+}
+
+.moc-pop { animation: moc-pop 0.45s ease-out both; }
+.moc-sheet { animation: moc-sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.moc-fade-in { animation: moc-fade-in 0.3s ease-out both; }
+.moc-glow { animation: moc-glow 2.4s ease-in-out infinite; }
+.moc-ring { animation: moc-ring 1.8s ease-out infinite; }
+.moc-check-draw { stroke-dasharray: 48; animation: moc-check-draw 0.6s 0.15s ease-out both; }
+.moc-bump { animation: moc-bump 0.4s ease-out; }
+
+.moc-scroll-x {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.moc-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
 @media print {
   body * {
     visibility: hidden !important;

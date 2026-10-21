@@ -25,6 +25,7 @@ const AdminPaymentsPage = lazy(() => import('./features/admin/pages/AdminPayment
 const PosFloorPage = lazy(() => import('./features/staff/pos/pages/PosFloorPage'))
 const PosSessionPage = lazy(() => import('./features/staff/pos/pages/PosSessionPage'))
 const KitchenBoardPage = lazy(() => import('./features/staff/pos/pages/KitchenBoardPage'))
+const LiveDiningPage = lazy(() => import('./features/dine/pages/LiveDiningPage'))
 
 const CUSTOMER = [Role.CUSTOMER]
 const OPERATIONS = [Role.STAFF, Role.ADMIN]
@@ -52,6 +53,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/menu" element={<CustomerMenuPage />} />
+                <Route path="/dine/:tableToken" element={<LiveDiningPage />} />
                 <Route path="/profile" element={guard(CUSTOMER, <CustomerProfilePage />)} />
                 <Route path="/cart" element={guard(CUSTOMER, <CustomerCartPage />)} />
                 <Route path="/checkout" element={guard(CUSTOMER, <CustomerCheckoutPage />)} />

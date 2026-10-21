@@ -131,6 +131,20 @@ const main = async () => {
   }
   await guest.close()
 
+  // Live Dining (QR tại bàn): một bàn chưa mở và một bàn đang phục vụ (thiết bị tự tham gia phiên).
+  const tableAdminAuth = await login('admin', '123')
+  const adminTables = await (await fetch(`${apiUrl}/admin/tables`, { headers: { Accept: 'application/json', Authorization: `Bearer ${tableAdminAuth.accessToken}` } })).json()
+  const floorForDine = await (await fetch(`${apiUrl}/staff/pos/tables`, { headers: { Accept: 'application/json', Authorization: `Bearer ${tableAdminAuth.accessToken}` } })).json()
+  const occupiedIds = new Set((floorForDine.data?.items || []).filter((table) => table.activeSession).map((table) => table.tableId))
+  const tableItems = adminTables.data?.items || []
+  const idleTable = tableItems.find((table) => !occupiedIds.has(table.tableId) && table.status !== 'MAINTENANCE' && table.qr?.token)
+  const servedTable = tableItems.find((table) => occupiedIds.has(table.tableId) && table.qr?.token)
+  const dine = await browser.newContext({ viewport, deviceScaleFactor: 1 })
+  for (const [name, table] of [['dine-entry', idleTable], ['dine-live', servedTable]]) {
+    if (table) results.push(await auditPage(dine, name, `/dine/${table.qr.token}`))
+  }
+  await dine.close()
+
   const staffAuth = await login('staff1', '123')
   const staff = await browser.newContext({ viewport, deviceScaleFactor: 1 })
   await staff.addInitScript(({ token, account }) => {

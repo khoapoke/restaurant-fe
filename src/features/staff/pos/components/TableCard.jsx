@@ -1,38 +1,40 @@
-import { CalendarClock, Clock3, Phone, UsersRound } from 'lucide-react'
-import { TABLE_STATUS_META, TableStatus } from '../constants'
-
-const formatDuration = (openedAt) => {
-  if (!openedAt) return null
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(openedAt).getTime()) / 60000))
-  if (minutes < 60) return `${minutes} phút`
-  return `${Math.floor(minutes / 60)}g ${minutes % 60}p`
-}
+import { BellRing, CalendarClock, ChefHat, Clock3, CreditCard, Phone, QrCode, Smartphone, TriangleAlert, UsersRound } from 'lucide-react'
+import { formatWait, minutesSince } from '../../../../lib/useNow'
+import { TABLE_STATUS_META, TableStatus, formatMoney, tableSignals } from '../constants'
 
 const formatTime = (value) => new Date(value).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
 
 const SESSION_STATUS_LABEL = { OPEN: 'Đang gọi món', AWAITING_PAYMENT: 'Chờ thanh toán' }
 
-export const TableCard = ({ table, onOpen, onSeatReservation, onContinue, onCompleteCleaning, cleaning }) => {
+export const TableCard = ({ table, now, onOpen, onSeatReservation, onContinue, onCompleteCleaning, onAcceptCheckIn, onShowQr, cleaning }) => {
   const meta = TABLE_STATUS_META[table.status] || TABLE_STATUS_META[TableStatus.MAINTENANCE]
   const reservation = table.upcomingReservation
+  const session = table.activeSession
+  const live = session?.live
+  const signals = tableSignals(table)
   const seatable = [TableStatus.AVAILABLE, TableStatus.RESERVED].includes(table.status)
   const canSeatReservation = seatable && reservation?.isWithinSeatingWindow
   const canOpenWalkIn = seatable && !reservation?.isWithinSeatingWindow
-  const canContinue = table.status === TableStatus.OCCUPIED && table.activeSession
+  const canContinue = table.status === TableStatus.OCCUPIED && session
   const canCompleteCleaning = table.status === TableStatus.CLEANING
 
-  const primary = canSeatReservation
-    ? { label: 'NHẬN KHÁCH ĐẶT TRƯỚC', action: () => onSeatReservation(table) }
-    : canContinue
-      ? { label: 'TIẾP TỤC PHIÊN', action: () => onContinue(table) }
-      : canCompleteCleaning
-        ? { label: cleaning ? 'ĐANG CẬP NHẬT...' : 'ĐÃ VỆ SINH · MỞ LẠI BÀN', action: () => onCompleteCleaning(table) }
-        : canOpenWalkIn
-          ? { label: 'MỞ PHIÊN PHỤC VỤ', action: () => onOpen(table) }
-          : null
+  const primary = table.pendingCheckIn && seatable
+    ? { label: 'NHẬN KHÁCH QR', action: () => onAcceptCheckIn(table) }
+    : canSeatReservation
+      ? { label: 'NHẬN KHÁCH ĐẶT TRƯỚC', action: () => onSeatReservation(table) }
+      : canContinue
+        ? { label: 'TIẾP TỤC PHIÊN', action: () => onContinue(table) }
+        : canCompleteCleaning
+          ? { label: cleaning ? 'ĐANG CẬP NHẬT...' : 'ĐÃ VỆ SINH · MỞ LẠI BÀN', action: () => onCompleteCleaning(table) }
+          : canOpenWalkIn
+            ? { label: 'MỞ PHIÊN PHỤC VỤ', action: () => onOpen(table) }
+            : null
+
+  const glow = signals.checkIn || signals.newRequests > 0
+  const ring = signals.late > 0 ? 'ring-2 ring-[#b42318]/50' : signals.payment ? 'ring-2 ring-[#b7791f]/60' : ''
 
   return (
-    <article className={`min-h-56 p-5 border ${meta.card} flex flex-col transition-transform hover:-translate-y-0.5`}>
+    <article className={`relative min-h-56 p-5 border ${meta.card} ${ring} ${glow ? 'moc-glow' : ''} flex flex-col transition-transform hover:-translate-y-0.5`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm leading-6 text-[#625a55]">{table.location || 'Chưa cập nhật khu vực'}</p>
@@ -43,19 +45,47 @@ export const TableCard = ({ table, onOpen, onSeatReservation, onContinue, onComp
         </span>
       </div>
 
-      <div className="mt-5 flex items-center gap-2 text-sm text-[#625a55]">
-        <UsersRound className="w-4 h-4" /> Tối đa {table.capacity} khách
-      </div>
-
-      {table.activeSession && (
-        <div className="mt-4 pt-4 border-t border-black/10 space-y-2 text-sm text-[#625a55]">
-          <p className="flex items-center justify-between gap-2"><span>Phiên #{table.activeSession.sessionId} · {SESSION_STATUS_LABEL[table.activeSession.status] || table.activeSession.status}</span><strong className="text-[#211b18]">{table.activeSession.guestCount} khách</strong></p>
-          <p className="flex items-center gap-2"><Clock3 className="w-3.5 h-3.5" /> {formatDuration(table.activeSession.openedAt)} · {table.activeSession.staffName}</p>
-          {table.activeSession.reservationId && <p className="text-[#6f1d32] font-semibold">Khách đặt trước #{table.activeSession.reservationId}</p>}
+      {(signals.checkIn || signals.newRequests > 0 || signals.payment || signals.late > 0) && (
+        <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Tín hiệu cần xử lý">
+          {signals.checkIn && <span className="moc-inverse inline-flex items-center gap-1 bg-[#6f1d32] px-2 py-1 text-xs font-bold text-[#fff8ed]"><QrCode className="h-3.5 w-3.5" /> Xin nhận bàn</span>}
+          {signals.newRequests > 0 && <span className="moc-inverse inline-flex items-center gap-1 bg-[#6f1d32] px-2 py-1 text-xs font-bold text-[#fff8ed]"><BellRing className="h-3.5 w-3.5" /> {signals.newRequests} yêu cầu mới</span>}
+          {signals.payment && <span className="inline-flex items-center gap-1 bg-[#e8c48a] px-2 py-1 text-xs font-bold text-[#211b18]"><CreditCard className="h-3.5 w-3.5" /> {session?.status === 'AWAITING_PAYMENT' ? 'Chờ thanh toán' : 'Xin thanh toán'}</span>}
+          {signals.late > 0 && <span className="inline-flex items-center gap-1 bg-[#fbeaea] px-2 py-1 text-xs font-bold text-[#8a1c1c]"><TriangleAlert className="h-3.5 w-3.5" /> {signals.late} món trễ</span>}
         </div>
       )}
 
-      {!table.activeSession && reservation && (
+      <div className="mt-4 flex items-center gap-2 text-sm text-[#625a55]">
+        <UsersRound className="w-4 h-4" /> Tối đa {table.capacity} khách
+      </div>
+
+      {session && (
+        <div className="mt-4 pt-4 border-t border-black/10 space-y-2 text-sm text-[#625a55]">
+          <p className="flex items-center justify-between gap-2"><span>Phiên #{session.sessionId} · {SESSION_STATUS_LABEL[session.status] || session.status}</span><strong className="text-[#211b18]">{session.guestCount} khách</strong></p>
+          <p className="flex items-center gap-2"><Clock3 className="w-3.5 h-3.5" /> Mở {formatWait(minutesSince(session.openedAt, now)).toLowerCase()} · {session.guestName || session.staffName}</p>
+          {live && (
+            <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+              <span className="bg-white/70 px-1 py-2"><strong className="block text-[15px] text-[#211b18]">{formatMoney(live.subTotal)}</strong><span className="text-xs">Tạm tính</span></span>
+              <span className="bg-white/70 px-1 py-2"><strong className="flex items-center justify-center gap-1 text-[15px] text-[#211b18]"><ChefHat className="h-3.5 w-3.5" />{live.pendingCount}</strong><span className="text-xs">Món đang chờ</span></span>
+              <span className="bg-white/70 px-1 py-2"><strong className="flex items-center justify-center gap-1 text-[15px] text-[#211b18]"><Smartphone className="h-3.5 w-3.5" />{live.connectedGuests}</strong><span className="text-xs">Thiết bị QR</span></span>
+            </div>
+          )}
+          {session.joinCode && (
+            <p className={`flex items-center gap-2 ${session.joinCodeLocked ? 'font-semibold text-[#8a1c1c]' : ''}`}>
+              Mã bàn cho khách mới: <strong className="font-mono text-base tracking-[0.2em] text-[#211b18]">{session.joinCode}</strong>{session.joinCodeLocked && ' · đã khóa'}
+            </p>
+          )}
+          {session.reservationId && <p className="text-[#6f1d32] font-semibold">Khách đặt trước #{session.reservationId}</p>}
+        </div>
+      )}
+
+      {table.pendingCheckIn && (
+        <div className="mt-4 p-3 border border-[#6f1d32]/30 bg-white/80 text-sm">
+          <p className="flex items-center gap-2 font-semibold text-[#6f1d32]"><QrCode className="w-4 h-4" /> {table.pendingCheckIn.guestName || 'Khách'} · {table.pendingCheckIn.guestCount} khách</p>
+          <p className="mt-1 text-[#625a55]">Gửi yêu cầu {formatWait(minutesSince(table.pendingCheckIn.requestedAt, now)).toLowerCase()} trước</p>
+        </div>
+      )}
+
+      {!session && reservation && (
         <div className={`mt-4 p-3 border text-sm ${reservation.isWithinSeatingWindow ? 'border-[#6f1d32]/30 bg-white/80' : 'border-black/10 bg-white/50'}`}>
           <p className="flex items-center gap-2 font-semibold text-[#6f1d32]"><CalendarClock className="w-4 h-4" /> Đặt lúc {formatTime(reservation.reservationTime)} · {reservation.guestCount} khách</p>
           <p className="mt-1 text-[#211b18]">{reservation.customerName}{reservation.customerPhone && <span className="inline-flex items-center gap-1 text-[#625a55]"> · <Phone className="w-3 h-3" />{reservation.customerPhone}</span>}</p>
@@ -64,7 +94,7 @@ export const TableCard = ({ table, onOpen, onSeatReservation, onContinue, onComp
         </div>
       )}
 
-      <div className="mt-auto pt-4 grid gap-2">
+      <div className="mt-auto pt-4 grid grid-cols-[1fr_auto] gap-2">
         <button
           type="button"
           onClick={primary?.action}
@@ -74,6 +104,9 @@ export const TableCard = ({ table, onOpen, onSeatReservation, onContinue, onComp
           }`}
         >
           {primary ? primary.label : meta.label.toUpperCase()}
+        </button>
+        <button type="button" onClick={() => onShowQr(table)} aria-label={`Mã QR ${table.tableName}`} title="Mã QR gọi món" className="grid min-h-11 w-11 place-items-center border border-[var(--moc-line)] bg-white/70 text-[#211b18] hover:border-[#6f1d32]/40">
+          <QrCode className="h-5 w-5" />
         </button>
       </div>
     </article>

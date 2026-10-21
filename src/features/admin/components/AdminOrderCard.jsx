@@ -71,8 +71,8 @@ export const AdminOrderCard = ({ order, busy, onAdvanceStatus, onAdvanceFulfillm
       </div>
 
       <ul className="mt-5 grid sm:grid-cols-2 xl:grid-cols-4 gap-2">
-        {(order.items || []).map((item) => (
-          <li key={item.itemId || `${item.dishId}-${item.dishName}`} className="border border-[var(--moc-line)] bg-white px-3 py-2 text-sm">
+        {(order.items || []).map((item, index) => (
+          <li key={item.itemId || `${index}-${item.dishId}`} className="border border-[var(--moc-line)] bg-white px-3 py-2 text-sm">
             <strong>{item.quantity}×</strong> {item.dishName}
           </li>
         ))}

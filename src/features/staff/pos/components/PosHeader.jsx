@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import MocBrand from '../../../../components/brand/MocBrand'
 import { useAuth } from '../../../../contexts/AuthContext'
 
-export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều hành tại bàn', subtitle = 'POS · Ca phục vụ hiện tại' }) => {
+export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều hành tại bàn', subtitle = 'POS · Ca phục vụ hiện tại', liveCount = 0, connection = null }) => {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
 
@@ -28,6 +28,7 @@ export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều h�
           <nav className="hidden md:flex items-center border border-[var(--moc-line)] bg-white/60 p-1">
             <NavLink to="/staff/floor" className={({ isActive }) => `h-9 px-3 inline-flex items-center gap-2 text-sm font-semibold ${isActive ? 'bg-[#6f1d32] text-white moc-inverse' : 'text-[#766e68] hover:text-[#6f1d32]'}`}>
               <LayoutGrid className="w-4 h-4" /> Bàn
+              {liveCount > 0 && <span key={liveCount} className="moc-pop grid h-5 min-w-5 place-items-center rounded-full bg-[#e8c48a] px-1 text-xs font-bold text-[#211b18]" aria-label={`${liveCount} yêu cầu mới`}>{liveCount}</span>}
             </NavLink>
             <NavLink to="/staff/kitchen" className={({ isActive }) => `h-9 px-3 inline-flex items-center gap-2 text-sm font-semibold ${isActive ? 'bg-[#6f1d32] text-white moc-inverse' : 'text-[#766e68] hover:text-[#6f1d32]'}`}>
               <ChefHat className="w-4 h-4" /> Bếp
@@ -40,7 +41,7 @@ export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều h�
           </nav>
           <div className="hidden lg:flex items-center gap-2 text-sm text-[#766e68]">
             <Clock3 className="w-4 h-4" />
-            {syncedAt ? `Đồng bộ ${new Date(syncedAt).toLocaleTimeString('vi-VN')}` : 'Chưa đồng bộ'}
+            {['reconnecting', 'offline'].includes(connection) ? <span className="font-semibold text-[#8a1c1c]">Đang kết nối lại...</span> : syncedAt ? `Đồng bộ ${new Date(syncedAt).toLocaleTimeString('vi-VN')}` : 'Chưa đồng bộ'}
           </div>
           {onRefresh && (
             <button
@@ -70,6 +71,7 @@ export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều h�
         ].map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end className={({ isActive }) => `h-11 inline-flex items-center justify-center gap-2 text-sm font-semibold ${isActive ? 'moc-inverse bg-[#6f1d32] text-white' : 'text-[#211b18]'}`}>
             <Icon className="w-4 h-4" /> {label}
+            {to === '/staff/floor' && liveCount > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#e8c48a] px-1 text-xs font-bold text-[#211b18]">{liveCount}</span>}
           </NavLink>
         ))}
       </nav>

@@ -1,6 +1,6 @@
 import apiClient from '../../../../lib/axios'
 
-export const getPosFloorApi = () => apiClient.get('/staff/pos/tables')
+export const getPosFloorApi = (config = {}) => apiClient.get('/staff/pos/tables', config)
 
 export const completeTableCleaningApi = (tableId) =>
   apiClient.post(`/staff/pos/tables/${tableId}/complete-cleaning`)
@@ -12,8 +12,8 @@ export const openPosSessionApi = ({ tableIds, guestCount, reservationId = null, 
     { headers: { 'Idempotency-Key': idempotencyKey } }
   )
 
-export const getPosSessionApi = (sessionId) =>
-  apiClient.get(`/staff/pos/sessions/${sessionId}`)
+export const getPosSessionApi = (sessionId, config = {}) =>
+  apiClient.get(`/staff/pos/sessions/${sessionId}`, config)
 
 export const createPosOrderApi = (sessionId, note = null) =>
   apiClient.post(`/staff/pos/sessions/${sessionId}/orders`, { note })
@@ -30,7 +30,7 @@ export const deletePosOrderItemApi = (itemId) =>
 export const sendOrderToKitchenApi = (orderId, itemIds) =>
   apiClient.post(`/staff/pos/orders/${orderId}/send-kitchen`, { itemIds })
 
-export const getKitchenItemsApi = () => apiClient.get('/staff/kitchen/items')
+export const getKitchenItemsApi = (config = {}) => apiClient.get('/staff/kitchen/items', config)
 
 export const updateKitchenItemStatusApi = (itemId, status) =>
   apiClient.patch(`/staff/kitchen/items/${itemId}/status`, { status })
@@ -51,3 +51,22 @@ export const cancelPosSessionApi = (sessionId, reason) =>
 
 export const closePosSessionApi = (sessionId, expectedVersion) =>
   apiClient.post(`/staff/pos/sessions/${sessionId}/close`, { expectedVersion })
+
+// Live Dining: hàng đợi check-in QR và yêu cầu phục vụ (docs/api/live-dining.md)
+export const getLiveQueueApi = (config = {}) => apiClient.get('/staff/live/queue', config)
+
+export const acceptCheckInApi = (visitId, { guestCount = null, reservationId = null } = {}) =>
+  apiClient.post(`/staff/live/check-ins/${visitId}/accept`, { guestCount, reservationId })
+
+export const rejectCheckInApi = (visitId, reason) =>
+  apiClient.post(`/staff/live/check-ins/${visitId}/reject`, { reason })
+
+export const acknowledgeServiceRequestApi = (requestId) =>
+  apiClient.post(`/staff/live/service-requests/${requestId}/acknowledge`)
+
+export const completeServiceRequestApi = (requestId) =>
+  apiClient.post(`/staff/live/service-requests/${requestId}/complete`)
+
+export const getTableQrApi = (tableId) => apiClient.get(`/staff/live/tables/${tableId}/qr`)
+
+export const rotateJoinCodeApi = (sessionId) => apiClient.post(`/staff/live/sessions/${sessionId}/join-code`)

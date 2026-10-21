@@ -30,6 +30,7 @@ export const refundPaymentApi = (paymentId, refundReason) => apiClient.post(`/ad
 export const confirmPaymentApi = (paymentId, payload) => apiClient.post(`/admin/payments/${paymentId}/confirm`, payload)
 
 export const getAdminTablesApi = () => apiClient.get('/admin/tables')
+export const rotateTableQrApi = (tableId) => apiClient.post(`/admin/tables/${tableId}/qr-token`)
 export const createTableApi = (payload) => apiClient.post('/admin/tables', payload)
 export const updateTableApi = (tableId, payload) => apiClient.put(`/admin/tables/${tableId}`, payload)
 

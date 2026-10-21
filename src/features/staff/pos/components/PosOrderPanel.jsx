@@ -34,7 +34,7 @@ export const PosOrderPanel = ({ order, onCreateOrder, onChangeQuantity, onRemove
             return (
               <article key={item.itemId} className="p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0"><h3 className="text-base font-semibold leading-6">{item.dishName}</h3><span className={`mt-2 inline-flex px-2 py-1 text-xs font-bold ${meta.tone}`}>{meta.label}</span>{item.note && <p className="mt-2 flex items-start gap-1.5 text-sm text-[#6f1d32]"><MessageSquareText className="mt-0.5 h-4 w-4 shrink-0" />{item.note}</p>}</div>
+                  <div className="min-w-0"><h3 className="text-base font-semibold leading-6">{item.dishName}</h3><span className={`mt-2 inline-flex px-2 py-1 text-xs font-bold ${meta.tone}`}>{meta.label}</span>{item.source === 'TABLE_QR' && <span className="ml-1.5 mt-2 inline-flex px-2 py-1 text-xs font-bold bg-[#e6eef6] text-[#1f4f7a]">QR khách gọi</span>}{item.note && <p className="mt-2 flex items-start gap-1.5 text-sm text-[#6f1d32]"><MessageSquareText className="mt-0.5 h-4 w-4 shrink-0" />{item.note}</p>}</div>
                   <strong className="shrink-0 text-sm text-[#6f1d32]">{formatMoney(item.subTotal)}</strong>
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3">

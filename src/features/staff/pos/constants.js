@@ -62,3 +62,24 @@ export const KITCHEN_NEXT_ACTION = {
 
 export const formatMoney = (value) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
+
+/** Tín hiệu cần chú ý của một bàn, dùng cho cả thẻ bàn và bộ lọc "Cần xử lý". */
+export const tableSignals = (table) => {
+  const live = table.activeSession?.live
+  return {
+    checkIn: !!table.pendingCheckIn,
+    newRequests: live?.newRequests || 0,
+    openRequests: live?.openRequests || 0,
+    payment: !!live?.paymentRequested || table.activeSession?.status === 'AWAITING_PAYMENT',
+    late: live?.lateCount || 0,
+    needsAttention: !!table.pendingCheckIn || (live?.newRequests || 0) > 0 || (live?.lateCount || 0) > 0 || !!live?.paymentRequested,
+  }
+}
+
+/** Mức SLA của một món trên KDS: normal / warning / late (ngưỡng lấy từ config backend). */
+export const kitchenSlaLevel = (item, minutes, sla) => {
+  if (['READY', 'SERVED'].includes(item.status)) return 'normal'
+  if (minutes >= sla.lateMinutes) return 'late'
+  if (minutes >= sla.warningMinutes) return 'warning'
+  return 'normal'
+}
