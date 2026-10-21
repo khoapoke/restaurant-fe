@@ -27,6 +27,7 @@ export const cancelAdminOrderApi = (orderId, cancelReason) => apiClient.post(`/a
 export const getAdminPaymentsApi = (params = {}) => apiClient.get('/admin/payments', { params })
 export const reconcilePaymentsApi = (paymentIds = []) => apiClient.post('/admin/payments/reconcile', { paymentIds })
 export const refundPaymentApi = (paymentId, refundReason) => apiClient.post(`/admin/payments/${paymentId}/refund`, { refundReason })
+export const confirmPaymentApi = (paymentId, payload) => apiClient.post(`/admin/payments/${paymentId}/confirm`, payload)
 
 export const getAdminTablesApi = () => apiClient.get('/admin/tables')
 export const createTableApi = (payload) => apiClient.post('/admin/tables', payload)

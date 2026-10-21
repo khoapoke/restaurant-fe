@@ -11,6 +11,7 @@ export const Pagination = ({
   onPageChange,
   disabled = false,
   className = '',
+  itemLabel = 'món',
 }) => {
   if (lastPage <= 1) return null
 
@@ -33,40 +34,30 @@ export const Pagination = ({
     return pages
   }
 
+  const navButton = 'grid h-10 w-10 place-items-center border border-[var(--moc-line)] bg-[#fffdf8] text-[#211b18] hover:border-[#6f1d32]/50 hover:text-[#6f1d32] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer'
+
   return (
-    <div
-      className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-4 text-xs text-gray-400 select-none ${className}`}
+    <nav
+      className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-4 text-sm text-[#625a55] select-none ${className}`}
+      aria-label="Phân trang"
     >
       <div>
         {totalItems > 0 && (
           <span>
-            Trang <strong className="text-gray-200">{currentPage}</strong> /{' '}
-            <strong className="text-gray-200">{lastPage}</strong> (Tổng cộng{' '}
-            <strong className="text-amber-400">{totalItems}</strong> món)
+            Trang <strong className="text-[#211b18]">{currentPage}</strong> / <strong className="text-[#211b18]">{lastPage}</strong>
+            {' '}· Tổng cộng <strong className="text-[#6f1d32]">{totalItems}</strong> {itemLabel}
           </span>
         )}
       </div>
 
       <div className="flex items-center gap-1.5">
-        {/* Nút Trước */}
-        <button
-          type="button"
-          disabled={disabled || currentPage <= 1}
-          onClick={() => onPageChange(currentPage - 1)}
-          className="p-2 rounded-xl border border-gray-800 bg-gray-900 text-gray-300 hover:text-white hover:border-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-          aria-label="Trang trước"
-        >
+        <button type="button" disabled={disabled || currentPage <= 1} onClick={() => onPageChange(currentPage - 1)} className={navButton} aria-label="Trang trước">
           <ChevronLeft className="w-4 h-4" />
         </button>
 
-        {/* Các số trang */}
         {getPageNumbers().map((page, idx) => {
           if (page === '...') {
-            return (
-              <span key={`dots-${idx}`} className="px-2 py-1 text-gray-600">
-                ...
-              </span>
-            )
+            return <span key={`dots-${idx}`} className="px-2 py-1 text-[#625a55]">…</span>
           }
 
           const isActive = page === currentPage
@@ -76,32 +67,23 @@ export const Pagination = ({
               type="button"
               disabled={disabled}
               onClick={() => onPageChange(page)}
-              className={`min-w-9 h-9 px-2 rounded-xl font-medium text-xs transition-all cursor-pointer
-                ${
-                  isActive
-                    ? 'bg-amber-500 text-gray-950 font-bold shadow-md shadow-amber-500/20'
-                    : 'border border-gray-800 bg-gray-900 text-gray-300 hover:border-gray-700 hover:text-white'
-                }
-                ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
-              `}
+              aria-current={isActive ? 'page' : undefined}
+              className={`min-w-10 h-10 px-2 text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                isActive
+                  ? 'moc-inverse bg-[#6f1d32] text-white border border-[#6f1d32]'
+                  : 'border border-[var(--moc-line)] bg-[#fffdf8] text-[#211b18] hover:border-[#6f1d32]/50 hover:text-[#6f1d32]'
+              }`}
             >
               {page}
             </button>
           )
         })}
 
-        {/* Nút Sau */}
-        <button
-          type="button"
-          disabled={disabled || currentPage >= lastPage}
-          onClick={() => onPageChange(currentPage + 1)}
-          className="p-2 rounded-xl border border-gray-800 bg-gray-900 text-gray-300 hover:text-white hover:border-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-          aria-label="Trang tiếp theo"
-        >
+        <button type="button" disabled={disabled || currentPage >= lastPage} onClick={() => onPageChange(currentPage + 1)} className={navButton} aria-label="Trang tiếp theo">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
-    </div>
+    </nav>
   )
 }
 

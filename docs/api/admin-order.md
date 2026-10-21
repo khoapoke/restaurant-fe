@@ -15,6 +15,9 @@
 | Chuyển trạng thái đơn (`ORD-08` → `ORD-11`) | `PATCH /api/v1/admin/orders/{orderId}/status` |
 | Cập nhật trạng thái bàn giao | `PATCH /api/v1/admin/orders/{orderId}/fulfillment-status` |
 | Hủy đơn kèm lý do (`ORD-12`) | `POST /api/v1/admin/orders/{orderId}/cancel` |
+| Chi tiết đơn | `GET /api/v1/admin/orders/{orderId}` |
+
+Bộ lọc danh sách: `status`, `fulfillmentType` (`DELIVERY`/`PICKUP`/`DINE_IN`), `keyword` (mã đơn, tên/SĐT người nhận, tài khoản), `page`, `perPage` (≤ 50).
 
 ### Request Body (`PATCH /api/v1/admin/orders/{orderId}/status`)
 ```json
@@ -79,6 +82,9 @@ Khi đạt `DELIVERED` hoặc `COLLECTED`, backend tự đổi đơn sang `COMPL
 | Đối soát số tiền (`PAY-05`) | `POST /api/v1/admin/payments/reconcile` |
 | Ghi nhận hoàn tiền (`PAY-06`) | `POST /api/v1/admin/payments/{paymentId}/refund` |
 | Xem log lỗi Callback (`PAY-07`) | `GET /api/v1/admin/payments/callback-logs` |
+| Xác nhận chuyển khoản thủ công (`PAY-08`) | `POST /api/v1/admin/payments/{paymentId}/confirm` |
+
+Bộ lọc danh sách giao dịch: `status`, `method` (`CASH`/`BANK_TRANSFER_QR`), `keyword` (mã đơn, mã giao dịch). Mỗi giao dịch trả thêm `orderStatus`, `fulfillmentType`, `invoiceId`.
 
 ### Response (Success - 200 OK — Hoàn tiền)
 ```json
@@ -108,3 +114,23 @@ Khi đạt `DELIVERED` hoặc `COLLECTED`, backend tự đổi đơn sang `COMPL
 
 ### Ghi chú nghiệp vụ
 Đối chiếu `THANH_TOAN.so_tien === DON_HANG.tong_tien` và lưu vết khi hoàn tiền.
+
+### Xác nhận chuyển khoản thủ công (`PAY-08`)
+Dùng khi nhà hàng đã thấy tiền về trong ứng dụng ngân hàng nhưng chưa có webhook.
+```json
+{ "transactionCode": "FT26102100123", "note": "Đã kiểm tra trên app ngân hàng" }
+```
+- Chỉ áp dụng cho giao dịch `BANK_TRANSFER_QR` đang `UNPAID`/`FAILED` của đơn chưa hủy (409 nếu đã `PAID`/`REFUNDED` hoặc là tiền mặt).
+- Ghi `ma_giao_dich`, lưu vết `log_callback = {source: MANUAL_CONFIRMATION, confirmedBy, note}`; đơn `PENDING_CONFIRMATION` tự chuyển `CONFIRMED`.
+
+### Webhook cổng thanh toán
+`POST /api/v1/webhooks/payment-callback` bắt buộc header `X-Signature = HMAC-SHA256(raw body, PAYMENT_WEBHOOK_SECRET)`.
+- Sai chữ ký → 401; chưa cấu hình secret → 503 (chỉ bỏ qua khi `PAYMENT_WEBHOOK_ALLOW_UNSIGNED=true` cho demo nội bộ).
+- Bắt buộc `amount`/`transferAmount` > 0; thiếu tiền → 400 và lưu log `PAID_AMOUNT_TOO_LOW`; callback lặp lại cho đơn đã `PAID` được chấp nhận idempotent.
+- Tiền về cho đơn đã hủy vẫn ghi `PAID` kèm `requiresRefund: true` để admin hoàn tiền.
+
+### `availableActions` trong mỗi đơn admin
+```json
+{ "nextStatus": "PREPARING", "nextFulfillmentStatus": null, "canCancel": true, "awaitingQrPayment": false, "requiresRefund": false }
+```
+Frontend chỉ hiển thị nút theo khối này. Đơn `DINE_IN` luôn không có thao tác (409 nếu gọi API) vì do POS/KDS điều phối. Không thể hủy đơn đang `OUT_FOR_DELIVERY`. Đổi trạng thái đơn online đồng bộ trạng thái món trên KDS (`PREPARING`, `READY`, hủy → `CANCELLED`, hoàn tất → `SERVED`).

@@ -1,4 +1,4 @@
-import { ChefHat, Clock3, LayoutGrid, LogOut, RefreshCw, UserRound } from 'lucide-react'
+import { ChefHat, Clock3, LayoutDashboard, LayoutGrid, LogOut, RefreshCw, UserRound } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import MocBrand from '../../../../components/brand/MocBrand'
 import { useAuth } from '../../../../contexts/AuthContext'
@@ -32,6 +32,11 @@ export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều h�
             <NavLink to="/staff/kitchen" className={({ isActive }) => `h-9 px-3 inline-flex items-center gap-2 text-sm font-semibold ${isActive ? 'bg-[#6f1d32] text-white moc-inverse' : 'text-[#766e68] hover:text-[#6f1d32]'}`}>
               <ChefHat className="w-4 h-4" /> Bếp
             </NavLink>
+            {user?.role === 'ADMIN' && (
+              <NavLink to="/admin" end className="h-9 px-3 inline-flex items-center gap-2 text-sm font-semibold text-[#766e68] hover:text-[#6f1d32]">
+                <LayoutDashboard className="w-4 h-4" /> Quản trị
+              </NavLink>
+            )}
           </nav>
           <div className="hidden lg:flex items-center gap-2 text-sm text-[#766e68]">
             <Clock3 className="w-4 h-4" />
@@ -57,6 +62,17 @@ export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều h�
           </button>
         </div>
       </div>
+      <nav className={`md:hidden grid border-t border-[var(--moc-line)] ${user?.role === 'ADMIN' ? 'grid-cols-3' : 'grid-cols-2'}`} aria-label="Điều hướng vận hành">
+        {[
+          { to: '/staff/floor', label: 'Sơ đồ bàn', icon: LayoutGrid },
+          { to: '/staff/kitchen', label: 'Bếp', icon: ChefHat },
+          ...(user?.role === 'ADMIN' ? [{ to: '/admin', label: 'Quản trị', icon: LayoutDashboard }] : []),
+        ].map(({ to, label, icon: Icon }) => (
+          <NavLink key={to} to={to} end className={({ isActive }) => `h-11 inline-flex items-center justify-center gap-2 text-sm font-semibold ${isActive ? 'moc-inverse bg-[#6f1d32] text-white' : 'text-[#211b18]'}`}>
+            <Icon className="w-4 h-4" /> {label}
+          </NavLink>
+        ))}
+      </nav>
     </header>
   )
 }

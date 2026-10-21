@@ -52,7 +52,10 @@
 ```
 
 ### Ghi chú nghiệp vụ
-Đồng bộ tự động trạng thái `BAN_AN.trang_thai` khi Admin duyệt (`CONFIRMED` → `RESERVED`) hoặc hoàn tất/hủy (`COMPLETED`/`CANCELLED` → `AVAILABLE`).
+- Bàn ở trạng thái `RESERVED` khi có lượt đặt `CONFIRMED` trong hôm nay (kể cả lượt bắt đầu chưa quá 119 phút và chưa nhận bàn). Khi lượt cuối cùng bị hủy/từ chối/hoàn tất, bàn trở về `AVAILABLE`. `OCCUPIED`, `CLEANING`, `MAINTENANCE` không bị ghi đè.
+- Không xác nhận lượt đặt đã quá giờ; không đổi trạng thái lượt đặt đang có khách ngồi (trừ `COMPLETED`) — POS tự hoàn tất khi đóng phiên.
+- `PUT /admin/tables/{id}` chỉ nhận `status` thủ công `AVAILABLE`, `CLEANING`, `MAINTENANCE` (422 với `OCCUPIED`/`RESERVED`). Chặn đổi trạng thái khi bàn đang có phiên POS và chặn bảo trì khi bàn có lượt đặt đã xác nhận hôm nay. Bàn mới chỉ tạo ở `AVAILABLE`/`MAINTENANCE`.
+- `GET /admin/reservations` nhận thêm `scope` = `upcoming` (mặc định, từ đầu hôm nay), `past`, `all`; mỗi lượt có `isSeated`.
 
 ---
 
@@ -103,3 +106,8 @@
 }
 ```
 - **Ghi chú nghiệp vụ:** Sử dụng Query Builder tổng hợp `DB::table('CHI_TIET_DON_HANG')->join('DON_HANG', ...)->selectRaw('SUM(so_luong) as totalSold, SUM(so_luong * don_gia) as revenue')->groupBy(...)` để đạt hiệu năng cao nhất trên SQL Server.
+
+### Trường bổ sung của dashboard
+- `revenue.refundedAmount`, `revenue.averageOrderValue`, `revenue.byMethod.{CASH, BANK_TRANSFER_QR}`.
+- `orders.byFulfillmentType.{DELIVERY, PICKUP, DINE_IN}` (không tính đơn hủy/nháp).
+- `attention.{pendingOrders, readyForHandoff, refundsPending, reservationsToConfirm}` — số việc cần xử lý ngay (không phụ thuộc kỳ báo cáo).

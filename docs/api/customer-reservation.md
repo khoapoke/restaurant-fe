@@ -64,3 +64,7 @@
 ## Ghi chú nghiệp vụ
 - Dùng thư viện `Carbon` để kiểm tra điều kiện báo trước 2 tiếng (nếu có yêu cầu đặc biệt).
 - Sửa/hủy trước tối thiểu 1 tiếng: `now()->diffInMinutes($reservation->thoi_gian, false) >= 60`.
+
+- Mỗi lượt đặt trả `canModify` (còn ≥ 60 phút và đang `PENDING`/`CONFIRMED`); frontend chỉ hiện nút Đổi lịch/Hủy khi `canModify = true`.
+- Khách đổi giờ, bàn hoặc số khách của lượt **đã xác nhận** → lượt quay về `PENDING` để nhà hàng xác nhận lại; bàn cũ được giải phóng nếu không còn lượt đặt hôm nay.
+- Thời gian đặt được hiểu theo múi giờ nhà hàng `Asia/Ho_Chi_Minh` (`APP_TIMEZONE`).

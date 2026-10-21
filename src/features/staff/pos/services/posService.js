@@ -5,10 +5,10 @@ export const getPosFloorApi = () => apiClient.get('/staff/pos/tables')
 export const completeTableCleaningApi = (tableId) =>
   apiClient.post(`/staff/pos/tables/${tableId}/complete-cleaning`)
 
-export const openPosSessionApi = ({ tableIds, guestCount, idempotencyKey }) =>
+export const openPosSessionApi = ({ tableIds, guestCount, reservationId = null, idempotencyKey }) =>
   apiClient.post(
     '/staff/pos/sessions',
-    { tableIds, guestCount },
+    { tableIds, guestCount, reservationId },
     { headers: { 'Idempotency-Key': idempotencyKey } }
   )
 
@@ -42,6 +42,12 @@ export const payInvoiceApi = (invoiceId, payload) =>
   apiClient.post(`/staff/invoices/${invoiceId}/payments`, payload, {
     headers: { 'Idempotency-Key': payload.idempotencyKey },
   })
+
+export const reopenPosSessionApi = (sessionId) =>
+  apiClient.post(`/staff/pos/sessions/${sessionId}/reopen`)
+
+export const cancelPosSessionApi = (sessionId, reason) =>
+  apiClient.post(`/staff/pos/sessions/${sessionId}/cancel`, { reason })
 
 export const closePosSessionApi = (sessionId, expectedVersion) =>
   apiClient.post(`/staff/pos/sessions/${sessionId}/close`, { expectedVersion })

@@ -192,6 +192,47 @@
     --tw-shadow-color: rgba(111, 29, 50, 0.16) !important;
   }
 
+  /* Màu trạng thái kế thừa từ giao diện tối: tăng tương phản trên nền kem (WCAG AA). */
+  .moc-theme [class~="text-red-300"]:not(.moc-inverse, .moc-inverse *),
+  .moc-theme [class~="text-red-400"]:not(.moc-inverse, .moc-inverse *) {
+    color: #b42318 !important;
+  }
+
+  .moc-theme [class~="text-emerald-300"]:not(.moc-inverse, .moc-inverse *),
+  .moc-theme [class~="text-emerald-400"]:not(.moc-inverse, .moc-inverse *) {
+    color: #05603a !important;
+  }
+
+  .moc-theme [class~="text-blue-400"]:not(.moc-inverse, .moc-inverse *),
+  .moc-theme [class~="text-sky-400"]:not(.moc-inverse, .moc-inverse *),
+  .moc-theme [class~="text-cyan-400"]:not(.moc-inverse, .moc-inverse *) {
+    color: #075985 !important;
+  }
+
+  .moc-theme [class~="text-purple-300"]:not(.moc-inverse, .moc-inverse *),
+  .moc-theme [class~="text-purple-400"]:not(.moc-inverse, .moc-inverse *) {
+    color: #6b21a8 !important;
+  }
+
+  .moc-theme [class~="bg-red-500/10"]:not(.moc-inverse, .moc-inverse *),
+  .moc-theme [class~="bg-red-500/20"]:not(.moc-inverse, .moc-inverse *) {
+    background-color: #fef3f2 !important;
+  }
+
+  .moc-theme [class~="bg-emerald-500/10"]:not(.moc-inverse, .moc-inverse *),
+  .moc-theme [class~="bg-emerald-500/20"]:not(.moc-inverse, .moc-inverse *) {
+    background-color: #ecfdf3 !important;
+  }
+
+  .moc-theme [class~="border-red-500/20"],
+  .moc-theme [class~="border-red-500/30"] {
+    border-color: #fecdca !important;
+  }
+
+  .moc-theme [class~="border-emerald-500/30"] {
+    border-color: #abefc6 !important;
+  }
+
   .moc-theme .moc-inverse,
   .moc-theme .moc-inverse [class~="text-white"],
   .moc-theme .moc-inverse [class~="text-gray-100"],
@@ -200,6 +241,25 @@
   .moc-theme .moc-inverse [class~="text-gray-400"],
   .moc-theme .moc-inverse [class~="text-gray-500"] {
     color: #fff8ed !important;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .moc-print-area,
+  .moc-print-area * {
+    visibility: visible !important;
+  }
+
+  .moc-print-area {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 80mm;
+    border: 0 !important;
+    padding: 0 !important;
   }
 }
 

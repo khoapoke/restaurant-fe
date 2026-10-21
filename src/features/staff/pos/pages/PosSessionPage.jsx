@@ -1,24 +1,27 @@
-import { AlertTriangle, ArrowLeft, UsersRound } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, CircleSlash, UsersRound } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Alert from '../../../../components/ui/Alert'
 import Button from '../../../../components/ui/Button'
+import ConfirmDialog from '../../../../components/ui/ConfirmDialog'
 import Skeleton from '../../../../components/ui/Skeleton'
-import { useAuth } from '../../../../contexts/AuthContext'
-import { Role } from '../../../auth/constants'
+import { apiErrorMessage } from '../../../../lib/apiError'
 import { getCategoriesApi, getDishesApi } from '../../../customer/menu/services/menuService'
 import BillingPanel from '../components/BillingPanel'
 import DishPicker from '../components/DishPicker'
+import InvoiceReceiptModal from '../components/InvoiceReceiptModal'
 import PosHeader from '../components/PosHeader'
 import PosOrderPanel from '../components/PosOrderPanel'
 import {
   addPosOrderItemApi,
+  cancelPosSessionApi,
   closePosSessionApi,
   createInvoiceApi,
   createPosOrderApi,
   deletePosOrderItemApi,
   getPosSessionApi,
   payInvoiceApi,
+  reopenPosSessionApi,
   sendOrderToKitchenApi,
   updatePosOrderItemApi,
 } from '../services/posService'
@@ -26,13 +29,17 @@ import {
 const createRequestId = (prefix) =>
   globalThis.crypto?.randomUUID?.() || `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 
-const getErrorMessage = (error, fallback) =>
-  error.response?.data?.message || Object.values(error.response?.data?.errors || {})?.flat?.()?.[0] || fallback
+const formatTime = (value) => new Date(value).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+
+const LOCKED_MESSAGE = {
+  AWAITING_PAYMENT: 'Phiên đã lập hóa đơn nên thực đơn tạm khóa. Bấm “Gọi thêm món” nếu khách muốn gọi thêm.',
+  CLOSED: 'Phiên đã đóng. Bàn đang chờ vệ sinh trên sơ đồ.',
+  CANCELLED: 'Phiên đã hủy.',
+}
 
 export const PosSessionPage = () => {
   const { sessionId } = useParams()
   const navigate = useNavigate()
-  const { isAuthenticated, role } = useAuth()
   const [session, setSession] = useState(null)
   const [dishes, setDishes] = useState([])
   const [categories, setCategories] = useState([])
@@ -43,11 +50,8 @@ export const PosSessionPage = () => {
   const [actionBusy, setActionBusy] = useState(false)
   const [addingDishId, setAddingDishId] = useState(null)
   const [busyItemId, setBusyItemId] = useState(null)
-
-  useEffect(() => {
-    if (!isAuthenticated) navigate('/login')
-    else if (![Role.STAFF, Role.ADMIN].includes(role)) navigate('/')
-  }, [isAuthenticated, role, navigate])
+  const [dialog, setDialog] = useState(null)
+  const [receiptOpen, setReceiptOpen] = useState(false)
 
   const loadSession = useCallback(async ({ quiet = false } = {}) => {
     if (quiet) setRefreshing(true)
@@ -56,7 +60,7 @@ export const PosSessionPage = () => {
       setSession(response.data)
       setError(null)
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Không thể tải phiên phục vụ.'))
+      setError(apiErrorMessage(requestError, 'Không thể tải phiên phục vụ.'))
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -64,40 +68,44 @@ export const PosSessionPage = () => {
   }, [sessionId])
 
   useEffect(() => {
-    if (!isAuthenticated || ![Role.STAFF, Role.ADMIN].includes(role)) return undefined
     let active = true
-    Promise.all([getPosSessionApi(sessionId), getCategoriesApi(), getDishesApi({ perPage: 100, isAvailable: true })])
+    Promise.all([getPosSessionApi(sessionId), getCategoriesApi(), getDishesApi({ perPage: 100 })])
       .then(([sessionResponse, categoryResponse, dishResponse]) => {
         if (!active) return
         setSession(sessionResponse.data)
         setCategories(categoryResponse.data || [])
         setDishes(dishResponse.data?.items || [])
       })
-      .catch((requestError) => active && setError(getErrorMessage(requestError, 'Không thể tải dữ liệu POS.')))
+      .catch((requestError) => active && setError(apiErrorMessage(requestError, 'Không thể tải dữ liệu POS.')))
       .finally(() => active && setLoading(false))
 
     const timer = window.setInterval(() => {
       getPosSessionApi(sessionId).then((response) => active && setSession(response.data)).catch(() => {})
     }, 8000)
     return () => { active = false; window.clearInterval(timer) }
-  }, [isAuthenticated, role, sessionId])
+  }, [sessionId])
 
   const runAction = async (action, successMessage) => {
     setActionBusy(true)
     setError(null)
+    setNotice(null)
     try {
       await action()
       await loadSession({ quiet: true })
       setNotice(successMessage)
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Thao tác chưa thể hoàn tất.'))
+      setError(apiErrorMessage(requestError, 'Thao tác chưa thể hoàn tất.'))
+      loadSession({ quiet: true })
     } finally {
       setActionBusy(false)
     }
   }
 
-  const order = session?.orders?.[0] || null
+  const order = session?.orders?.find((sessionOrder) => sessionOrder.status !== 'CANCELLED') || null
   const sessionLocked = session?.status !== 'OPEN'
+  const activeItems = order?.items?.filter((item) => !['CANCELLED', 'REJECTED'].includes(item.kitchenStatus)) || []
+  const unfinishedCount = activeItems.filter((item) => !['READY', 'SERVED'].includes(item.kitchenStatus)).length
+  const canCancelSession = session?.status === 'OPEN' && activeItems.every((item) => item.kitchenStatus === 'DRAFT')
 
   const handleAddDish = async (dish) => {
     if (!order || sessionLocked) return
@@ -108,7 +116,7 @@ export const PosSessionPage = () => {
       await loadSession({ quiet: true })
       setNotice(`Đã thêm ${dish.dishName}.`)
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Không thể thêm món.'))
+      setError(apiErrorMessage(requestError, 'Không thể thêm món.'))
     } finally {
       setAddingDishId(null)
     }
@@ -122,16 +130,51 @@ export const PosSessionPage = () => {
       await loadSession({ quiet: true })
       setNotice(message)
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Không thể cập nhật món.'))
+      setError(apiErrorMessage(requestError, 'Không thể cập nhật món.'))
     } finally {
       setBusyItemId(null)
     }
   }
 
-  const handlePay = () => runAction(
-    () => payInvoiceApi(session.invoice.invoiceId, { method: 'CASH', amount: session.invoice.totalAmount, idempotencyKey: createRequestId('payment') }),
-    'Đã ghi nhận thanh toán tiền mặt.'
+  const editNote = (item) => setDialog({
+    title: `Ghi chú cho ${item.dishName}`,
+    description: 'Ghi chú hiển thị cho bếp trên màn hình KDS.',
+    confirmLabel: 'Lưu ghi chú',
+    reason: { label: 'Ghi chú món', placeholder: 'Ví dụ: Ít cay, không hành', required: false, defaultValue: item.note || '', maxLength: 255 },
+    onConfirm: async (note) => {
+      await updatePosOrderItemApi(item.itemId, { note: note || null })
+      await loadSession({ quiet: true })
+      setNotice(`Đã cập nhật ghi chú ${item.dishName}.`)
+    },
+  })
+
+  const handlePay = (payload) => runAction(
+    () => payInvoiceApi(session.invoice.invoiceId, { ...payload, idempotencyKey: createRequestId('payment') }),
+    payload.method === 'CASH' ? 'Đã ghi nhận thanh toán tiền mặt.' : 'Đã ghi nhận chuyển khoản QR.'
   )
+
+  const handleReopen = () => setDialog({
+    title: 'Gọi thêm món',
+    description: 'Hóa đơn hiện tại sẽ được hủy để thêm món. Sau khi gửi bếp, hãy lập lại hóa đơn với tổng tiền mới.',
+    confirmLabel: 'Mở lại để gọi thêm',
+    onConfirm: async () => {
+      await reopenPosSessionApi(session.sessionId)
+      await loadSession({ quiet: true })
+      setNotice('Đã mở lại phiên. Khách có thể gọi thêm món.')
+    },
+  })
+
+  const handleCancelSession = () => setDialog({
+    title: `Hủy phiên #${session.sessionId}`,
+    tone: 'danger',
+    description: 'Chỉ dùng khi mở nhầm bàn hoặc khách rời đi trước khi gọi món. Món nháp sẽ bị hủy và bàn trở lại trạng thái sẵn sàng.',
+    confirmLabel: 'Hủy phiên',
+    reason: { label: 'Lý do', placeholder: 'Ví dụ: Mở nhầm bàn, khách đổi ý', minLength: 3 },
+    onConfirm: async (reason) => {
+      await cancelPosSessionApi(session.sessionId, reason)
+      navigate('/staff/floor', { replace: true })
+    },
+  })
 
   const handleClose = async () => {
     setActionBusy(true)
@@ -140,41 +183,70 @@ export const PosSessionPage = () => {
       await closePosSessionApi(session.sessionId, session.version)
       navigate('/staff/floor', { replace: true })
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Chưa thể đóng phiên. Kiểm tra trạng thái món tại bếp.'))
+      setError(apiErrorMessage(requestError, 'Chưa thể đóng phiên. Kiểm tra trạng thái món tại bếp.'))
       setActionBusy(false)
+      loadSession({ quiet: true })
     }
   }
 
   if (loading) return <div className="min-h-screen bg-[#f5f0e7]"><PosHeader /><main className="max-w-[1500px] mx-auto p-6 lg:p-8 space-y-5"><Skeleton className="h-28" /><div className="grid lg:grid-cols-[1.45fr_.85fr] gap-5"><Skeleton className="h-[640px]" /><Skeleton className="h-[640px]" /></div></main></div>
 
   if (!session) return (
-    <div className="min-h-screen bg-[#f5f0e7]"><PosHeader /><main className="max-w-3xl mx-auto p-8 text-center"><AlertTriangle className="w-10 h-10 mx-auto text-red-600" /><h1 className="mt-4 moc-serif text-3xl">Không mở được phiên phục vụ</h1><p className="mt-2 text-sm text-[#766e68]">{error}</p><Button className="mt-6" onClick={() => navigate('/staff/floor')}>VỀ SƠ ĐỒ BÀN</Button></main></div>
+    <div className="min-h-screen bg-[#f5f0e7]"><PosHeader /><main className="max-w-3xl mx-auto p-8 text-center"><AlertTriangle className="w-10 h-10 mx-auto text-red-700" /><h1 className="mt-4 moc-serif text-3xl">Không mở được phiên phục vụ</h1><p className="mt-2 text-sm text-[#625a55]">{error}</p><div className="mt-6 flex justify-center gap-3"><Button variant="outline" onClick={() => { setLoading(true); loadSession() }}>THỬ LẠI</Button><Button onClick={() => navigate('/staff/floor')}>VỀ SƠ ĐỒ BÀN</Button></div></main></div>
   )
+
+  const tableNames = session.tables.map((table) => table.tableName)
 
   return (
     <div className="min-h-screen bg-[#f5f0e7] text-[#211b18]">
-      <PosHeader title={`Phiên #${session.sessionId}`} subtitle={session.tables.map((table) => table.tableName).join(' · ')} syncedAt={new Date().toISOString()} onRefresh={() => loadSession({ quiet: true })} refreshing={refreshing} />
-      <main className="max-w-[1500px] mx-auto px-4 lg:px-8 py-6 lg:py-8">
+      <PosHeader title={`Phiên #${session.sessionId}`} subtitle={tableNames.join(' · ')} syncedAt={new Date().toISOString()} onRefresh={() => loadSession({ quiet: true })} refreshing={refreshing} />
+      <main className="max-w-[1500px] mx-auto px-4 lg:px-8 py-6 lg:py-8 pb-28 xl:pb-8">
         <div className="mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button type="button" onClick={() => navigate('/staff/floor')} className="w-11 h-11 grid place-items-center border border-[var(--moc-line)] bg-[#fffdf8]" aria-label="Về sơ đồ bàn"><ArrowLeft className="w-5 h-5" /></button>
-            <div><span className="moc-eyebrow">PHIÊN ĐANG PHỤC VỤ</span><h1 className="mt-1 moc-serif text-3xl sm:text-4xl">{session.tables.map((table) => table.tableName).join(' + ')}</h1></div>
+          <div className="flex items-center gap-4 min-w-0">
+            <button type="button" onClick={() => navigate('/staff/floor')} className="w-11 h-11 shrink-0 grid place-items-center border border-[var(--moc-line)] bg-[#fffdf8]" aria-label="Về sơ đồ bàn"><ArrowLeft className="w-5 h-5" /></button>
+            <div className="min-w-0"><span className="moc-eyebrow">PHIÊN ĐANG PHỤC VỤ</span><h1 className="mt-1 moc-serif text-3xl sm:text-4xl truncate">{tableNames.join(' + ')}</h1></div>
           </div>
-          <div className="flex items-center gap-3 text-sm text-[#766e68]"><UsersRound className="w-5 h-5 text-[#6f1d32]" /><strong className="text-[#211b18]">{session.guestCount} khách</strong><span>·</span><span>{session.staff.fullName || session.staff.username}</span></div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-[#625a55]">
+            <UsersRound className="w-5 h-5 text-[#6f1d32]" /><strong className="text-[#211b18]">{session.guestCount} khách</strong><span>·</span><span>{session.staff.fullName || session.staff.username}</span>
+            {canCancelSession && <Button size="sm" variant="ghost" icon={CircleSlash} onClick={handleCancelSession}>Hủy phiên</Button>}
+          </div>
         </div>
 
-        {error && <Alert type="error" message={error} onClose={() => setError(null)} className="mb-5 bg-red-50 text-red-800" />}
-        {notice && <Alert type="success" message={notice} onClose={() => setNotice(null)} className="mb-5 bg-emerald-50 text-emerald-800" />}
-        {sessionLocked && <Alert type="info" message="Phiên đã lập hóa đơn nên thực đơn được khóa. Hãy hoàn tất thanh toán và xử lý món tại màn hình bếp." className="mb-5 bg-sky-50 text-sky-800" />}
+        {session.reservation && (
+          <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 border border-[#6f1d32]/25 bg-[#fffdf8] px-4 py-3 text-sm">
+            <span className="inline-flex items-center gap-2 font-semibold text-[#6f1d32]"><CalendarClock className="w-4 h-4" /> Khách đặt trước #{session.reservation.reservationId} · {formatTime(session.reservation.reservationTime)}</span>
+            <span>{session.reservation.customerName}{session.reservation.customerPhone ? ` · ${session.reservation.customerPhone}` : ''}</span>
+            {session.reservation.note && <span className="text-[#625a55]">Ghi chú: {session.reservation.note}</span>}
+          </div>
+        )}
+
+        {error && <Alert type="error" message={error} onClose={() => setError(null)} className="mb-5" />}
+        {notice && <Alert type="success" message={notice} onClose={() => setNotice(null)} className="mb-5" />}
+        {sessionLocked && <Alert type="info" message={LOCKED_MESSAGE[session.status] || 'Phiên đang tạm khóa.'} className="mb-5" />}
 
         <div className="min-w-0 grid xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,.75fr)] gap-5 items-start">
           <DishPicker dishes={dishes} categories={categories} onAdd={handleAddDish} addingDishId={addingDishId} disabled={!order || sessionLocked} />
-          <aside className="min-w-0 space-y-5 xl:sticky xl:top-[106px]">
-            <PosOrderPanel order={order} onCreateOrder={() => runAction(() => createPosOrderApi(session.sessionId), 'Đã tạo order cho bàn.')} onChangeQuantity={(item, quantity) => handleItemAction(item, () => updatePosOrderItemApi(item.itemId, { quantity }), 'Đã cập nhật số lượng.')} onRemove={(item) => handleItemAction(item, () => deletePosOrderItemApi(item.itemId), `Đã xóa ${item.dishName}.`)} onSendKitchen={(itemIds) => runAction(() => sendOrderToKitchenApi(order.orderId, itemIds), 'Đã chuyển món xuống bếp.')} busyItemId={busyItemId} actionBusy={actionBusy} sessionLocked={sessionLocked} />
-            <BillingPanel session={session} order={order} onCreateInvoice={() => runAction(() => createInvoiceApi(session.sessionId), 'Đã lập hóa đơn cho phiên.')} onPay={handlePay} onClose={handleClose} actionBusy={actionBusy} />
+          <aside id="pos-order-panel" className="min-w-0 space-y-5 scroll-mt-28 xl:sticky xl:top-[106px]">
+            <PosOrderPanel order={order} onCreateOrder={() => runAction(() => createPosOrderApi(session.sessionId), 'Đã tạo order cho bàn.')} onChangeQuantity={(item, quantity) => handleItemAction(item, () => updatePosOrderItemApi(item.itemId, { quantity }), 'Đã cập nhật số lượng.')} onRemove={(item) => handleItemAction(item, () => deletePosOrderItemApi(item.itemId), `Đã xóa ${item.dishName}.`)} onEditNote={editNote} onSendKitchen={(itemIds) => runAction(() => sendOrderToKitchenApi(order.orderId, itemIds), `Đã gửi ${itemIds.length} món xuống bếp.`)} busyItemId={busyItemId} actionBusy={actionBusy} sessionLocked={sessionLocked} />
+            {['OPEN', 'AWAITING_PAYMENT'].includes(session.status) && (
+              <BillingPanel key={session.invoice?.invoiceId ? `${session.invoice.invoiceId}-${session.invoice.status}` : 'no-invoice'} session={session} order={order} unfinishedCount={unfinishedCount} actionBusy={actionBusy} onCreateInvoice={() => runAction(() => createInvoiceApi(session.sessionId), 'Đã lập hóa đơn cho phiên.')} onPay={handlePay} onReopen={handleReopen} onClose={handleClose} onPrint={() => setReceiptOpen(true)} />
+            )}
           </aside>
         </div>
       </main>
+
+      {order && (
+        <div className="xl:hidden fixed inset-x-0 bottom-0 z-30 border-t border-[var(--moc-line)] bg-[#fffdf8]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
+          <div className="min-w-0 text-sm">
+            <p className="font-semibold">{activeItems.reduce((total, item) => total + item.quantity, 0)} phần · {activeItems.filter((item) => item.kitchenStatus === 'DRAFT').length} chưa gửi bếp</p>
+            <p className="text-[#6f1d32] font-bold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount || 0)}</p>
+          </div>
+          <Button size="sm" onClick={() => document.getElementById('pos-order-panel')?.scrollIntoView({ behavior: 'smooth' })}>XEM ORDER</Button>
+        </div>
+      )}
+
+      <InvoiceReceiptModal session={session} order={order} isOpen={receiptOpen} onClose={() => setReceiptOpen(false)} />
+      {dialog && <ConfirmDialog key={dialog.title} isOpen {...dialog} onClose={() => setDialog(null)} />}
     </div>
   )
 }

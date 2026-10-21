@@ -91,7 +91,9 @@ Checkout online chỉ gửi `DELIVERY` hoặc `PICKUP`; `DINE_IN` không phải 
 |-------|---------|
 | `AVAILABLE` | Trống, sẵn sàng |
 | `RESERVED` | Đã được đặt trước |
-| `OCCUPIED` | Đang có khách |
+| `OCCUPIED` | Đang có khách (chỉ POS đặt) |
+| `CLEANING` | Chờ vệ sinh sau khi đóng phiên |
+| `MAINTENANCE` | Bảo trì, không nhận khách/đặt chỗ |
 
 ---
 
@@ -119,3 +121,34 @@ Checkout online chỉ gửi `DELIVERY` hoặc `PICKUP`; `DINE_IN` không phải 
 | `HIGH_PROTEIN` | Nhiều đạm |
 | `VEGETARIAN` | Chay |
 | `LOW_CARB` | Ít tinh bột |
+
+## KitchenItemStatus (Trạng thái món tại bếp)
+| Value | Ý nghĩa |
+|-------|---------|
+| `DRAFT` | Món nháp trong POS, chưa gửi bếp |
+| `SENT` | Món mới gửi xuống bếp |
+| `QUEUED` | Bếp đã nhận |
+| `PREPARING` | Đang chế biến |
+| `READY` | Hoàn thành, chờ phục vụ/bàn giao |
+| `SERVED` | Đã phục vụ |
+| `CANCELLED` | Đã hủy |
+
+## PosSessionStatus (Phiên phục vụ tại bàn)
+| Value | Ý nghĩa |
+|-------|---------|
+| `OPEN` | Đang gọi món |
+| `AWAITING_PAYMENT` | Đã lập hóa đơn, chờ thanh toán |
+| `CLOSED` | Đã đóng, bàn chờ vệ sinh |
+| `CANCELLED` | Hủy do mở nhầm |
+
+## InvoiceStatus (Hóa đơn tại bàn)
+| Value | Ý nghĩa |
+|-------|---------|
+| `OPEN` | Đã chốt, chờ thanh toán |
+| `PAID` | Đã thanh toán |
+| `VOID` | Đã hủy để gọi thêm món |
+
+## Role bổ sung
+| Value | `ma_vai_tro` | Ý nghĩa |
+|-------|-------------|---------|
+| `STAFF` | 2 | Nhân viên POS/bếp |

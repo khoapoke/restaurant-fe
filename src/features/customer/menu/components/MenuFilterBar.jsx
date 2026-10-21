@@ -121,11 +121,12 @@ export const MenuFilterBar = ({
         <button
           type="button"
           onClick={() => onSelectCategory(null)}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0
+          aria-pressed={selectedCategoryId === null}
+          className={`min-h-10 px-4 py-2 text-sm font-semibold transition-colors cursor-pointer select-none shrink-0
             ${
               selectedCategoryId === null
-                ? 'bg-amber-500 text-gray-950 shadow-md font-bold'
-                : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+                ? 'moc-inverse bg-[#6f1d32] border border-[#6f1d32] text-white font-bold'
+                : 'bg-[#fffdf8] border border-[var(--moc-line)] text-[#211b18] hover:border-[#6f1d32]/50 hover:text-[#6f1d32]'
             }`}
         >
           Tất cả thực đơn
@@ -136,11 +137,12 @@ export const MenuFilterBar = ({
             key={cat.categoryId}
             type="button"
             onClick={() => onSelectCategory(cat.categoryId)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0
+            aria-pressed={selectedCategoryId === cat.categoryId}
+            className={`min-h-10 px-4 py-2 text-sm font-semibold transition-colors cursor-pointer select-none shrink-0
               ${
                 selectedCategoryId === cat.categoryId
-                  ? 'bg-amber-500 text-gray-950 shadow-md font-bold'
-                  : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+                  ? 'moc-inverse bg-[#6f1d32] border border-[#6f1d32] text-white font-bold'
+                  : 'bg-[#fffdf8] border border-[var(--moc-line)] text-[#211b18] hover:border-[#6f1d32]/50 hover:text-[#6f1d32]'
               }`}
           >
             {cat.categoryName}

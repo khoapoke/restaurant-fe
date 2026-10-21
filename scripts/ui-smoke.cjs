@@ -1,4 +1,7 @@
-const { chromium } = require('playwright')
+const loadPlaywright = () => {
+  try { return require('playwright') } catch { return require('playwright-core') }
+}
+const { chromium } = loadPlaywright()
 
 const baseUrl = 'http://127.0.0.1:5173'
 

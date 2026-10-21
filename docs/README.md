@@ -46,6 +46,14 @@
 
 ---
 
+## 🍽️ Staff APIs (POS & Bếp)
+
+| File | Module | Endpoints chính |
+|------|--------|----------------|
+| [`api/staff-pos.md`](./api/staff-pos.md) | Sơ đồ bàn, phiên phục vụ, KDS, hóa đơn | `/staff/pos/*`, `/staff/kitchen/items`, `/staff/invoices/{id}/payments` |
+
+---
+
 ## 📝 Tài liệu hướng dẫn khác
 | File | Mô tả |
 |------|-------|

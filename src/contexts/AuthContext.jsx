@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- Context provider and hook intentionally share this module. */
-import { createContext, useContext, useState } from 'react'
-import { STORAGE_KEYS } from '../features/auth/constants'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { AUTH_EXPIRED_EVENT, STORAGE_KEYS } from '../features/auth/constants'
 import { loginApi, registerApi, logoutApi } from '../features/auth/services/authService'
 
 const AuthContext = createContext(null)
@@ -27,6 +27,19 @@ export const AuthProvider = ({ children }) => {
   })
 
   const [loading, setLoading] = useState(false)
+  const [authNotice, setAuthNotice] = useState(null)
+
+  useEffect(() => {
+    const handleExpired = (event) => {
+      setToken(null)
+      setUser(null)
+      setAuthNotice(event.detail?.reason === 'LOCKED'
+        ? 'Tài khoản của bạn đã bị quản trị viên khóa. Vui lòng liên hệ nhà hàng để được hỗ trợ.'
+        : 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+    }
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleExpired)
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpired)
+  }, [])
 
   const saveAuthData = (tokenValue, accountValue, remember = true) => {
     const storage = remember ? localStorage : sessionStorage
@@ -41,6 +54,7 @@ export const AuthProvider = ({ children }) => {
 
     setToken(tokenValue)
     setUser(accountValue)
+    setAuthNotice(null)
   }
 
   const clearAuthData = () => {
@@ -131,6 +145,8 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateUserProfile,
+        authNotice,
+        clearAuthNotice: () => setAuthNotice(null),
       }}
     >
       {children}

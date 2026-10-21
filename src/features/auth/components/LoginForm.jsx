@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
-import { Role } from '../constants'
+import { HOME_PATH_BY_ROLE, Role } from '../constants'
 import Input from '../../../components/ui/Input'
 import Button from '../../../components/ui/Button'
 import Alert from '../../../components/ui/Alert'
+import { apiErrorMessage, translateApiMessage } from '../../../lib/apiError'
 
 export const LoginForm = () => {
   const navigate = useNavigate()
-  const { login, loading } = useAuth()
+  const location = useLocation()
+  const { login, loading, authNotice, clearAuthNotice } = useAuth()
 
   const [formData, setFormData] = useState({
     username: '',
@@ -60,33 +62,37 @@ export const LoginForm = () => {
         rememberMe: formData.rememberMe,
       })
 
+      clearAuthNotice()
       const role = result.data?.account?.role
-      if (role === Role.ADMIN) {
-        navigate('/admin')
-      } else if (role === Role.STAFF) {
-        navigate('/staff/floor')
+      const from = location.state?.from
+      const allowedPrefix = { [Role.ADMIN]: ['/admin', '/staff'], [Role.STAFF]: ['/staff'], [Role.CUSTOMER]: ['/profile', '/cart', '/checkout', '/orders', '/reservations', '/menu'] }[role] || []
+      if (from && allowedPrefix.some((prefix) => from.startsWith(prefix))) {
+        navigate(from, { replace: true })
       } else {
-        navigate('/')
+        navigate(HOME_PATH_BY_ROLE[role] || '/', { replace: true })
       }
     } catch (err) {
       const responseData = err.response?.data
       if (err.response?.status === 401) {
-        setErrorMessage(
-          responseData?.message || 'Tên đăng nhập hoặc mật khẩu không chính xác, hoặc tài khoản đã bị khóa.'
-        )
+        setErrorMessage('Tên đăng nhập hoặc mật khẩu không chính xác.')
+      } else if (err.response?.status === 403) {
+        setErrorMessage(translateApiMessage(responseData?.message) || 'Tài khoản của bạn đã bị khóa.')
+      } else if (err.response?.status === 429) {
+        setErrorMessage('Bạn đã thử đăng nhập quá nhiều lần. Vui lòng đợi một phút rồi thử lại.')
       } else if (err.response?.status === 422 && responseData?.errors) {
         setFieldErrors(responseData.errors)
         setErrorMessage('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.')
       } else {
-        setErrorMessage(
-          responseData?.message || 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.'
-        )
+        setErrorMessage(apiErrorMessage(err, 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.'))
       }
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full">
+      {authNotice && !errorMessage && (
+        <Alert type="warning" message={authNotice} onClose={clearAuthNotice} />
+      )}
       {errorMessage && (
         <Alert
           type="error"

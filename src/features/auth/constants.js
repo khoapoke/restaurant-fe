@@ -18,3 +18,11 @@ export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'restaurant_access_token',
   ACCOUNT: 'restaurant_account',
 }
+
+export const AUTH_EXPIRED_EVENT = 'moc:auth-expired'
+
+export const HOME_PATH_BY_ROLE = {
+  ADMIN: '/admin',
+  STAFF: '/staff/floor',
+  CUSTOMER: '/',
+}

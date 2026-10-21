@@ -11,6 +11,7 @@ import {
 } from '../constants'
 import { FALLBACK_DISH_IMAGE } from '../../menu/constants'
 import { Loader2, AlertTriangle, QrCode, XCircle } from 'lucide-react'
+import OrderProgress from './OrderProgress'
 
 export const OrderDetailModal = ({
   orderId,
@@ -103,6 +104,8 @@ export const OrderDetailModal = ({
               </span>
             </div>
           </div>
+
+          <OrderProgress order={order} />
 
           {/* Thông tin giao hàng */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-gray-950/60 p-4 rounded-xl border border-gray-800/80">

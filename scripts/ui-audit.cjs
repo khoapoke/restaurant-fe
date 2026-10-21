@@ -1,4 +1,7 @@
-const { chromium } = require('playwright')
+const loadPlaywright = () => {
+  try { return require('playwright') } catch { return require('playwright-core') }
+}
+const { chromium } = loadPlaywright()
 const fs = require('fs')
 const path = require('path')
 
@@ -134,7 +137,11 @@ const main = async () => {
     localStorage.setItem('restaurant_access_token', token)
     localStorage.setItem('restaurant_account', JSON.stringify(account))
   }, { token: staffAuth.accessToken, account: staffAuth.account })
-  for (const [name, route] of [['staff-floor', '/staff/floor'], ['staff-session', '/staff/sessions/1'], ['staff-kitchen', '/staff/kitchen']]) {
+  const floorResponse = await fetch(`${apiUrl}/staff/pos/tables`, { headers: { Accept: 'application/json', Authorization: `Bearer ${staffAuth.accessToken}` } })
+  const activeSessionId = (await floorResponse.json()).data?.items?.find((table) => table.activeSession)?.activeSession?.sessionId
+  const staffRoutes = [['staff-floor', '/staff/floor'], ['staff-kitchen', '/staff/kitchen']]
+  if (activeSessionId) staffRoutes.splice(1, 0, ['staff-session', `/staff/sessions/${activeSessionId}`])
+  for (const [name, route] of staffRoutes) {
     results.push(await auditPage(staff, name, route))
   }
   await staff.close()
@@ -146,8 +153,17 @@ const main = async () => {
     localStorage.setItem('restaurant_account', JSON.stringify(account))
   }, { token: customerAuth.accessToken, account: customerAuth.account })
   await ensureCustomerCartHasItem(customerAuth.accessToken)
-  results.push(await auditPage(customer, 'customer-reservations', '/reservations'))
-  results.push(await auditPage(customer, 'customer-checkout', '/checkout'))
+  for (const [name, route] of [
+    ['customer-home', '/'],
+    ['customer-menu', '/menu'],
+    ['customer-cart', '/cart'],
+    ['customer-checkout', '/checkout'],
+    ['customer-orders', '/orders'],
+    ['customer-reservations', '/reservations'],
+    ['customer-profile', '/profile'],
+  ]) {
+    results.push(await auditPage(customer, name, route))
+  }
   await customer.close()
 
   const adminAuth = await login('admin', '123')

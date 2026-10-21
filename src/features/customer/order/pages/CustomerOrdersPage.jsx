@@ -18,6 +18,7 @@ import Skeleton from '../../../../components/ui/Skeleton'
 import Alert from '../../../../components/ui/Alert'
 import MocSiteHeader from '../../../../components/navigation/MocSiteHeader'
 import MocFooter from '../../../../components/navigation/MocFooter'
+import { apiErrorMessage } from '../../../../lib/apiError'
 
 export const CustomerOrdersPage = () => {
   const navigate = useNavigate()
@@ -44,11 +45,11 @@ export const CustomerOrdersPage = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await getOrdersApi()
+      const response = await getOrdersApi({ perPage: 50 })
       const data = response.data?.items || response.data || []
       setOrders(data)
     } catch (err) {
-      setError(err.response?.data?.message || 'Không thể tải lịch sử đơn hàng.')
+      setError(apiErrorMessage(err, 'Không thể tải lịch sử đơn hàng.'))
     } finally {
       setLoading(false)
     }
@@ -60,6 +61,18 @@ export const CustomerOrdersPage = () => {
   }, [isAuthenticated, fetchOrders])
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  // Tự cập nhật tiến độ khi còn đơn đang xử lý (bếp, giao hàng, chờ thanh toán)
+  useEffect(() => {
+    const hasActiveOrder = orders.some((order) => !['COMPLETED', 'CANCELLED'].includes(order.status))
+    if (!isAuthenticated || !hasActiveOrder) return undefined
+    const timer = window.setInterval(() => {
+      getOrdersApi({ perPage: 50 })
+        .then((response) => setOrders(response.data?.items || response.data || []))
+        .catch(() => {})
+    }, 20000)
+    return () => window.clearInterval(timer)
+  }, [isAuthenticated, orders])
+
   const filteredOrders = orders.filter((o) => {
     if (selectedStatus === 'ALL') return true
     return o.status === selectedStatus
@@ -70,7 +83,7 @@ export const CustomerOrdersPage = () => {
     { key: OrderStatus.PENDING_CONFIRMATION, label: 'Chờ xác nhận' },
     { key: OrderStatus.CONFIRMED, label: 'Đã xác nhận' },
     { key: OrderStatus.PREPARING, label: 'Bếp đang nấu' },
-    { key: OrderStatus.DELIVERING, label: 'Đang giao' },
+    { key: OrderStatus.READY, label: 'Sẵn sàng / đang giao' },
     { key: OrderStatus.COMPLETED, label: 'Hoàn thành' },
     { key: OrderStatus.CANCELLED, label: 'Đã hủy' },
   ]

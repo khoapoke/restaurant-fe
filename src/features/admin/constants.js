@@ -68,6 +68,44 @@ export const PAYMENT_STATUS_LABEL = {
   REFUNDED: 'Đã hoàn tiền',
 }
 
+export const PAYMENT_METHOD_LABEL = {
+  CASH: 'Tiền mặt',
+  BANK_TRANSFER_QR: 'Chuyển khoản QR',
+}
+
+export const PAYMENT_STATUS_TONE = {
+  UNPAID: 'bg-[#6f1d32]/8 text-[#6f1d32]',
+  PAID: 'bg-emerald-100 text-emerald-900',
+  FAILED: 'bg-red-100 text-red-800',
+  REFUNDED: 'bg-stone-200 text-stone-800',
+}
+
+export const ORDER_STATUS_TONE = {
+  PENDING_CONFIRMATION: 'bg-[#6f1d32] text-white moc-inverse',
+  CONFIRMED: 'bg-sky-100 text-sky-900',
+  PREPARING: 'bg-[#6f1d32]/10 text-[#6f1d32]',
+  READY: 'bg-emerald-100 text-emerald-900',
+  COMPLETED: 'bg-stone-200 text-stone-800',
+  CANCELLED: 'bg-red-100 text-red-800',
+}
+
+export const RESERVATION_STATUS_TONE = {
+  PENDING: 'bg-[#6f1d32] text-white moc-inverse',
+  CONFIRMED: 'bg-emerald-100 text-emerald-900',
+  COMPLETED: 'bg-sky-100 text-sky-900',
+  CANCELLED: 'bg-stone-200 text-stone-800',
+  REJECTED: 'bg-red-100 text-red-800',
+}
+
+/** Trạng thái bàn admin được đặt tay; RESERVED/OCCUPIED do đặt bàn và POS tự cập nhật. */
+export const MANUAL_TABLE_STATUSES = ['AVAILABLE', 'CLEANING', 'MAINTENANCE']
+
+export const ROLE_LABEL = {
+  ADMIN: 'Quản trị viên',
+  STAFF: 'Nhân viên',
+  CUSTOMER: 'Khách hàng',
+}
+
 export const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', {
   style: 'currency',
   currency: 'VND',

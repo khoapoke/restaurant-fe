@@ -134,7 +134,7 @@ export const WeatherRecommendationAccordion = ({
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     {dish.categoryName && (
-                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-xs font-semibold bg-[#251b19]/85 text-[#fff8ed] backdrop-blur-sm">
+                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-xs font-semibold bg-[#251b19] text-[#fff8ed] moc-inverse">
                         {dish.categoryName}
                       </span>
                     )}

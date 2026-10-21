@@ -45,15 +45,15 @@ export const DishPicker = ({ dishes, categories, onAdd, addingDishId, disabled }
           <div><UtensilsCrossed className="w-9 h-9 mx-auto text-[#6f1d32]" /><p className="mt-4 moc-serif text-2xl">Không tìm thấy món phù hợp</p></div>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 2xl:grid-cols-3 gap-px bg-[var(--moc-line)]">
+        <div className="grid grid-cols-2 2xl:grid-cols-3 gap-px bg-[var(--moc-line)]">
           {visibleDishes.map((dish) => (
-            <article key={dish.dishId} className="bg-[#fffdf8] p-4 flex flex-col">
+            <article key={dish.dishId} className="bg-[#fffdf8] p-3 sm:p-4 flex flex-col min-w-0">
               <img src={dish.imageUrl || FALLBACK_DISH_IMAGE} alt={dish.dishName} onError={(event) => { event.currentTarget.src = FALLBACK_DISH_IMAGE }} className="w-full aspect-[4/3] object-cover bg-[#eee7dc]" />
-              <p className="mt-3 text-sm font-semibold tracking-[0.05em] text-[#6f1d32]">{dish.categoryName}</p>
-              <h3 className="mt-1 text-base font-semibold leading-6 line-clamp-2">{dish.dishName}</h3>
-              <div className="mt-auto pt-4 flex items-center justify-between gap-3">
+              <p className="mt-3 text-xs sm:text-sm font-semibold tracking-[0.05em] text-[#6f1d32] truncate">{dish.categoryName}</p>
+              <h3 className="mt-1 text-sm sm:text-base font-semibold leading-5 sm:leading-6 line-clamp-2">{dish.dishName}</h3>
+              <div className="mt-auto pt-3 sm:pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
                 <strong className="text-base text-[#6f1d32]">{formatMoney(dish.price)}</strong>
-                <button type="button" disabled={disabled || addingDishId === dish.dishId} onClick={() => onAdd(dish)} className="min-h-10 px-4 bg-[#6f1d32] text-white moc-inverse text-sm font-bold hover:bg-[#49101f] disabled:opacity-50">
+                <button type="button" disabled={disabled || addingDishId === dish.dishId} onClick={() => onAdd(dish)} aria-label={`Thêm ${dish.dishName}`} className="min-h-10 px-4 bg-[#6f1d32] text-white moc-inverse text-sm font-bold hover:bg-[#49101f] disabled:opacity-50">
                   {addingDishId === dish.dishId ? 'ĐANG THÊM' : 'THÊM MÓN'}
                 </button>
               </div>

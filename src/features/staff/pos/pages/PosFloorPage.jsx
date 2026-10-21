@@ -11,6 +11,7 @@ import FloorSummary from '../components/FloorSummary'
 import TableCard from '../components/TableCard'
 import OpenSessionModal from '../components/OpenSessionModal'
 import { completeTableCleaningApi, getPosFloorApi, openPosSessionApi } from '../services/posService'
+import { apiErrorMessage } from '../../../../lib/apiError'
 
 const createIdempotencyKey = () =>
   globalThis.crypto?.randomUUID?.() || `pos-${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -23,6 +24,7 @@ export const PosFloorPage = () => {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(null)
   const [selectedTable, setSelectedTable] = useState(null)
+  const [selectedReservation, setSelectedReservation] = useState(null)
   const [opening, setOpening] = useState(false)
   const [openError, setOpenError] = useState(null)
   const [notice, setNotice] = useState(null)
@@ -41,7 +43,7 @@ export const PosFloorPage = () => {
       const response = await getPosFloorApi()
       setFloor(response.data)
     } catch (err) {
-      setError(err.response?.data?.message || 'Không thể tải sơ đồ bàn. Vui lòng thử lại.')
+      setError(apiErrorMessage(err, 'Không thể tải sơ đồ bàn. Vui lòng thử lại.'))
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -63,8 +65,13 @@ export const PosFloorPage = () => {
         if (active) setLoading(false)
       })
 
+    const timer = window.setInterval(() => {
+      getPosFloorApi().then((response) => active && setFloor(response.data)).catch(() => {})
+    }, 15000)
+
     return () => {
       active = false
+      window.clearInterval(timer)
     }
   }, [isAuthenticated, role])
 
@@ -84,12 +91,15 @@ export const PosFloorPage = () => {
       const response = await openPosSessionApi({
         tableIds: [selectedTable.tableId],
         guestCount,
+        reservationId: selectedReservation?.reservationId || null,
         idempotencyKey: createIdempotencyKey(),
       })
       setSelectedTable(null)
+      setSelectedReservation(null)
       navigate(`/staff/sessions/${response.data.sessionId}`)
     } catch (err) {
-      setOpenError(err.response?.data?.message || 'Không thể mở phiên phục vụ cho bàn này.')
+      setOpenError(apiErrorMessage(err, 'Không thể mở phiên phục vụ cho bàn này.'))
+      fetchFloor({ quiet: true })
     } finally {
       setOpening(false)
     }
@@ -103,7 +113,7 @@ export const PosFloorPage = () => {
       setNotice(`${table.tableName} đã vệ sinh xong và sẵn sàng đón khách.`)
       await fetchFloor({ quiet: true })
     } catch (err) {
-      setActionError(err.response?.data?.message || 'Không thể hoàn tất vệ sinh bàn này.')
+      setActionError(apiErrorMessage(err, 'Không thể hoàn tất vệ sinh bàn này.'))
     } finally {
       setCleaningTableId(null)
     }
@@ -118,7 +128,7 @@ export const PosFloorPage = () => {
             <span className="moc-eyebrow">SƠ ĐỒ VẬN HÀNH</span>
             <h1 className="mt-4 moc-serif text-4xl sm:text-5xl font-medium tracking-[-0.04em]">Chọn bàn để bắt đầu phục vụ.</h1>
           </div>
-          <p className="max-w-md text-sm leading-6 text-[#766e68]">Trạng thái bàn được đồng bộ từ dữ liệu thật. Chỉ bàn sẵn sàng mới có thể mở phiên mới.</p>
+          <p className="max-w-md text-sm leading-6 text-[#625a55]">Trạng thái bàn đồng bộ mỗi 15 giây. Bàn có khách đặt trong khung giờ sắp tới chỉ mở được cho đúng lượt đặt đó.</p>
         </div>
 
         {notice && <Alert type="success" message={notice} onClose={() => setNotice(null)} className="mb-6 bg-emerald-50 text-emerald-800" />}
@@ -154,14 +164,14 @@ export const PosFloorPage = () => {
             {Object.entries(groupedTables).map(([area, tables]) => (
               <section key={area}>
                 <div className="flex items-center gap-4 mb-4"><h2 className="moc-serif text-2xl font-medium">{area}</h2><span className="h-px flex-1 bg-[var(--moc-line)]" /><span className="text-sm text-[#766e68]">{tables.length} bàn</span></div>
-                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">{tables.map((table) => <TableCard key={table.tableId} table={table} onOpen={setSelectedTable} onContinue={(currentTable) => navigate(`/staff/sessions/${currentTable.activeSession.sessionId}`)} onCompleteCleaning={handleCompleteCleaning} cleaning={cleaningTableId === table.tableId} />)}</div>
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">{tables.map((table) => <TableCard key={table.tableId} table={table} onOpen={(currentTable) => { setOpenError(null); setSelectedReservation(null); setSelectedTable(currentTable) }} onSeatReservation={(currentTable) => { setOpenError(null); setSelectedReservation(currentTable.upcomingReservation); setSelectedTable(currentTable) }} onContinue={(currentTable) => navigate(`/staff/sessions/${currentTable.activeSession.sessionId}`)} onCompleteCleaning={handleCompleteCleaning} cleaning={cleaningTableId === table.tableId} />)}</div>
               </section>
             ))}
           </div>
         )}
       </main>
 
-      <OpenSessionModal key={selectedTable?.tableId || 'closed'} table={selectedTable} isOpen={!!selectedTable} onClose={() => !opening && setSelectedTable(null)} onConfirm={handleOpenSession} isSubmitting={opening} error={openError} />
+      <OpenSessionModal key={`${selectedTable?.tableId || 'closed'}-${selectedReservation?.reservationId || 'walk-in'}`} table={selectedTable} reservation={selectedReservation} isOpen={!!selectedTable} onClose={() => { if (!opening) { setSelectedTable(null); setSelectedReservation(null) } }} onConfirm={handleOpenSession} isSubmitting={opening} error={openError} />
     </div>
   )
 }
