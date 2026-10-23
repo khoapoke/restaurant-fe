@@ -89,3 +89,18 @@ Chi tiết tại [`live-dining.md`](./live-dining.md).
 - `GET /staff/pos/sessions/{id}` bổ sung `serviceRequests`, `liveDining`; mỗi món có `source` (`POS`/`TABLE_QR`), `sentAt`, `statusChangedAt`.
 - `GET /staff/kitchen/items` bổ sung `sla { warningMinutes, lateMinutes }`; mỗi món có `source` (`POS`/`TABLE_QR`/`ONLINE`), `sentAt`.
 - Lập hóa đơn → yêu cầu thanh toán `ACKNOWLEDGED`; thanh toán → `COMPLETED`; đóng/hủy phiên → yêu cầu mở `CANCELLED`.
+
+## Ngoại lệ tại POS & bếp (ADR-024, ADR-025)
+
+- Hủy/miễn/làm lại/đổi/tách món: `POST /staff/pos/order-items/{item}/void|waive|remake|exchange|split`. Món đã nấu: STAFF gửi `POST /staff/approvals` (`ITEM_VOID`), ADMIN duyệt.
+- Bếp: `POST /staff/kitchen/items/{item}/reject` (lý do, `markSoldOut`), `POST /staff/kitchen/items/{item}/undo` (≤ 120 giây). `GET /staff/kitchen/items` thêm `upcoming[]`.
+- Phiên: `PATCH /staff/pos/sessions/{id}/guest-count`, `POST /staff/pos/sessions/{id}/tables` (`releaseAs`), `GET /staff/pos/sessions/{id}/history`, `POST /staff/pos/sessions/{id}/write-off` (ADMIN).
+- Mở phiên thêm `overrideReason` (ADMIN, ngoài khung nhận khách), `relocationReason`, `releaseReservationId` (nhường bàn sau hạn giữ).
+- Khách đặt trễ: `POST /staff/pos/reservations/{id}/extend` (`minutes`, `reason`; 409 nếu bàn đã có phiên khách khác trong khoảng giữ mới — xếp khách đặt sang bàn khác), `POST /staff/pos/reservations/{id}/no-show` (`note`).
+- Thu tiền: tiền mặt ≤ số còn thiếu (+ `cashTendered`), chuyển khoản bắt buộc mã ≥ 6 ký tự; thu thiếu được, hóa đơn giữ `OPEN` tới khi đủ.
+- Gửi lại khoản thu (`usePendingPayment`): khóa + nội dung khoản đang gửi lưu ở `localStorage` (`moc.pos.payment.{invoiceId}`). Mất phản hồi / 5xx / 429 / hết giờ → giữ khoản, `BillingPanel` hiện "GỬI LẠI KHOẢN THU" (cùng khóa) hoặc "Bỏ khoản này" (xác nhận), tự gửi lại một lần sau khi tải trang; lỗi nghiệp vụ 4xx → xóa khoản. Cùng khóa khác số tiền/hình thức/hóa đơn → 409.
+- Kết thúc phiên không tính tiền: `POST /staff/pos/sessions/{id}/finish-without-charge` (`note`) khi mọi món đã xuống bếp bị hủy/từ chối; `SessionManagePanel` → "Kết thúc phiên (không tính tiền)".
+- Bếp: `PATCH /staff/kitchen/items/{id}/status` với món của đơn hẹn chưa tới giờ xuống bếp → 409 (quản lý cho làm sớm ở màn Đơn hàng).
+- UI: `ItemCorrectionModal`, `SessionManagePanel`, `ChangeTablesModal`, `AuditHistoryModal`, `OpenSessionModal` (mode `reservation|early|release|walkIn|checkIn`), thẻ bàn cảnh báo trễ/quá giờ, KDS "Không làm được"/"Hoàn tác", trang `/admin/approvals`.
+
+Đặc tả đầy đủ: `restaurant-lavarel/docs/laravel_restful_api_specifications.md` Phần E; chính sách: `restaurant-lavarel/docs/operations/exception-policies.md`.

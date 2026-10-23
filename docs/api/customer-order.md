@@ -159,3 +159,18 @@
 ### 4. Webhook nhận kết quả từ Cổng thanh toán
 - **Method & URL:** `POST /api/v1/webhooks/payment-callback`
 - **Ghi chú nghiệp vụ:** Tích hợp chuẩn VietQR/PayOS/SePay. Đối chiếu chữ ký HMAC và số tiền `so_tien` trước khi cập nhật `THANH_TOAN.trang_thai = PaymentStatus::PAID`.
+
+## Ngoại lệ phía khách (ADR-026, ADR-027)
+
+- Checkout gửi `expectedTotal` (tổng giỏ đang hiển thị). Giá đổi → `409`, `errors.reason = "PRICE_CHANGED"`, `errors.currentTotal`; UI hỏi "Đặt với giá mới".
+- `scheduledAt` cho giao và tự lấy: tương lai, ≤ 7 ngày, 10:00–22:00. Không hẹn khi bếp đã ngưng nhận đơn → 409.
+- Đơn tự lấy có `pickupCode` 4 số (đọc khi nhận, người lấy hộ dùng cùng mã).
+- `PATCH /customer/orders/{id}/recipient` sửa người nhận/SĐT/địa chỉ trước khi giao tài xế (`canEditRecipient`).
+- Đơn thêm `deliveryFailure`, `cancellation{reason, at, moneyDecision}`, `money{amountPaid, amountRefunded, outstanding, refundDue}`; dòng món đã hủy có `cancelled`, `cancelReason`.
+- Đơn tiền mặt đã xác nhận không đổi sang QR được (409).
+
+Đặc tả đầy đủ: `restaurant-lavarel/docs/laravel_restful_api_specifications.md` Phần E; chính sách: `restaurant-lavarel/docs/operations/exception-policies.md`.
+
+## Checkout chuyển khoản (sửa sau review G)
+
+Sau khi `POST /customer/orders/checkout` thành công với `BANK_TRANSFER_QR`, trang checkout giữ modal VietQR (không tự chuyển về giỏ dù giỏ đã rỗng). Đóng modal → `/orders` kèm thông báo "Đã tạo đơn #…. Bạn có thể quét lại mã VietQR trong chi tiết đơn nếu chưa thanh toán."

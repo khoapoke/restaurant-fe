@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -17,17 +17,25 @@ import QrPaymentModal from '../components/QrPaymentModal'
 import Input from '../../../../components/ui/Input'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
+import ConfirmDialog from '../../../../components/ui/ConfirmDialog'
+import { apiErrorMessage } from '../../../../lib/apiError'
 import MocSiteHeader from '../../../../components/navigation/MocSiteHeader'
 import MocFooter from '../../../../components/navigation/MocFooter'
+
+/** Giờ nhận gọi món (config/restaurant.php · hours). Backend kiểm tra lại mọi trường hợp. */
+const ORDER_HOURS = { opensAt: '10:00', lastOrderAt: '22:00' }
 
 export const CustomerCheckoutPage = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const { cart, loading: cartLoading, totalQuantity, estimatedTotalAmount, fetchCart } = useCart()
 
+  // Đơn vừa tạo: giỏ được làm rỗng nhưng khách vẫn ở bước thanh toán (modal QR) — không đá về giỏ.
+  const orderPlacedRef = useRef(false)
+
   useEffect(() => {
     if (!isAuthenticated) navigate('/login')
-    else if (!cartLoading && cart.cartId !== null && (!cart.items || cart.items.length === 0)) navigate('/cart')
+    else if (!orderPlacedRef.current && !cartLoading && cart.cartId !== null && (!cart.items || cart.items.length === 0)) navigate('/cart')
   }, [isAuthenticated, cart.cartId, cart.items, cartLoading, navigate])
 
   const [formData, setFormData] = useState({
@@ -46,11 +54,19 @@ export const CustomerCheckoutPage = () => {
   const [errorMessage, setErrorMessage] = useState(null)
   const [createdOrderId, setCreatedOrderId] = useState(null)
   const [showQrModal, setShowQrModal] = useState(false)
+  // Giá đổi giữa lúc xem giỏ và lúc đặt: hỏi khách xác nhận tổng mới (MNU-02).
+  const [priceChange, setPriceChange] = useState(null)
   const [minimumScheduledAt] = useState(() => {
     const earliestPickup = new Date()
     earliestPickup.setMinutes(earliestPickup.getMinutes() + 30)
     earliestPickup.setMinutes(earliestPickup.getMinutes() - earliestPickup.getTimezoneOffset())
     return earliestPickup.toISOString().slice(0, 16)
+  })
+  const [maximumScheduledAt] = useState(() => {
+    const latest = new Date()
+    latest.setDate(latest.getDate() + 7)
+    latest.setMinutes(latest.getMinutes() - latest.getTimezoneOffset())
+    return latest.toISOString().slice(0, 16)
   })
 
   const handleChange = (e) => {
@@ -66,18 +82,24 @@ export const CustomerCheckoutPage = () => {
     if (formData.fulfillmentType === FulfillmentType.DELIVERY && !formData.shippingAddress.trim()) {
       errs.shippingAddress = 'Vui lòng nhập địa chỉ giao hàng chi tiết'
     }
-    if (
-      formData.fulfillmentType === FulfillmentType.PICKUP &&
-      formData.pickupTiming === 'SCHEDULED' &&
-      !formData.scheduledAt
-    ) {
-      errs.scheduledAt = 'Vui lòng chọn thời gian dự kiến đến lấy món'
+    if (formData.pickupTiming === 'SCHEDULED' && !formData.scheduledAt) {
+      errs.scheduledAt = formData.fulfillmentType === FulfillmentType.PICKUP ? 'Vui lòng chọn thời gian dự kiến đến lấy món' : 'Vui lòng chọn giờ giao mong muốn'
+    }
+    if (formData.pickupTiming === 'SCHEDULED' && formData.scheduledAt) {
+      const time = formData.scheduledAt.slice(11, 16)
+      if (time < ORDER_HOURS.opensAt || time > ORDER_HOURS.lastOrderAt) {
+        errs.scheduledAt = `Vui lòng chọn giờ trong khoảng ${ORDER_HOURS.opensAt}–${ORDER_HOURS.lastOrderAt}`
+      }
     }
     return errs
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
+    await submitOrder(estimatedTotalAmount)
+  }
+
+  const submitOrder = async (expectedTotal) => {
     setErrorMessage(null)
     const errs = handleValidate()
     if (Object.keys(errs).length > 0) {
@@ -88,6 +110,7 @@ export const CustomerCheckoutPage = () => {
     setIsSubmitting(true)
     try {
       const response = await checkoutApi({
+        expectedTotal,
         fulfillmentType: formData.fulfillmentType,
         recipientName: formData.recipientName.trim(),
         recipientPhone: formData.recipientPhone.trim(),
@@ -95,30 +118,33 @@ export const CustomerCheckoutPage = () => {
           formData.fulfillmentType === FulfillmentType.DELIVERY
             ? formData.shippingAddress.trim()
             : undefined,
-        scheduledAt:
-          formData.fulfillmentType === FulfillmentType.PICKUP &&
-          formData.pickupTiming === 'SCHEDULED'
-            ? formData.scheduledAt
-            : undefined,
+        scheduledAt: formData.pickupTiming === 'SCHEDULED' ? formData.scheduledAt : undefined,
         paymentMethod: formData.paymentMethod,
         orderNote: formData.orderNote.trim() || undefined,
       })
 
       const newOrder = response.data
-      await fetchCart() // Đồng bộ xóa sạch giỏ hàng
-
+      orderPlacedRef.current = true
       if (formData.paymentMethod === PaymentMethod.BANK_TRANSFER_QR) {
         setCreatedOrderId(newOrder.orderId)
         setShowQrModal(true)
-      } else {
+      }
+      await fetchCart() // Đồng bộ xóa sạch giỏ hàng
+
+      // Chuyển khoản: modal QR đã mở ở trên; đóng modal → trang Đơn hàng để xem/thanh toán lại.
+      if (formData.paymentMethod !== PaymentMethod.BANK_TRANSFER_QR) {
         navigate('/orders', {
           state: { successMessage: `Đặt hàng thành công đơn #${newOrder.orderId}!` },
         })
       }
     } catch (err) {
-      setErrorMessage(
-        err.response?.data?.message || 'Không thể tạo đơn hàng. Vui lòng kiểm tra lại.'
-      )
+      const details = err.response?.data?.errors
+      if (err.response?.status === 409 && details?.reason === 'PRICE_CHANGED') {
+        await fetchCart()
+        setPriceChange(details)
+      } else {
+        setErrorMessage(apiErrorMessage(err, 'Không thể tạo đơn hàng. Vui lòng kiểm tra lại.'))
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -213,6 +239,22 @@ export const CustomerCheckoutPage = () => {
                     />
                   </div>
                 )}
+                {formData.fulfillmentType === FulfillmentType.DELIVERY && (
+                  <div className="sm:col-span-2 grid gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button type="button" onClick={() => setFormData((current) => ({ ...current, pickupTiming: 'ASAP', scheduledAt: '' }))} className={`min-h-10 border px-3 text-xs font-semibold ${formData.pickupTiming === 'ASAP' ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-gray-800 bg-gray-950 text-gray-400'}`}>Giao sớm nhất</button>
+                      <button type="button" onClick={() => setFormData((current) => ({ ...current, pickupTiming: 'SCHEDULED' }))} className={`min-h-10 border px-3 text-xs font-semibold ${formData.pickupTiming === 'SCHEDULED' ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-gray-800 bg-gray-950 text-gray-400'}`}>Hẹn giờ giao</button>
+                    </div>
+                    {formData.pickupTiming === 'SCHEDULED' && (
+                      <label className="block text-xs font-medium text-gray-300">
+                        <span className="mb-1.5 flex items-center gap-2"><CalendarClock className="h-4 w-4 text-amber-400" /> Giờ giao mong muốn</span>
+                        <input type="datetime-local" name="scheduledAt" value={formData.scheduledAt} min={minimumScheduledAt} max={maximumScheduledAt} onChange={handleChange} className="min-h-11 w-full border border-gray-800 bg-gray-950 px-3.5 text-sm text-gray-100 outline-none focus:border-amber-500" required />
+                        {errors.scheduledAt && <span className="mt-1 block text-[11px] text-red-400">{errors.scheduledAt}</span>}
+                      </label>
+                    )}
+                    <p className="text-[11px] leading-5 text-gray-400">Bếp nhận đơn {ORDER_HOURS.opensAt}–{ORDER_HOURS.lastOrderAt}, hẹn trước tối đa 7 ngày. Phí giao hàng: chưa áp dụng (0 ₫).</p>
+                  </div>
+                )}
                 {formData.fulfillmentType === FulfillmentType.PICKUP && (
                   <div className="sm:col-span-2 space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
                     <div className="flex items-start gap-3">
@@ -220,7 +262,7 @@ export const CustomerCheckoutPage = () => {
                       <div>
                         <p className="text-xs font-bold text-gray-100">Nhận món tại Mộc Dining</p>
                         <p className="mt-1 text-[11px] leading-5 text-gray-400">
-                          82 Nguyễn Du, Quận 1, TP.HCM · Vui lòng đọc mã đơn khi nhận món.
+                          82 Nguyễn Du, Quận 1, TP.HCM · Sau khi đặt, bạn nhận mã 4 số để đọc khi lấy món (người lấy hộ cũng dùng mã này).
                         </p>
                       </div>
                     </div>
@@ -250,6 +292,7 @@ export const CustomerCheckoutPage = () => {
                           name="scheduledAt"
                           value={formData.scheduledAt}
                           min={minimumScheduledAt}
+                          max={maximumScheduledAt}
                           onChange={handleChange}
                           className="min-h-11 w-full border border-gray-800 bg-gray-950 px-3.5 text-sm text-gray-100 outline-none focus:border-amber-500"
                           required
@@ -257,6 +300,7 @@ export const CustomerCheckoutPage = () => {
                         {errors.scheduledAt && <span className="mt-1 block text-[11px] text-red-400">{errors.scheduledAt}</span>}
                       </label>
                     )}
+                    <p className="text-[11px] leading-5 text-gray-400">Bếp nhận đơn {ORDER_HOURS.opensAt}–{ORDER_HOURS.lastOrderAt}. Món được giữ 60 phút sau giờ hẹn hoặc giờ sẵn sàng.</p>
                   </div>
                 )}
                 <div className="sm:col-span-2">
@@ -391,12 +435,25 @@ export const CustomerCheckoutPage = () => {
 
       <MocFooter />
 
+      <ConfirmDialog
+        key={priceChange ? `${priceChange.currentTotal}` : 'none'}
+        isOpen={!!priceChange}
+        title="Giá món vừa thay đổi"
+        description={priceChange ? `Tổng tiền hàng hiện là ${Number(priceChange.currentTotal).toLocaleString('vi-VN')} ₫ (trước đó ${Number(priceChange.expectedTotal).toLocaleString('vi-VN')} ₫). Giỏ hàng đã được cập nhật giá mới.` : ''}
+        details="Bạn có muốn đặt với tổng tiền mới không?"
+        confirmLabel="Đặt với giá mới"
+        cancelLabel="Xem lại giỏ"
+        onConfirm={async () => { const total = priceChange.currentTotal; setPriceChange(null); await submitOrder(total) }}
+        onClose={() => setPriceChange(null)}
+      />
       <QrPaymentModal
         orderId={createdOrderId}
         isOpen={showQrModal}
         onClose={() => {
           setShowQrModal(false)
-          navigate('/orders')
+          navigate('/orders', {
+            state: { successMessage: `Đã tạo đơn #${createdOrderId}. Bạn có thể quét lại mã VietQR trong chi tiết đơn nếu chưa thanh toán.` },
+          })
         }}
         onPaymentSuccess={() => {
           setShowQrModal(false)

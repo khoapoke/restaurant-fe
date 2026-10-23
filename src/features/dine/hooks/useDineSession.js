@@ -156,8 +156,8 @@ export const useDineSession = (tableToken) => {
     refresh()
   }, [rememberVisit, setData, refresh])
 
-  const submitOrder = useCallback(async (items, idempotencyKey) => {
-    const response = await submitTableOrderApi(tableToken, visitTokenRef.current, items, idempotencyKey)
+  const submitOrder = useCallback(async (items, idempotencyKey, expectedTotal = null) => {
+    const response = await submitTableOrderApi(tableToken, visitTokenRef.current, items, idempotencyKey, expectedTotal)
     applyLive(response.data.live)
     return response
   }, [tableToken, applyLive])

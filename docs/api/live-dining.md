@@ -100,3 +100,13 @@ Mọi thao tác trả `live` (snapshot mới) để UI cập nhật ngay, không
 
 - Backend: `tests/Feature/LiveDiningApiTest.php` (25 test, gồm mã bàn, khách bữa trước, khóa mã sai, replay sau khi lập hóa đơn, demo từ chối phiên ghép).
 - Browser E2E nhiều context: `node scripts/live-dining-e2e.cjs` (tự chạy `php artisan dining:demo --json` trước và sau): POS, khách mobile, thiết bị thứ hai vào bằng mã/link mời, mất phản hồi + reload (kiểm tra DB chỉ có 1 lượt), khách bữa trước không vào được bữa mới.
+
+## Bổ sung ngoại lệ (ADR-025, ADR-027)
+
+- `POST /public/dine/{token}/orders` nhận `expectedTotal`; giá đổi → 409 `PRICE_CHANGED` + `errors.prices[]`, món trả về giỏ với giá mới. Lượt đã nhận vẫn được xác nhận khi gửi lại cùng key.
+- Ngoài 10:00–22:00 không gửi được lượt mới (`entry.orderingOpen=false`, `entry.lastOrderAt`); hóa đơn và thanh toán vẫn bình thường.
+- Khi nhân viên chuyển bàn: `entry.movedTo{tableNames, tableToken}` trên QR bàn cũ; thẻ khách dùng được ở bàn mới.
+- Món bị hủy/từ chối: `status` `CANCELLED|REJECTED`, `cancelReason` (nhãn), `billedQuantity`; món làm lại `lineType=REMAKE`.
+- Nội dung chuyển khoản hóa đơn có phiên bản: `HD{id}V{n} THANH TOAN`; mã QR cũ sau khi lập lại không còn khớp hóa đơn mới.
+
+Đặc tả đầy đủ: `restaurant-lavarel/docs/laravel_restful_api_specifications.md` Phần E; chính sách: `restaurant-lavarel/docs/operations/exception-policies.md`.

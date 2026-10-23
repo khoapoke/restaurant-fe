@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Armchair, CalendarCheck, Check, Phone, RefreshCw, Search, UsersRound, X } from 'lucide-react'
+import { Armchair, CalendarCheck, Check, History, LockKeyhole, Pencil, Phone, RefreshCw, Search, UserX, UsersRound, X } from 'lucide-react'
+import AuditHistoryModal from '../../../components/ui/AuditHistoryModal'
+import Modal from '../../../components/ui/Modal'
+import { apiErrorMessage } from '../../../lib/apiError'
+import { AUDIT_ACTION_LABEL } from '../../staff/pos/constants'
 import Button from '../../../components/ui/Button'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import FeedbackBanner from '../../../components/ui/FeedbackBanner'
@@ -8,7 +12,7 @@ import Pagination from '../../../components/ui/Pagination'
 import { useApiResource } from '../../../lib/useApiResource'
 import AdminDataState from '../components/AdminDataState'
 import { RESERVATION_STATUS_LABEL, RESERVATION_STATUS_TONE, formatDateTime } from '../constants'
-import { getAdminReservationsApi, updateReservationStatusApi } from '../services/adminService'
+import { getAdminReservationsApi, getAdminTablesApi, getReservationHistoryApi, updateAdminReservationApi, updateReservationStatusApi } from '../services/adminService'
 
 const SCOPES = [
   { value: 'upcoming', label: 'Hôm nay & sắp tới' },
@@ -16,11 +20,80 @@ const SCOPES = [
   { value: 'all', label: 'Tất cả' },
 ]
 
+// COMPLETED không còn bấm tay: lượt đặt tự hoàn tất khi đóng phiên POS (ADR-025).
 const TRANSITIONS = {
-  CONFIRMED: { title: 'Xác nhận lượt đặt', confirmLabel: 'Xác nhận giữ bàn', success: 'Đã xác nhận và giữ bàn cho khách.', reason: { label: 'Ghi chú cho khách (không bắt buộc)', placeholder: 'Ví dụ: Đã giữ bàn cạnh cửa sổ', required: false } },
-  REJECTED: { title: 'Từ chối lượt đặt', tone: 'danger', confirmLabel: 'Từ chối', success: 'Đã từ chối lượt đặt.', reason: { label: 'Lý do từ chối', placeholder: 'Ví dụ: Khung giờ đã kín bàn', minLength: 3 } },
-  CANCELLED: { title: 'Hủy lượt đặt', tone: 'danger', confirmLabel: 'Hủy lịch', success: 'Đã hủy lượt đặt và giải phóng bàn.', reason: { label: 'Lý do hủy', placeholder: 'Ví dụ: Khách gọi điện báo hủy', minLength: 3 } },
-  COMPLETED: { title: 'Đánh dấu hoàn thành', confirmLabel: 'Hoàn thành', success: 'Đã đánh dấu lượt đặt hoàn thành.' },
+  CONFIRMED: { title: 'Xác nhận lượt đặt', confirmLabel: 'Xác nhận giữ bàn', success: 'Đã xác nhận và giữ bàn cho khách.', field: 'internalNote', reason: { label: 'Ghi chú nội bộ (khách không thấy)', placeholder: 'Ví dụ: Khách quen, chuẩn bị ghế trẻ em', required: false } },
+  REJECTED: { title: 'Từ chối lượt đặt', tone: 'danger', confirmLabel: 'Từ chối', success: 'Đã từ chối lượt đặt.', field: 'reason', reason: { label: 'Lý do gửi khách', placeholder: 'Ví dụ: Khung giờ đã kín bàn, mời anh/chị chọn 20:30', minLength: 3 } },
+  CANCELLED: { title: 'Hủy lượt đặt', tone: 'danger', confirmLabel: 'Hủy lịch', success: 'Đã hủy lượt đặt và giải phóng bàn.', field: 'reason', reason: { label: 'Lý do gửi khách', placeholder: 'Ví dụ: Bàn hỏng đột xuất, đã gọi xin lỗi khách', minLength: 3 } },
+  NO_SHOW: { title: 'Ghi khách không đến', tone: 'danger', confirmLabel: 'Ghi không đến', success: 'Đã ghi khách không đến và trả bàn.', field: 'reason', reason: { label: 'Ghi chú', placeholder: 'Ví dụ: Đã gọi 2 lần không liên lạc được', minLength: 3 } },
+}
+
+const toLocalInput = (value) => (value ? value.slice(0, 16) : '')
+
+/** Nhà hàng sửa giờ/bàn/số khách của lượt đặt (vd. bàn hỏng), có lý do, kiểm tra trùng lịch. */
+const EditReservationModal = ({ reservation, onClose, onDone }) => {
+  const [tables, setTables] = useState([])
+  const [time, setTime] = useState(toLocalInput(reservation.reservationTime))
+  const [tableId, setTableId] = useState(reservation.table?.tableId || '')
+  const [guestCount, setGuestCount] = useState(reservation.guestCount)
+  const [internalNote, setInternalNote] = useState('')
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    getAdminTablesApi().then((response) => active && setTables(response.data?.items || response.data || [])).catch(() => {})
+    return () => { active = false }
+  }, [])
+
+  const submit = async (event) => {
+    event.preventDefault()
+    if (reason.trim().length < 3) { setError('Nhập lý do thay đổi (tối thiểu 3 ký tự).'); return }
+    setSubmitting(true)
+    setError(null)
+    try {
+      await updateAdminReservationApi(reservation.reservationId, {
+        reservationTime: time ? `${time.replace('T', ' ')}:00` : null,
+        tableId: tableId ? Number(tableId) : null,
+        guestCount: Number(guestCount),
+        internalNote: internalNote.trim() || null,
+        reason: reason.trim(),
+      })
+      onDone(`Đã cập nhật lượt đặt #${reservation.reservationId}.`)
+    } catch (requestError) {
+      setError(apiErrorMessage(requestError))
+      setSubmitting(false)
+    }
+  }
+
+  const field = 'min-h-11 w-full border border-[var(--moc-line)] bg-white px-3 text-sm font-normal normal-case tracking-normal text-[#211b18]'
+  const label = 'grid gap-1.5 text-xs font-bold uppercase tracking-[0.08em] text-[#625a55]'
+
+  return (
+    <Modal isOpen onClose={() => !submitting && onClose()} title={`Sửa lượt đặt #${reservation.reservationId}`} maxWidth="max-w-lg">
+      <form onSubmit={submit} className="grid gap-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={label}>Giờ khách đến<input type="datetime-local" value={time} onChange={(event) => setTime(event.target.value)} className={field} /></label>
+          <label className={label}>Số khách<input type="number" min="1" max="50" value={guestCount} onChange={(event) => setGuestCount(event.target.value)} className={field} /></label>
+        </div>
+        <label className={label}>
+          Bàn
+          <select value={tableId} onChange={(event) => setTableId(event.target.value)} className={field}>
+            {tables.length === 0 && <option value={reservation.table?.tableId}>{reservation.table?.tableName}</option>}
+            {tables.map((table) => <option key={table.tableId} value={table.tableId}>{table.tableName} · {table.capacity} chỗ</option>)}
+          </select>
+        </label>
+        <label className={label}>Ghi chú nội bộ (khách không thấy)<input value={internalNote} onChange={(event) => setInternalNote(event.target.value)} maxLength={500} className={field} /></label>
+        <label className={label}>Lý do thay đổi<input value={reason} onChange={(event) => setReason(event.target.value)} maxLength={255} placeholder="Ví dụ: Bàn cũ hỏng, đã báo khách" className={field} /></label>
+        {error && <p className="border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800" role="alert">{error}</p>}
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose} disabled={submitting}>Quay lại</Button>
+          <Button type="submit" isLoading={submitting}>Lưu thay đổi</Button>
+        </div>
+      </form>
+    </Modal>
+  )
 }
 
 const selectClass = 'min-h-12 border border-[var(--moc-line)] bg-white px-4 text-sm text-[#211b18] outline-none focus:border-[#6f1d32]'
@@ -30,6 +103,8 @@ export const AdminReservationsPage = () => {
   const [filters, setFilters] = useState({ keyword: '', status: '', date: '', scope: 'upcoming', page: 1 })
   const [feedback, setFeedback] = useState(null)
   const [dialog, setDialog] = useState(null)
+  const [modal, setModal] = useState(null)
+  const loadHistory = useCallback(() => getReservationHistoryApi(modal?.reservation?.reservationId), [modal])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -58,7 +133,7 @@ export const AdminReservationsPage = () => {
       title: `${config.title} #${reservation.reservationId}`,
       description: `${reservation.customer?.fullName || reservation.customer?.username} · ${reservation.table?.tableName} · ${formatDateTime(reservation.reservationTime)} · ${reservation.guestCount} khách`,
       onConfirm: async (note) => {
-        await updateReservationStatusApi(reservation.reservationId, targetStatus, note || null)
+        await updateReservationStatusApi(reservation.reservationId, targetStatus, { [config.field]: note || null })
         setFeedback({ tone: 'success', message: config.success })
         reload({ quiet: true })
       },
@@ -118,7 +193,16 @@ export const AdminReservationsPage = () => {
                     <div><span className="text-xs font-semibold uppercase tracking-[0.06em] text-[#625a55]">Thời gian</span><p className="mt-1 font-semibold">{formatDateTime(reservation.reservationTime)}</p></div>
                     <div><span className="text-xs font-semibold uppercase tracking-[0.06em] text-[#625a55]">Bàn & số khách</span><p className="mt-1 flex items-center gap-1.5 font-semibold">{reservation.table?.tableName} · <UsersRound className="h-4 w-4" />{reservation.guestCount}</p></div>
                   </div>
-                  {reservation.note && <p className="mt-4 whitespace-pre-line text-sm leading-6 text-[#625a55]">{reservation.note}</p>}
+                  {reservation.note && <p className="mt-4 whitespace-pre-line text-sm leading-6 text-[#625a55]">Khách ghi chú: {reservation.note}</p>}
+                  {reservation.internalNote && <p className="mt-2 flex items-start gap-1.5 whitespace-pre-line border-l-2 border-[#6f1d32]/40 pl-3 text-sm leading-6 text-[#211b18]"><LockKeyhole className="mt-1 h-3.5 w-3.5 shrink-0 text-[#6f1d32]" />{reservation.internalNote}</p>}
+                  {reservation.hold && reservation.status === 'CONFIRMED' && !reservation.isSeated && (
+                    <p className={`mt-2 text-sm ${reservation.hold.holdExpired ? 'font-semibold text-[#8a1c1c]' : 'text-[#625a55]'}`}>
+                      Nhận khách {formatDateTime(reservation.hold.seatingOpensAt)} – {formatDateTime(reservation.hold.holdUntil)}{reservation.hold.holdExpired ? ' · đã quá hạn giữ bàn' : ''}
+                    </p>
+                  )}
+                  {reservation.extension && <p className="mt-1 text-sm text-[#625a55]">Gia hạn đến {formatDateTime(reservation.extension.until)} · {reservation.extension.reason}{reservation.extension.by ? ` · ${reservation.extension.by}` : ''}</p>}
+                  {reservation.resolution && ['REJECTED', 'CANCELLED', 'NO_SHOW', 'EXPIRED'].includes(reservation.status) && <p className="mt-1 text-sm text-[#8a1c1c]">{reservation.resolution.reason || '—'} · {reservation.resolution.by || 'Hệ thống'} · {formatDateTime(reservation.resolution.at)}</p>}
+                  {reservation.isSeated && reservation.actualGuestCount && reservation.actualGuestCount !== reservation.guestCount && <p className="mt-1 text-sm text-[#625a55]">Thực tế {reservation.actualGuestCount} khách · {reservation.seatedTables?.join(' + ')}</p>}
                   {actionable && (
                     <div className="mt-5 flex flex-wrap gap-2">
                       {reservation.status === 'PENDING' && <>
@@ -126,9 +210,11 @@ export const AdminReservationsPage = () => {
                         <Button size="sm" variant="outline" icon={X} onClick={() => transition(reservation, 'REJECTED')}>Từ chối</Button>
                       </>}
                       {reservation.status === 'CONFIRMED' && <>
-                        <Button size="sm" icon={Check} onClick={() => transition(reservation, 'COMPLETED')}>Hoàn thành</Button>
+                        {reservation.hold?.holdExpired && <Button size="sm" variant="outline" icon={UserX} onClick={() => transition(reservation, 'NO_SHOW')}>Không đến</Button>}
                         <Button size="sm" variant="outline" icon={X} onClick={() => transition(reservation, 'CANCELLED')}>Hủy lịch</Button>
                       </>}
+                      {['PENDING', 'CONFIRMED'].includes(reservation.status) && <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setModal({ kind: 'edit', reservation })}>Sửa</Button>}
+                      <Button size="sm" variant="ghost" icon={History} onClick={() => setModal({ kind: 'history', reservation })}>Lịch sử</Button>
                     </div>
                   )}
                   {reservation.isSeated && reservation.status === 'CONFIRMED' && <p className="mt-4 text-sm text-[#625a55]">Khách đang dùng bữa. Lượt đặt sẽ tự hoàn thành khi đóng phiên POS.</p>}
@@ -141,6 +227,8 @@ export const AdminReservationsPage = () => {
       </div>
 
       {dialog && <ConfirmDialog key={dialog.title} isOpen {...dialog} onClose={() => setDialog(null)} />}
+      {modal?.kind === 'edit' && <EditReservationModal reservation={modal.reservation} onClose={() => setModal(null)} onDone={(message) => { setModal(null); setFeedback({ tone: 'success', message }); reload({ quiet: true }) }} />}
+      {modal?.kind === 'history' && <AuditHistoryModal title={`Lịch sử lượt đặt #${modal.reservation.reservationId}`} load={loadHistory} actionLabels={AUDIT_ACTION_LABEL} onClose={() => setModal(null)} />}
     </div>
   )
 }

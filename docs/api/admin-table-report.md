@@ -83,8 +83,8 @@
       "completionRate": 33.33
     },
     "topSellingDishes": [
-      { "dishId": 4, "dishName": "Trà đào cam sả", "totalSold": 3, "revenue": 135000.00 },
-      { "dishId": 1, "dishName": "Súp bào ngư", "totalSold": 2, "revenue": 300000.00 }
+      { "dishId": 4, "dishName": "Trà đào cam sả", "totalSold": 3, "revenue": 135000.00, "preparedQuantity": 4, "freeQuantity": 1 },
+      { "dishId": 1, "dishName": "Súp bào ngư", "totalSold": 2, "revenue": 300000.00, "preparedQuantity": 2, "freeQuantity": 0 }
     ],
     "reservations": {
       "totalBookings": 3,
@@ -105,9 +105,17 @@
   }
 }
 ```
-- **Ghi chú nghiệp vụ:** Sử dụng Query Builder tổng hợp `DB::table('CHI_TIET_DON_HANG')->join('DON_HANG', ...)->selectRaw('SUM(so_luong) as totalSold, SUM(so_luong * don_gia) as revenue')->groupBy(...)` để đạt hiệu năng cao nhất trên SQL Server.
+- **Ghi chú nghiệp vụ:** Món bán chạy: `totalSold` = số phần **tính tiền**, `revenue` = Σ `billedAmount` (dòng làm lại 0 ₫, phần miễn, phần hủy không cộng); `preparedQuantity` = số phần bếp làm xong/phục vụ, `freeQuantity` = phần làm lại/miễn. Món không có phần tính tiền không vào danh sách. `finance.salesValue` đã trừ bồi hoàn, `finance.compensationValue` hiện riêng.
 
 ### Trường bổ sung của dashboard
 - `revenue.refundedAmount`, `revenue.averageOrderValue`, `revenue.byMethod.{CASH, BANK_TRANSFER_QR}`.
 - `orders.byFulfillmentType.{DELIVERY, PICKUP, DINE_IN}` (không tính đơn hủy/nháp).
 - `attention.{pendingOrders, readyForHandoff, refundsPending, reservationsToConfirm}` — số việc cần xử lý ngay (không phụ thuộc kỳ báo cáo).
+
+## Báo cáo tài chính & cảnh báo mới (ADR-023)
+
+- `finance`: giá trị bán (ngày đặt), tiền thực nhận (ngày tiền về), tiền hoàn (ngày hoàn), thực nhận ròng, chưa phân bổ, phải hoàn, khách còn nợ, giá trị đơn hủy, món hủy/miễn/làm lại, thất thu, tiền cũ không rõ ngày, `formula`.
+- `attention`: `refundsPending`, `transactionsToReview`, `approvalsPending`, `deliveryFailed`, `driverWaitTooLong`, `pickupOverdue` (bên cạnh chỉ số cũ).
+- `revenue.totalPaidRevenue` nay là tiền đã áp vào đơn bán (không tính đơn hủy, trừ khi giữ tiền).
+
+Đặc tả đầy đủ: `restaurant-lavarel/docs/laravel_restful_api_specifications.md` Phần E; chính sách: `restaurant-lavarel/docs/operations/exception-policies.md`.

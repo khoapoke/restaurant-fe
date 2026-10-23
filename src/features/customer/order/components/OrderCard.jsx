@@ -31,7 +31,7 @@ export const OrderCard = ({
 
   const isPending = order.status === 'PENDING_CONFIRMATION'
   const isUnpaid =
-    order.payment?.status === 'UNPAID' &&
+    ['UNPAID', 'PARTIALLY_PAID'].includes(order.payment?.status) &&
     order.payment?.paymentMethod === 'BANK_TRANSFER_QR' &&
     order.status !== 'CANCELLED'
 

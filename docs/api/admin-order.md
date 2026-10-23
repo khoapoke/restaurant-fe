@@ -22,9 +22,11 @@ Bộ lọc danh sách: `status`, `fulfillmentType` (`DELIVERY`/`PICKUP`/`DINE_IN
 ### Request Body (`PATCH /api/v1/admin/orders/{orderId}/status`)
 ```json
 {
-  "targetStatus": "PREPARING"
+  "targetStatus": "PREPARING",
+  "reason": "Khách gọi báo đến sớm 20 phút"
 }
 ```
+`reason` chỉ bắt buộc khi cho đơn hẹn giờ xuống bếp trước `kitchenReleaseAt` (`availableActions.startRequiresReason = true`); thiếu → 422, có → nhật ký `ORDER_STARTED_EARLY`. UI: màn Đơn hàng mở hộp thoại nhập lý do, thẻ đơn hiện "Tự xuống bếp lúc HH:mm".
 
 ### Response (Success - 200 OK)
 ```json
@@ -134,3 +136,21 @@ Dùng khi nhà hàng đã thấy tiền về trong ứng dụng ngân hàng như
 { "nextStatus": "PREPARING", "nextFulfillmentStatus": null, "canCancel": true, "awaitingQrPayment": false, "requiresRefund": false }
 ```
 Frontend chỉ hiển thị nút theo khối này. Đơn `DINE_IN` luôn không có thao tác (409 nếu gọi API) vì do POS/KDS điều phối. Không thể hủy đơn đang `OUT_FOR_DELIVERY`. Đổi trạng thái đơn online đồng bộ trạng thái món trên KDS (`PREPARING`, `READY`, hủy → `CANCELLED`, hoàn tất → `SERVED`).
+
+## Ngoại lệ giao hàng, tự lấy và tiền (ADR-023, ADR-026)
+
+- `PATCH /admin/orders/{id}/fulfillment-status`: `DELIVERY_FAILED` cần `failureReason` + `note`; `AWAITING_DRIVER` từ `DELIVERY_FAILED` = giao lại; `COLLECTED` cần `pickupCode` hoặc `verifiedPhone` (+ `collectedBy`).
+- `POST /admin/orders/{id}/cancel`: `cancelReason`, `reasonType`, `moneyDecision` (`RETAINED` chỉ khi lỗi do khách).
+- `PATCH /admin/orders/{id}/recipient` (lý do), `GET /admin/orders/{id}/history`, lọc `fulfillmentStatus`.
+- Thanh toán: `confirm` cần `transactionCode` ≥ 6 + `amount`/`receivedAt`; `refund` = "Ghi nhận đã hoàn tiền" (`amount`, `method`, `referenceCode`, `refundReason`, `refundedAt?`); sổ giao dịch `GET /admin/payments/transactions`, `…/{id}/refunds|allocate|resolve`.
+- UI: `OrderExceptionModals` (giao thất bại, bàn giao tự lấy, hủy có quyết định tiền, sửa người nhận), trang Thanh toán có tab "Sổ giao dịch tiền", `RefundRecordModal`.
+
+Đặc tả đầy đủ: `restaurant-lavarel/docs/laravel_restful_api_specifications.md` Phần E; chính sách: `restaurant-lavarel/docs/operations/exception-policies.md`.
+
+## Sửa sau review A–N (ADR-028)
+
+- `confirm`: định danh chuyển khoản theo ngân hàng + tài khoản nhận + mã — xác nhận tay rồi webhook của cùng khoản không ghi hai lần. Đơn đã đủ tiền vẫn ghi được khoản chuyển thêm (cờ `DUPLICATE`, chờ hoàn); phản hồi có `lastReceipt{transactionId, amount, applied, flag, reconciliation}`. UI: nút "Ghi nhận khoản chuyển thêm".
+- `refund` và `transactions/{id}/refunds`: thêm `refundType` (`REFUND` mặc định | `COMPENSATION`) và header `Idempotency-Key`. `RefundRecordModal` tạo một khóa cho mỗi lần mở; bấm lại sau mất phản hồi trả bản ghi cũ. Số tiền vượt `refundDue` (sổ giao dịch: `refundDueAmount`) phải chọn "Bồi hoàn cho khách" — backend 422 nếu không; bồi hoàn giảm `payableAmount`, hóa đơn giữ PAID.
+- `AdminPayment` thêm `payableAmount`, `compensationAmount`; `MoneyTransaction` thêm `refundDueAmount`, `refunds[].type`, `refunds[].fromAllocated`.
+- Review lần 2: một lần ghi hoàn trên giao dịch đã áp cho nhiều đơn sinh nhiều dòng `refunds[]` (mỗi đơn một dòng, phần chưa phân bổ một dòng, chung khóa). Sổ giao dịch hiện "Đã hoàn X · đơn #N" hoặc "(tiền chưa phân bổ)"; `amountRefunded` của từng đơn đúng phần của đơn đó. Chuyển khoản cùng dãy số tài khoản ở ngân hàng khác là khoản riêng, hiện "Cần xem xét" kèm ghi chú đối soát.
+- `AdminOrder` thêm `kitchenReleaseAt`, `awaitingKitchenRelease`, `availableActions.startRequiresReason`.

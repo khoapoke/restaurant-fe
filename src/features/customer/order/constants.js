@@ -77,6 +77,7 @@ export const FULFILLMENT_STATUS_CONFIG = {
   COLLECTED: { label: 'Khách đã nhận món', color: 'text-emerald-800' },
   SERVING: { label: 'Đang phục vụ tại bàn', color: 'text-amber-400' },
   SERVED: { label: 'Đã phục vụ', color: 'text-emerald-800' },
+  DELIVERY_FAILED: { label: 'Giao chưa thành công', color: 'text-red-800' },
 }
 
 export const PaymentMethod = {
@@ -100,5 +101,7 @@ export const PAYMENT_STATUS_CONFIG = {
   UNPAID: { label: 'Chưa thanh toán', color: 'text-amber-400', bg: 'bg-amber-500/10' },
   PAID: { label: 'Đã thanh toán', color: 'text-emerald-800', bg: 'bg-emerald-50' },
   REFUNDED: { label: 'Đã hoàn tiền', color: 'text-purple-800', bg: 'bg-purple-50' },
+  PARTIALLY_PAID: { label: 'Đã thanh toán một phần', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+  PARTIALLY_REFUNDED: { label: 'Đã hoàn một phần', color: 'text-purple-800', bg: 'bg-purple-50' },
   FAILED: { label: 'Thanh toán lỗi', color: 'text-red-800', bg: 'bg-red-50' },
 }

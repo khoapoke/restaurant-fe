@@ -14,6 +14,7 @@ import FloorSummary from '../components/FloorSummary'
 import TableCard from '../components/TableCard'
 import OpenSessionModal from '../components/OpenSessionModal'
 import LiveQueuePanel from '../components/LiveQueuePanel'
+import { useAuth } from '../../../../contexts/AuthContext'
 import { TableStatus, tableSignals } from '../constants'
 import {
   acceptCheckInApi,
@@ -22,8 +23,11 @@ import {
   completeTableCleaningApi,
   getLiveQueueApi,
   getPosFloorApi,
+  createApprovalApi,
+  extendReservationApi,
   getTableQrApi,
-  openPosSessionApi,
+  markReservationNoShowApi,
+  openSessionWithOptionsApi,
   rejectCheckInApi,
 } from '../services/posService'
 
@@ -36,6 +40,7 @@ const FILTERS = [
   { key: 'OCCUPIED', label: 'Đang phục vụ', match: (table) => table.status === TableStatus.OCCUPIED },
   { key: 'AVAILABLE', label: 'Còn trống', match: (table) => table.status === TableStatus.AVAILABLE },
   { key: 'RESERVED', label: 'Đặt trước', match: (table) => table.status === TableStatus.RESERVED || !!table.upcomingReservation },
+  { key: 'LATE', label: 'Khách trễ / quá giờ', match: (table) => (table.upcomingReservation?.minutesLate || 0) > 0 || !!table.activeSession?.overdue || !!table.activeSession?.nextReservation?.atRisk },
   { key: 'CLEANING', label: 'Chờ vệ sinh', match: (table) => table.status === TableStatus.CLEANING },
 ]
 
@@ -61,6 +66,9 @@ export const PosFloorPage = () => {
   const [busyKey, setBusyKey] = useState(null)
   const [rejecting, setRejecting] = useState(null)
   const [qrModal, setQrModal] = useState(null)
+  const [reservationDialog, setReservationDialog] = useState(null)
+  const { role } = useAuth()
+  const isAdmin = role === 'ADMIN'
 
   const refreshAll = useCallback(() => {
     refreshFloor()
@@ -88,12 +96,27 @@ export const PosFloorPage = () => {
     setOpening(true)
     setOpenError(null)
     try {
+      if (options.requestApproval) {
+        await createApprovalApi({
+          type: 'SEAT_OUTSIDE_WINDOW',
+          targetId: options.reservationId,
+          reason: options.reason,
+          payload: { tableIds: options.tableIds, guestCount, relocationReason: options.relocationReason },
+        })
+        setSelected(null)
+        setNotice('Đã gửi yêu cầu nhận khách ngoài khung giờ cho quản lý duyệt.')
+        refreshAll()
+        return
+      }
       const response = selected.mode === 'checkIn'
         ? await acceptCheckInApi(selected.checkIn.visitId, { guestCount, reservationId: options.reservationId || null })
-        : await openPosSessionApi({
-          tableIds: [selected.table.tableId],
+        : await openSessionWithOptionsApi({
+          tableIds: options.tableIds?.length ? options.tableIds : [selected.table.tableId],
           guestCount,
-          reservationId: selected.mode === 'reservation' ? selected.table.upcomingReservation?.reservationId : null,
+          reservationId: options.reservationId || null,
+          relocationReason: options.relocationReason || null,
+          overrideReason: options.overrideReason || null,
+          releaseReservationId: options.releaseReservationId || null,
           idempotencyKey: createIdempotencyKey(),
         })
       setSelected(null)
@@ -234,6 +257,10 @@ export const PosFloorPage = () => {
                       now={now}
                       onOpen={(current) => openModal(current, 'walkIn')}
                       onSeatReservation={(current) => openModal(current, 'reservation')}
+                      onSeatEarly={(current) => openModal(current, 'early')}
+                      onRelease={(current) => openModal(current, 'release')}
+                      onExtend={(current) => setReservationDialog({ kind: 'extend', table: current })}
+                      onNoShow={(current) => setReservationDialog({ kind: 'noShow', table: current })}
                       onAcceptCheckIn={(current) => openModal(current, 'checkIn', { checkIn: current.pendingCheckIn })}
                       onContinue={(current) => navigate(`/staff/sessions/${current.activeSession.sessionId}`)}
                       onCompleteCleaning={handleCompleteCleaning}
@@ -251,7 +278,10 @@ export const PosFloorPage = () => {
       <OpenSessionModal
         key={`${selected?.table?.tableId || 'closed'}-${selected?.mode || ''}-${selected?.checkIn?.visitId || ''}`}
         table={selected?.table}
-        reservation={selected?.mode === 'reservation' ? selected.table.upcomingReservation : null}
+        mode={selected?.mode}
+        isAdmin={isAdmin}
+        freeTables={tables.filter((candidate) => [TableStatus.AVAILABLE, TableStatus.RESERVED].includes(candidate.status) && !candidate.activeSession && candidate.tableId !== selected?.table?.tableId)}
+        reservation={['reservation', 'early', 'release'].includes(selected?.mode) ? selected.table.upcomingReservation : null}
         checkIn={selected?.mode === 'checkIn' ? selected.checkIn : null}
         isOpen={!!selected}
         onClose={() => { if (!opening) setSelected(null) }}
@@ -273,6 +303,25 @@ export const PosFloorPage = () => {
           refreshAll()
         }}
         onClose={() => setRejecting(null)}
+      />
+      <ConfirmDialog
+        key={`${reservationDialog?.kind || 'none'}-${reservationDialog?.table?.tableId || ''}`}
+        isOpen={!!reservationDialog}
+        tone={reservationDialog?.kind === 'noShow' ? 'danger' : 'primary'}
+        title={reservationDialog?.kind === 'noShow' ? `Ghi khách không đến · ${reservationDialog?.table?.tableName || ''}` : `Gia hạn giữ bàn 15 phút · ${reservationDialog?.table?.tableName || ''}`}
+        description={reservationDialog?.kind === 'noShow'
+          ? `Lượt đặt #${reservationDialog?.table?.upcomingReservation?.reservationId} sẽ được ghi “Không đến” và bàn trả lại cho khách khác.`
+          : 'Chỉ gia hạn khi khách đã báo đến trễ. Tổng gia hạn tối đa 30 phút sau hạn giữ bàn và không được chạm lượt đặt kế tiếp.'}
+        confirmLabel={reservationDialog?.kind === 'noShow' ? 'Ghi không đến' : 'Gia hạn 15 phút'}
+        reason={{ label: reservationDialog?.kind === 'noShow' ? 'Ghi chú (đã liên hệ khách chưa?)' : 'Lý do gia hạn', placeholder: reservationDialog?.kind === 'noShow' ? 'Ví dụ: Gọi 2 lần không nghe máy' : 'Ví dụ: Khách gọi báo kẹt xe, đến lúc 19:30', minLength: 3, maxLength: 255 }}
+        onConfirm={async (reason) => {
+          const reservationId = reservationDialog.table.upcomingReservation.reservationId
+          if (reservationDialog.kind === 'noShow') await markReservationNoShowApi(reservationId, reason)
+          else await extendReservationApi(reservationId, 15, reason)
+          setNotice(reservationDialog.kind === 'noShow' ? `Đã ghi lượt đặt #${reservationId} không đến.` : `Đã gia hạn giữ bàn cho lượt đặt #${reservationId}.`)
+          refreshFloor()
+        }}
+        onClose={() => setReservationDialog(null)}
       />
       <TableQrModal isOpen={!!qrModal} onClose={() => setQrModal(null)} tableName={qrModal?.tableName} url={qrModal?.url} issuedAt={qrModal?.issuedAt} />
     </div>

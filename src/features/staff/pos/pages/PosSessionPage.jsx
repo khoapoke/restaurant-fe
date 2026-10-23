@@ -7,12 +7,16 @@ import ConfirmDialog from '../../../../components/ui/ConfirmDialog'
 import Skeleton from '../../../../components/ui/Skeleton'
 import { apiErrorMessage } from '../../../../lib/apiError'
 import { getCategoriesApi, getDishesApi } from '../../../customer/menu/services/menuService'
+import { useAuth } from '../../../../contexts/AuthContext'
 import BillingPanel from '../components/BillingPanel'
 import DishPicker from '../components/DishPicker'
 import InvoiceReceiptModal from '../components/InvoiceReceiptModal'
+import ItemCorrectionModal from '../components/ItemCorrectionModal'
 import PosHeader from '../components/PosHeader'
 import PosOrderPanel from '../components/PosOrderPanel'
 import SessionLivePanel from '../components/SessionLivePanel'
+import SessionManagePanel from '../components/SessionManagePanel'
+import usePendingPayment from '../hooks/usePendingPayment'
 import {
   addPosOrderItemApi,
   cancelPosSessionApi,
@@ -22,7 +26,7 @@ import {
   deletePosOrderItemApi,
   getPosSessionApi,
   payInvoiceApi,
-  reopenPosSessionApi,
+  reopenWithReasonApi,
   sendOrderToKitchenApi,
   updatePosOrderItemApi,
 } from '../services/posService'
@@ -37,6 +41,9 @@ const LOCKED_MESSAGE = {
   CLOSED: 'Phiên đã đóng. Bàn đang chờ vệ sinh trên sơ đồ.',
   CANCELLED: 'Phiên đã hủy.',
 }
+
+const CLOSED_BY_WRITE_OFF = 'Phiên đã đóng với khoản thất thu do quản lý duyệt.'
+const CLOSED_NO_CHARGE = 'Phiên đã kết thúc không phát sinh tiền (mọi món đã hủy hoặc bếp từ chối).'
 
 export const PosSessionPage = () => {
   const { sessionId } = useParams()
@@ -53,6 +60,9 @@ export const PosSessionPage = () => {
   const [busyItemId, setBusyItemId] = useState(null)
   const [dialog, setDialog] = useState(null)
   const [receiptOpen, setReceiptOpen] = useState(false)
+  const [correcting, setCorrecting] = useState(null)
+  const { user, role } = useAuth()
+  const isAdmin = role === 'ADMIN'
 
   const loadSession = useCallback(async ({ quiet = false } = {}) => {
     if (quiet) setRefreshing(true)
@@ -107,6 +117,7 @@ export const PosSessionPage = () => {
   const activeItems = order?.items?.filter((item) => !['CANCELLED', 'REJECTED'].includes(item.kitchenStatus)) || []
   const unfinishedCount = activeItems.filter((item) => !['READY', 'SERVED'].includes(item.kitchenStatus)).length
   const canCancelSession = session?.status === 'OPEN' && activeItems.every((item) => item.kitchenStatus === 'DRAFT')
+    && !(order?.items || []).some((item) => ['CANCELLED', 'REJECTED'].includes(item.kitchenStatus) && item.billedQuantity > 0)
 
   const handleAddDish = async (dish) => {
     if (!order || sessionLocked) return
@@ -149,17 +160,44 @@ export const PosSessionPage = () => {
     },
   })
 
-  const handlePay = (payload) => runAction(
-    () => payInvoiceApi(session.invoice.invoiceId, { ...payload, idempotencyKey: createRequestId('payment') }),
-    payload.method === 'CASH' ? 'Đã ghi nhận thanh toán tiền mặt.' : 'Đã ghi nhận chuyển khoản QR.'
-  )
+  const currentInvoiceId = session?.invoice && session.invoice.status !== 'VOID' ? session.invoice.invoiceId : null
+  const payment = usePendingPayment({
+    invoiceId: currentInvoiceId,
+    submit: useCallback((payload, key) => payInvoiceApi(currentInvoiceId, { ...payload, idempotencyKey: key }), [currentInvoiceId]),
+    onRecorded: useCallback((payload, wasRetry) => {
+      setError(null)
+      setNotice(`${wasRetry ? 'Đã xác nhận với máy chủ: ' : ''}${payload.method === 'CASH'
+        ? (payload.cashTendered > payload.amount ? `Đã ghi nhận ${payload.amount.toLocaleString('vi-VN')} ₫ tiền mặt. Thối lại khách ${(payload.cashTendered - payload.amount).toLocaleString('vi-VN')} ₫.` : 'Đã ghi nhận thanh toán tiền mặt.')
+        : 'Đã ghi nhận chuyển khoản.'}`)
+      loadSession({ quiet: true })
+    }, [loadSession]),
+    onRejected: useCallback((message) => {
+      setNotice(null)
+      setError(message)
+      loadSession({ quiet: true })
+    }, [loadSession]),
+  })
+
+  const handlePay = (payload) => payment.collect(payload)
+
+  const discardPendingPayment = () => setDialog({
+    title: 'Bỏ khoản thu chưa rõ kết quả',
+    tone: 'danger',
+    description: `Chỉ bỏ khi đã kiểm tra số "Đã thu" của hóa đơn không bao gồm khoản ${Number(payment.pending?.payload?.amount || 0).toLocaleString('vi-VN')} ₫ này (ví dụ khách chưa đưa tiền).`,
+    confirmLabel: 'Bỏ khoản thu này',
+    onConfirm: async () => {
+      payment.discard()
+      setNotice('Đã bỏ khoản thu chưa rõ kết quả. Bạn có thể thu lại như một khoản mới.')
+    },
+  })
 
   const handleReopen = () => setDialog({
     title: 'Gọi thêm món',
-    description: 'Hóa đơn hiện tại sẽ được hủy để thêm món. Sau khi gửi bếp, hãy lập lại hóa đơn với tổng tiền mới.',
+    description: 'Bản hóa đơn hiện tại sẽ bị hủy (mã QR cũ hết hiệu lực) để thêm món. Tiền khách đã trả được giữ nguyên và trừ vào hóa đơn mới.',
     confirmLabel: 'Mở lại để gọi thêm',
-    onConfirm: async () => {
-      await reopenPosSessionApi(session.sessionId)
+    reason: { label: 'Lý do', placeholder: 'Ví dụ: Khách gọi thêm 2 ly trà', required: false, maxLength: 255 },
+    onConfirm: async (reason) => {
+      await reopenWithReasonApi(session.sessionId, reason || 'Khách gọi thêm món')
       await loadSession({ quiet: true })
       setNotice('Đã mở lại phiên. Khách có thể gọi thêm món.')
     },
@@ -223,16 +261,26 @@ export const PosSessionPage = () => {
 
         {['OPEN', 'AWAITING_PAYMENT'].includes(session.status) && <SessionLivePanel session={session} onChanged={() => loadSession({ quiet: true })} />}
 
+        <SessionManagePanel
+          session={session}
+          isAdmin={isAdmin}
+          currentUserId={user?.accountId}
+          outstanding={Number(session.invoice && session.invoice.status !== 'VOID' ? session.invoice.outstanding : order?.totalAmount || 0)}
+          onChanged={() => loadSession({ quiet: true })}
+          onNotice={(message) => { setError(null); setNotice(message) }}
+          onError={setError}
+        />
+
         {error && <Alert type="error" message={error} onClose={() => setError(null)} className="mb-5" />}
         {notice && <Alert type="success" message={notice} onClose={() => setNotice(null)} className="mb-5" />}
-        {sessionLocked && <Alert type="info" message={LOCKED_MESSAGE[session.status] || 'Phiên đang tạm khóa.'} className="mb-5" />}
+        {sessionLocked && <Alert type="info" message={session.endType === 'WRITE_OFF' ? CLOSED_BY_WRITE_OFF : session.endType === 'NO_CHARGE' ? CLOSED_NO_CHARGE : LOCKED_MESSAGE[session.status] || 'Phiên đang tạm khóa.'} className="mb-5" />}
 
         <div className="min-w-0 grid xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,.75fr)] gap-5 items-start">
           <DishPicker dishes={dishes} categories={categories} onAdd={handleAddDish} addingDishId={addingDishId} disabled={!order || sessionLocked} />
           <aside id="pos-order-panel" className="min-w-0 space-y-5 scroll-mt-28 xl:sticky xl:top-[106px]">
-            <PosOrderPanel order={order} onCreateOrder={() => runAction(() => createPosOrderApi(session.sessionId), 'Đã tạo order cho bàn.')} onChangeQuantity={(item, quantity) => handleItemAction(item, () => updatePosOrderItemApi(item.itemId, { quantity }), 'Đã cập nhật số lượng.')} onRemove={(item) => handleItemAction(item, () => deletePosOrderItemApi(item.itemId), `Đã xóa ${item.dishName}.`)} onEditNote={editNote} onSendKitchen={(itemIds) => runAction(() => sendOrderToKitchenApi(order.orderId, itemIds), `Đã gửi ${itemIds.length} món xuống bếp.`)} busyItemId={busyItemId} actionBusy={actionBusy} sessionLocked={sessionLocked} />
+            <PosOrderPanel order={order} onCreateOrder={() => runAction(() => createPosOrderApi(session.sessionId), 'Đã tạo order cho bàn.')} onChangeQuantity={(item, quantity) => handleItemAction(item, () => updatePosOrderItemApi(item.itemId, { quantity }), 'Đã cập nhật số lượng.')} onRemove={(item) => handleItemAction(item, () => deletePosOrderItemApi(item.itemId), `Đã xóa ${item.dishName}.`)} onEditNote={editNote} onSendKitchen={(itemIds) => runAction(() => sendOrderToKitchenApi(order.orderId, itemIds), `Đã gửi ${itemIds.length} món xuống bếp.`)} onCorrect={setCorrecting} correctionsEnabled={['OPEN', 'AWAITING_PAYMENT'].includes(session.status)} busyItemId={busyItemId} actionBusy={actionBusy} sessionLocked={sessionLocked} />
             {['OPEN', 'AWAITING_PAYMENT'].includes(session.status) && (
-              <BillingPanel key={session.invoice?.invoiceId ? `${session.invoice.invoiceId}-${session.invoice.status}` : 'no-invoice'} session={session} order={order} unfinishedCount={unfinishedCount} actionBusy={actionBusy} onCreateInvoice={() => runAction(() => createInvoiceApi(session.sessionId), 'Đã lập hóa đơn cho phiên.')} onPay={handlePay} onReopen={handleReopen} onClose={handleClose} onPrint={() => setReceiptOpen(true)} />
+              <BillingPanel key={session.invoice?.invoiceId ? `${session.invoice.invoiceId}-${session.invoice.status}` : 'no-invoice'} session={session} order={order} unfinishedCount={unfinishedCount} actionBusy={actionBusy} onCreateInvoice={() => runAction(() => createInvoiceApi(session.sessionId), 'Đã lập hóa đơn cho phiên.')} onPay={handlePay} pendingPayment={payment.pending} paymentSending={payment.sending} onRetryPending={payment.retry} onDiscardPending={discardPendingPayment} onReopen={handleReopen} onClose={handleClose} onPrint={() => setReceiptOpen(true)} />
             )}
           </aside>
         </div>
@@ -250,6 +298,16 @@ export const PosSessionPage = () => {
 
       <InvoiceReceiptModal session={session} order={order} isOpen={receiptOpen} onClose={() => setReceiptOpen(false)} />
       {dialog && <ConfirmDialog key={dialog.title} isOpen {...dialog} onClose={() => setDialog(null)} />}
+      {correcting && (
+        <ItemCorrectionModal
+          key={correcting.itemId}
+          item={correcting}
+          dishes={dishes}
+          isAdmin={isAdmin}
+          onClose={() => setCorrecting(null)}
+          onDone={(message) => { setCorrecting(null); setError(null); setNotice(message); loadSession({ quiet: true }) }}
+        />
+      )}
     </div>
   )
 }

@@ -56,6 +56,12 @@ const TrackedItem = ({ item, sentAt, now, sla }) => {
             </p>
           )}
           {item.status === 'READY' && <p className="mt-1.5 text-sm font-semibold text-[#14532d]">Món đã xong, nhân viên đang mang ra bàn.</p>}
+          {['CANCELLED', 'REJECTED'].includes(item.status) && (
+            <p className="mt-1.5 text-sm text-[#8a1c1c]">
+              {item.cancelReason ? `${item.cancelReason} · ` : ''}{item.billedQuantity > 0 ? 'vẫn tính tiền theo quy định' : 'không tính tiền'}
+            </p>
+          )}
+          {item.lineType === 'REMAKE' && <p className="mt-1.5 text-sm text-[#6b4a12]">Bếp làm lại món này cho bạn, không tính thêm tiền.</p>}
         </div>
       </div>
       <StepTrack status={item.status} />

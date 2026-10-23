@@ -3,7 +3,7 @@ const loadPlaywright = () => {
 }
 const { chromium } = loadPlaywright()
 
-const baseUrl = 'http://127.0.0.1:5173'
+const baseUrl = process.env.APP_URL || 'http://127.0.0.1:5173'
 
 const expectPath = (page, expected) => {
   const actual = new URL(page.url()).pathname
@@ -15,6 +15,14 @@ const main = async () => {
     executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     headless: true,
   })
+  try {
+    await run(browser)
+  } finally {
+    await browser.close()
+  }
+}
+
+const run = async (browser) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   const consoleErrors = []
   page.on('console', (message) => message.type() === 'error' && consoleErrors.push(message.text()))
@@ -27,7 +35,8 @@ const main = async () => {
   await page.waitForURL('**/staff/floor')
   expectPath(page, '/staff/floor')
 
-  await page.getByRole('button', { name: 'TIẾP TỤC PHIÊN' }).click()
+  // DB có thể có nhiều phiên đang mở: tiếp tục phiên đầu tiên.
+  await page.getByRole('button', { name: 'TIẾP TỤC PHIÊN' }).first().click()
   await page.waitForURL('**/staff/sessions/*')
   if (!new URL(page.url()).pathname.startsWith('/staff/sessions/')) {
     throw new Error(`Expected staff session route, received ${page.url()}`)
@@ -39,12 +48,12 @@ const main = async () => {
 
   await page.goto(`${baseUrl}/menu`, { waitUntil: 'networkidle' })
   await page.getByPlaceholder(/Tìm kiếm theo tên món ăn/i).fill('Phở bò')
-  await page.waitForTimeout(500)
+  // Ô tìm kiếm có debounce: chờ kết quả thay vì ngủ cố định.
+  await page.getByText('Phở bò đặc biệt', { exact: true }).first().waitFor({ timeout: 10000 }).catch(() => {})
   const visibleDish = await page.getByText('Phở bò đặc biệt', { exact: true }).count()
   if (!visibleDish) throw new Error('Menu search did not show Phở bò đặc biệt')
 
   if (consoleErrors.length) throw new Error(`Browser console errors: ${consoleErrors.join(' | ')}`)
-  await browser.close()
   console.log(JSON.stringify({ passed: true, checks: ['staff login', 'floor to session', 'session to kitchen', 'menu search'], consoleErrors }, null, 2))
 }
 

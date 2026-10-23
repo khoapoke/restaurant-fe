@@ -68,3 +68,12 @@
 - Mỗi lượt đặt trả `canModify` (còn ≥ 60 phút và đang `PENDING`/`CONFIRMED`); frontend chỉ hiện nút Đổi lịch/Hủy khi `canModify = true`.
 - Khách đổi giờ, bàn hoặc số khách của lượt **đã xác nhận** → lượt quay về `PENDING` để nhà hàng xác nhận lại; bàn cũ được giải phóng nếu không còn lượt đặt hôm nay.
 - Thời gian đặt được hiểu theo múi giờ nhà hàng `Asia/Ho_Chi_Minh` (`APP_TIMEZONE`).
+
+## Quy tắc đặt bàn mới (ADR-025)
+
+- Giờ đến 10:00–21:30 (gửi yêu cầu lúc nào cũng được); tối đa 3 lượt tương lai; không chồng giờ với lượt khác của chính mình.
+- Bàn trống tính theo thời lượng dùng bàn (90 phút ≤ 4 khách, 120 phút > 4) + 15 phút dọn; bàn đang có khách bị loại tới giờ dự kiến trả bàn.
+- Trạng thái mới `EXPIRED` (chưa được xác nhận trước giờ hẹn), `NO_SHOW`; `statusReason` khi nhà hàng từ chối/hủy; `holdUntil` (giữ bàn 20 phút); `isSeated` → không sửa/hủy được.
+- Ghi chú nội bộ của nhà hàng không bao giờ được trả cho khách.
+
+Đặc tả đầy đủ: `restaurant-lavarel/docs/laravel_restful_api_specifications.md` Phần E; chính sách: `restaurant-lavarel/docs/operations/exception-policies.md`.

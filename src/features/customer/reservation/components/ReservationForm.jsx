@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { RESERVATION_HOURS } from '../constants'
 import { CalendarDays, Clock3, Search, Users } from 'lucide-react'
 import Button from '../../../../components/ui/Button'
 import Input from '../../../../components/ui/Input'
@@ -32,6 +33,7 @@ export const ReservationForm = ({ reservation, onSubmit, onCancelEdit, submittin
     if (!form.date || !form.time || !form.guestCount) return 'Hãy chọn ngày, giờ và số khách trước.'
     const guests = Number(form.guestCount)
     if (!Number.isInteger(guests) || guests < 1 || guests > 30) return 'Số khách từ 1 đến 30 người.'
+    if (form.time < RESERVATION_HOURS.opensAt || form.time > RESERVATION_HOURS.lastReservationAt) return `Mộc nhận khách đặt bàn đến từ ${RESERVATION_HOURS.opensAt} đến ${RESERVATION_HOURS.lastReservationAt}.`
     const minutesAhead = (new Date(`${form.date}T${form.time}:00`).getTime() - Date.now()) / 60000
     if (minutesAhead < (isSpecialRequest ? 120 : 30)) return isSpecialRequest ? 'Yêu cầu đặc biệt cần đặt trước ít nhất 2 giờ.' : 'Vui lòng đặt trước giờ đến ít nhất 30 phút.'
     return null
@@ -62,7 +64,7 @@ export const ReservationForm = ({ reservation, onSubmit, onCancelEdit, submittin
   return (
     <form onSubmit={submit} className="moc-panel p-5 sm:p-7">
       <div className="flex items-start justify-between gap-4"><div><span className="moc-eyebrow">{reservation ? 'CHỈNH SỬA' : 'TÌM BÀN'}</span><h2 className="mt-3 moc-serif text-2xl sm:text-3xl">{reservation ? `Lượt đặt #${reservation.reservationId}` : 'Chọn một buổi tối thật vừa ý.'}</h2></div>{reservation && <Button size="sm" variant="ghost" onClick={onCancelEdit}>Đóng</Button>}</div>
-      <div className="mt-6 grid sm:grid-cols-3 gap-4"><Input name="date" type="date" label="Ngày đến" icon={CalendarDays} value={form.date} onChange={update} min={todayInput()} required /><Input name="time" type="time" label="Giờ đến" icon={Clock3} value={form.time} onChange={update} required /><Input name="guestCount" type="number" min="1" max="30" label="Số khách" icon={Users} value={form.guestCount} onChange={update} required /></div>
+      <div className="mt-6 grid sm:grid-cols-3 gap-4"><Input name="date" type="date" label="Ngày đến" icon={CalendarDays} value={form.date} onChange={update} min={todayInput()} required /><Input name="time" type="time" label="Giờ đến" icon={Clock3} value={form.time} onChange={update} min={RESERVATION_HOURS.opensAt} max={RESERVATION_HOURS.lastReservationAt} required /><Input name="guestCount" type="number" min="1" max="30" label="Số khách" icon={Users} value={form.guestCount} onChange={update} required /></div>
       <Button type="button" variant="outline" icon={Search} isLoading={searching} className="mt-4" onClick={findTables}>Kiểm tra bàn trống</Button>
       {tables.length > 0 && <div className="mt-5 grid sm:grid-cols-2 gap-3">{tables.map((table) => <label key={table.tableId} className={`cursor-pointer border p-4 transition-colors ${String(form.tableId) === String(table.tableId) ? 'border-[#6f1d32] bg-[#6f1d32]/5' : 'border-[var(--moc-line)] bg-white hover:border-[#6f1d32]/40'}`}><input type="radio" name="tableId" value={table.tableId} checked={String(form.tableId) === String(table.tableId)} onChange={update} className="sr-only" /><strong>{table.tableName}</strong><p className="mt-1 text-sm text-[#625a55]">{table.capacity} khách · {table.location}</p></label>)}</div>}
       <label className="mt-5 grid gap-1.5 text-xs font-bold tracking-[0.08em] uppercase text-[#625a55]">Ghi chú trải nghiệm<textarea name="note" value={form.note} onChange={update} rows="3" placeholder="Ghế trẻ em, món chay, sinh nhật..." className="border border-[var(--moc-line)] bg-white p-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-[#6f1d32]" /></label>

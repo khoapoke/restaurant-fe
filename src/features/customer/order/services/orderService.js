@@ -23,6 +23,11 @@ export const cancelOrderApi = async (orderId, cancelReason) => {
   })
 }
 
+/** Sửa người nhận/SĐT/địa chỉ trước khi đơn được giao cho tài xế (DLV-01). */
+export const updateOrderRecipientApi = async (orderId, payload) => {
+  return await apiClient.patch(`/customer/orders/${orderId}/recipient`, payload)
+}
+
 export const generateQrApi = async (orderId) => {
   return await apiClient.post(`/customer/payments/${orderId}/qr`)
 }

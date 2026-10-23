@@ -161,3 +161,24 @@ Checkout online chỉ gửi `DELIVERY` hoặc `PICKUP`; `DINE_IN` không phải 
 | `ServiceRequestType` | `CALL_STAFF`, `WATER`, `CUTLERY`, `CLEAN_TABLE`, `PAYMENT`, `OTHER` | Gọi nhân viên, xin nước, dụng cụ, dọn bàn, thanh toán (ưu tiên), khác (bắt buộc ghi chú) |
 | `ServiceRequestStatus` | `NEW`, `ACKNOWLEDGED`, `COMPLETED`, `CANCELLED` | Mới → nhân viên đang đến → xong / đã hủy |
 | `KitchenTicketSource` | `POS`, `TABLE_QR` | Nguồn lượt gọi món; KDS trả thêm `ONLINE` cho đơn giao/tự lấy |
+
+## Bổ sung ngoại lệ nghiệp vụ (ADR-023 → ADR-027)
+
+| Enum | Giá trị (API trả `name`) | Nhãn hiển thị |
+|---|---|---|
+| `PaymentStatus` (+) | `PARTIALLY_PAID`, `PARTIALLY_REFUNDED` | Thanh toán một phần · Đã hoàn một phần |
+| `InvoiceStatus` (+) | `WRITTEN_OFF` | Thất thu |
+| `ReservationStatus` (+) | `EXPIRED`, `NO_SHOW` | Hết hạn chờ · Không đến |
+| `FulfillmentStatus` (+) | `DELIVERY_FAILED` | Giao thất bại |
+| `KitchenItemStatus` | `CANCELLED`, `REJECTED` có lý do | Đã hủy · Bếp từ chối |
+| `ItemVoidReason` | `CUSTOMER_CHANGED_MIND`, `ORDER_ENTRY_ERROR`, `OUT_OF_STOCK`, `RESTAURANT_MISTAKE`, `DAMAGED`, `NOT_SERVED` | Khách đổi ý · Nhân viên gọi nhầm · Hết nguyên liệu · Bếp làm sai · Món hỏng, đổ vỡ · Khách chưa nhận được món |
+| `OrderLineType` | `NORMAL`, `REMAKE`, `EXCHANGE` | — · Làm lại · Món đổi |
+| `ApprovalType` | `ITEM_VOID`, `SEAT_OUTSIDE_WINDOW`, `SESSION_WRITE_OFF` | Hủy/miễn tiền món đã chế biến · Nhận khách ngoài khung giờ · Kết thúc phiên thất thu |
+| `ApprovalStatus` | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | Chờ duyệt · Đã duyệt · Từ chối · Đã rút |
+| `DeliveryFailureReason` | `CUSTOMER_UNREACHABLE`, `CUSTOMER_REFUSED`, `DRIVER_CANCELLED`, `ADDRESS_PROBLEM`, `OTHER` | |
+| `CancellationMoneyDecision` | `REFUND_DUE`, `RETAINED` | Phải hoàn tiền · Giữ tiền (lỗi do khách) |
+| `MoneySource` | `WEBHOOK`, `MANUAL`, `POS`, `COD`, `LEGACY` | |
+| `ReconciliationStatus` | `MATCHED`, `NEEDS_REVIEW`, `RESOLVED` | Đã khớp · Cần xem xét · Đã xử lý |
+| Hoàn tiền `method` | `BANK_TRANSFER`, `CASH`, `OTHER` | |
+
+Đặc tả đầy đủ: `restaurant-lavarel/docs/laravel_restful_api_specifications.md` Phần E; chính sách: `restaurant-lavarel/docs/operations/exception-policies.md`.

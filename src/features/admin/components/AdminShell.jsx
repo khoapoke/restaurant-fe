@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { BarChart3, BookOpen, ChefHat, CalendarDays, CreditCard, LogOut, Monitor, ShoppingBag, TableProperties, Users } from 'lucide-react'
+import { BarChart3, BookOpen, CalendarDays, ChefHat, CreditCard, LogOut, Monitor, ShieldCheck, ShoppingBag, TableProperties, Users } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { Role } from '../../auth/constants'
 import MocBrand from '../../../components/brand/MocBrand'
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/admin/tables', label: 'Bàn ăn', icon: TableProperties },
   { to: '/admin/accounts', label: 'Tài khoản', icon: Users },
   { to: '/admin/payments', label: 'Thanh toán', icon: CreditCard },
+  { to: '/admin/approvals', label: 'Duyệt yêu cầu', icon: ShieldCheck },
   { to: '/staff/floor', label: 'Mở POS', icon: Monitor },
   { to: '/staff/kitchen', label: 'Màn hình bếp', icon: ChefHat },
 ]

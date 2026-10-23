@@ -70,3 +70,37 @@ export const completeServiceRequestApi = (requestId) =>
 export const getTableQrApi = (tableId) => apiClient.get(`/staff/live/tables/${tableId}/qr`)
 
 export const rotateJoinCodeApi = (sessionId) => apiClient.post(`/staff/live/sessions/${sessionId}/join-code`)
+
+// ADR-024: hủy / miễn tiền / làm lại / đổi / tách món, từ chối & hoàn tác tại bếp
+export const voidOrderItemApi = (itemId, payload) => apiClient.post(`/staff/pos/order-items/${itemId}/void`, payload)
+export const waiveOrderItemApi = (itemId, note) => apiClient.post(`/staff/pos/order-items/${itemId}/waive`, { note })
+export const remakeOrderItemApi = (itemId, payload) => apiClient.post(`/staff/pos/order-items/${itemId}/remake`, payload)
+export const exchangeOrderItemApi = (itemId, payload) => apiClient.post(`/staff/pos/order-items/${itemId}/exchange`, payload)
+export const splitOrderItemApi = (itemId, quantity) => apiClient.post(`/staff/pos/order-items/${itemId}/split`, { quantity })
+export const rejectKitchenItemApi = (itemId, payload) => apiClient.post(`/staff/kitchen/items/${itemId}/reject`, payload)
+export const undoKitchenItemApi = (itemId) => apiClient.post(`/staff/kitchen/items/${itemId}/undo`)
+
+// Yêu cầu quản lý duyệt (STAFF gửi, ADMIN duyệt bằng phiên đăng nhập của mình)
+export const getApprovalsApi = (params = {}, config = {}) => apiClient.get('/staff/approvals', { params, ...config })
+export const createApprovalApi = (payload) => apiClient.post('/staff/approvals', payload)
+export const cancelApprovalApi = (approvalId) => apiClient.post(`/staff/approvals/${approvalId}/cancel`)
+export const approveApprovalApi = (approvalId, note = null) => apiClient.post(`/staff/approvals/${approvalId}/approve`, { note })
+export const rejectApprovalApi = (approvalId, note) => apiClient.post(`/staff/approvals/${approvalId}/reject`, { note })
+
+// ADR-025: phiên phục vụ — số khách, chuyển/ghép bàn, lịch sử, thất thu
+export const changeGuestCountApi = (sessionId, guestCount, reason = null) =>
+  apiClient.patch(`/staff/pos/sessions/${sessionId}/guest-count`, { guestCount, reason })
+export const changeSessionTablesApi = (sessionId, { tableIds, reason, releaseAs = 'CLEANING' }) =>
+  apiClient.post(`/staff/pos/sessions/${sessionId}/tables`, { tableIds, reason, releaseAs })
+export const getSessionHistoryApi = (sessionId) => apiClient.get(`/staff/pos/sessions/${sessionId}/history`)
+export const writeOffSessionApi = (sessionId, note) => apiClient.post(`/staff/pos/sessions/${sessionId}/write-off`, { note })
+export const finishWithoutChargeApi = (sessionId, note) => apiClient.post(`/staff/pos/sessions/${sessionId}/finish-without-charge`, { note })
+export const reopenWithReasonApi = (sessionId, reason) => apiClient.post(`/staff/pos/sessions/${sessionId}/reopen`, { reason })
+
+// ADR-025: khách đặt bàn đến trễ
+export const extendReservationApi = (reservationId, minutes, reason) =>
+  apiClient.post(`/staff/pos/reservations/${reservationId}/extend`, { minutes, reason })
+export const markReservationNoShowApi = (reservationId, note) =>
+  apiClient.post(`/staff/pos/reservations/${reservationId}/no-show`, { note })
+export const openSessionWithOptionsApi = ({ idempotencyKey, ...payload }) =>
+  apiClient.post('/staff/pos/sessions', payload, { headers: { 'Idempotency-Key': idempotencyKey } })

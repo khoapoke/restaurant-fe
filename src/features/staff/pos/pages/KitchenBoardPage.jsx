@@ -1,15 +1,16 @@
-import { BellOff, BellRing, ChefHat, RefreshCw, TriangleAlert, UtensilsCrossed } from 'lucide-react'
+import { BellOff, BellRing, CalendarClock, ChefHat, RefreshCw, TriangleAlert, UtensilsCrossed } from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import Alert from '../../../../components/ui/Alert'
 import Button from '../../../../components/ui/Button'
+import Modal from '../../../../components/ui/Modal'
 import Skeleton from '../../../../components/ui/Skeleton'
 import { apiErrorMessage } from '../../../../lib/apiError'
 import useLivePolling from '../../../../lib/useLivePolling'
 import useNow from '../../../../lib/useNow'
-import { KitchenStatus, kitchenSlaLevel } from '../constants'
+import { KITCHEN_REJECT_REASONS, KitchenStatus, kitchenSlaLevel } from '../constants'
 import KitchenCard from '../components/KitchenCard'
 import PosHeader from '../components/PosHeader'
-import { getKitchenItemsApi, updateKitchenItemStatusApi } from '../services/posService'
+import { getKitchenItemsApi, rejectKitchenItemApi, undoKitchenItemApi, updateKitchenItemStatusApi } from '../services/posService'
 
 const COLUMNS = [
   { key: 'NEW', title: 'Món mới', statuses: [KitchenStatus.SENT, KitchenStatus.QUEUED] },
@@ -33,6 +34,58 @@ const SOURCES = [
 ]
 
 const SOUND_KEY = 'moc.kds.sound'
+
+const formatClock = (value) => new Date(value).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+
+/** Bếp từ chối món (hết nguyên liệu/làm sai/hỏng) — POS, khách QR và hóa đơn cập nhật theo (KDS-03). */
+const RejectItemModal = ({ item, onClose, onDone }) => {
+  const [reason, setReason] = useState('OUT_OF_STOCK')
+  const [note, setNote] = useState('')
+  const [markSoldOut, setMarkSoldOut] = useState(true)
+  const [error, setError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const submit = async (event) => {
+    event.preventDefault()
+    if (note.trim().length < 3) { setError('Vui lòng ghi rõ sự việc (tối thiểu 3 ký tự).'); return }
+    setSubmitting(true)
+    setError(null)
+    try {
+      await rejectKitchenItemApi(item.itemId, { reason, note: note.trim(), markSoldOut: reason === 'OUT_OF_STOCK' && markSoldOut })
+      onDone(`Đã từ chối ${item.dishName}. Nhân viên và khách được báo ngay, món không tính tiền.`)
+    } catch (requestError) {
+      setError(apiErrorMessage(requestError))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Modal isOpen onClose={() => !submitting && onClose()} title={`Không làm được · ${item.dishName}`} maxWidth="max-w-md">
+      <form onSubmit={submit} className="grid gap-4">
+        <div className="grid gap-2" role="radiogroup" aria-label="Lý do">
+          {KITCHEN_REJECT_REASONS.map((option) => (
+            <label key={option.value} className={`flex items-center gap-3 border px-3 py-2.5 text-sm ${reason === option.value ? 'border-[#6f1d32] bg-[#6f1d32]/5' : 'border-[var(--moc-line)] bg-white'}`}>
+              <input type="radio" name="reject-reason" checked={reason === option.value} onChange={() => setReason(option.value)} className="h-4 w-4 accent-[#6f1d32]" />{option.label}
+            </label>
+          ))}
+        </div>
+        <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} maxLength={255} placeholder="Ví dụ: Hết bò tái, đã báo bếp trưởng" aria-label="Ghi chú" className="border border-[var(--moc-line)] bg-white p-3 text-sm text-[#211b18] outline-none focus:border-[#6f1d32]" />
+        {reason === 'OUT_OF_STOCK' && (
+          <label className="flex items-start gap-3 text-sm">
+            <input type="checkbox" checked={markSoldOut} onChange={(event) => setMarkSoldOut(event.target.checked)} className="mt-1 h-4 w-4 accent-[#6f1d32]" />
+            <span>Báo hết món này trên thực đơn (POS, QR, đặt online) để không nhận thêm.</span>
+          </label>
+        )}
+        {error && <p className="border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800" role="alert">{error}</p>}
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose} disabled={submitting}>Quay lại</Button>
+          <Button type="submit" variant="danger" isLoading={submitting}>Từ chối món</Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
 
 const readSoundPreference = () => {
   try {
@@ -73,6 +126,9 @@ export const KitchenBoardPage = () => {
   const [error, setError] = useState(null)
   const [soundOn, setSoundOn] = useState(readSoundPreference)
   const [newIds, setNewIds] = useState([])
+  const [rejecting, setRejecting] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [busyId, setBusyId] = useState(null)
   const audioRef = useRef(null)
   const soundRef = useRef(soundOn)
 
@@ -136,6 +192,22 @@ export const KitchenBoardPage = () => {
     }
   }
 
+  const handleUndo = async (item) => {
+    setError(null)
+    setBusyId(item.itemId)
+    try {
+      await undoKitchenItemApi(item.itemId)
+      setNotice(`Đã hoàn tác bước vừa bấm cho ${item.dishName}.`)
+      refresh()
+    } catch (requestError) {
+      setError(`${item.dishName}: ${apiErrorMessage(requestError)}`)
+      refresh()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  const upcoming = board?.upcoming || []
   const loading = !board && !polling.error
 
   return (
@@ -167,6 +239,20 @@ export const KitchenBoardPage = () => {
         </div>
 
         {error && <Alert type="error" message={error} onClose={() => setError(null)} className="mb-5" />}
+        {notice && <Alert type="success" message={notice} onClose={() => setNotice(null)} className="mb-5" />}
+        {upcoming.length > 0 && (
+          <section className="mb-5 border border-[var(--moc-line)] bg-[#fffdf8] p-4" aria-label="Đơn hẹn giờ sắp tới">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.08em] text-[#6f1d32]"><CalendarClock className="h-4 w-4" /> Đơn hẹn giờ sắp tới · tự xuống bếp trước giờ hẹn 30 phút</h2>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {upcoming.map((order) => (
+                <li key={order.orderId} className="border border-[var(--moc-line)] bg-white px-3 py-2 text-sm">
+                  <strong>#{order.orderId} · {order.fulfillmentType === 'DELIVERY' ? 'Giao' : 'Tự lấy'} {formatClock(order.scheduledAt)}</strong>
+                  <span className="block text-xs text-[#625a55]">Vào bếp lúc {formatClock(order.releaseAt)} · {order.items.map((line) => `${line.quantity}× ${line.dishName}`).join(', ')}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {!board && polling.error && <Alert type="error" message={apiErrorMessage(polling.error, 'Không thể tải bảng bếp.')} className="mb-5" />}
         {loading && <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">{COLUMNS.map((column) => <Skeleton key={column.key} className="h-[520px]" />)}</div>}
 
@@ -183,13 +269,14 @@ export const KitchenBoardPage = () => {
               return (
                 <section key={column.key} className="bg-[#eee7dc] border border-[var(--moc-line)] min-h-[460px]" aria-label={column.title}>
                   <header className="p-4 bg-[#251b19] text-white moc-inverse flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ChefHat className="w-4 h-4 text-[#e0b774]" /><h2 className="text-sm font-bold tracking-[0.08em] uppercase">{column.title}</h2></div><span className="min-w-7 h-7 px-1 grid place-items-center bg-white/15 text-sm font-bold">{columnItems.length}</span></header>
-                  <div className="p-3 space-y-3">{columnItems.length ? columnItems.map((item) => <KitchenCard key={item.itemId} item={item} now={now} sla={sla} onAdvance={handleAdvance} busy={!!overrides[item.itemId]} isNew={newIds.includes(item.itemId)} />) : <p className="py-12 text-center text-sm text-[#625a55]">Chưa có món</p>}</div>
+                  <div className="p-3 space-y-3">{columnItems.length ? columnItems.map((item) => <KitchenCard key={item.itemId} item={item} now={now} sla={sla} onAdvance={handleAdvance} onReject={setRejecting} onUndo={handleUndo} busy={!!overrides[item.itemId] || busyId === item.itemId} isNew={newIds.includes(item.itemId)} />) : <p className="py-12 text-center text-sm text-[#625a55]">Chưa có món</p>}</div>
                 </section>
               )
             })}
           </div>
         )}
       </main>
+      {rejecting && <RejectItemModal key={rejecting.itemId} item={rejecting} onClose={() => setRejecting(null)} onDone={(message) => { setRejecting(null); setNotice(message); refresh() }} />}
     </div>
   )
 }

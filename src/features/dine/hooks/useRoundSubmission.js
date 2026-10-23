@@ -75,7 +75,7 @@ export const useRoundSubmission = ({ tableToken, visitToken, submitOrder, cart, 
     setStatus('sending')
     setError(null)
     try {
-      const response = await submitOrder(entry.items, entry.key)
+      const response = await submitOrder(entry.items, entry.key, entry.expectedTotal ?? null)
       persist(null)
       setStatus('idle')
       onSent({ ...response.data.round, replayed: !response.data.created })
@@ -91,6 +91,15 @@ export const useRoundSubmission = ({ tableToken, visitToken, submitOrder, cart, 
         setNotice('Bếp đã nhận một lượt mang mã này trước đó. Vui lòng xem tab Theo dõi để kiểm tra món.')
       } else {
         persist(null)
+        const details = requestError?.response?.data?.errors
+        if (details?.reason === 'PRICE_CHANGED') {
+          // Giá đổi: trả món về giỏ với giá mới để khách xem lại tổng trước khi gửi (MNU-02).
+          const prices = new Map((details.prices || []).map((price) => [price.dishId, price.unitPrice]))
+          cart.restoreLines((entry.lines || []).map((line) => (prices.has(line.dishId) ? { ...line, price: prices.get(line.dishId) } : line)))
+          setStatus('idle')
+          setError(`Giá món vừa thay đổi: tổng lượt này giờ là ${Number(details.currentTotal).toLocaleString('vi-VN')} ₫. Món đã trở lại giỏ với giá mới, vui lòng xem lại rồi gửi.`)
+          return
+        }
         cart.restoreLines(entry.lines || [])
         setStatus('idle')
         setError(`${apiErrorMessage(requestError, 'Bếp chưa nhận lượt món này.')} Món đã được trả lại giỏ để bạn chỉnh và gửi lại.`)
@@ -110,6 +119,9 @@ export const useRoundSubmission = ({ tableToken, visitToken, submitOrder, cart, 
       createdAt: new Date().toISOString(),
       items: cart.lines.map(({ dishId, quantity, note }) => ({ dishId, quantity, note: note || null })),
       lines: cart.lines,
+      expectedTotal: cart.lines.every((line) => Number.isFinite(Number(line.price)))
+        ? Math.round(cart.lines.reduce((sum, line) => sum + Number(line.price) * line.quantity, 0) * 100) / 100
+        : null,
       attempts: 0,
     }
     if (!writePending(tableToken, entry)) {

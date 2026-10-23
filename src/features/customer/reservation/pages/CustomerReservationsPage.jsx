@@ -23,10 +23,14 @@ const ReservationCard = ({ reservation, onEdit, onCancel }) => (
       <p className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0" /> {reservation.table?.location}</p>
     </div>
     {reservation.note && <p className="mt-3 whitespace-pre-line border-t border-[var(--moc-line)] pt-3 text-sm leading-6">{reservation.note}</p>}
+    {reservation.statusReason && <p className="mt-3 text-sm text-[#8a1c1c]">Lý do từ nhà hàng: {reservation.statusReason}</p>}
+    {reservation.status === 'CONFIRMED' && reservation.holdUntil && !reservation.isSeated && <p className="mt-3 text-sm text-[#625a55]">Mộc giữ bàn đến {new Date(reservation.holdUntil).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}. Nếu đến trễ hơn, vui lòng gọi trước để được gia hạn.</p>}
+    {reservation.status === 'EXPIRED' && <p className="mt-3 text-sm text-[#625a55]">Yêu cầu chưa được xác nhận trước giờ hẹn nên đã hết hạn. Bạn có thể đặt lượt mới.</p>}
+    {reservation.isSeated && <p className="mt-3 text-sm text-emerald-800">Bạn đã được nhận bàn. Mọi thay đổi xin trao đổi trực tiếp với nhân viên.</p>}
     {reservation.canModify && (
       <div className="mt-4 flex gap-2"><Button size="sm" variant="outline" icon={Pencil} onClick={() => onEdit(reservation)}>Đổi lịch</Button><Button size="sm" variant="ghost" icon={X} onClick={() => onCancel(reservation)}>Hủy</Button></div>
     )}
-    {!reservation.canModify && ['PENDING', 'CONFIRMED'].includes(reservation.status) && (
+    {!reservation.canModify && !reservation.isSeated && ['PENDING', 'CONFIRMED'].includes(reservation.status) && (
       <p className="mt-4 flex items-center gap-2 text-sm text-[#625a55]"><Clock3 className="h-4 w-4" />Đã gần giờ đến (dưới 60 phút). Vui lòng gọi nhà hàng nếu cần thay đổi.</p>
     )}
   </article>

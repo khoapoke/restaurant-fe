@@ -22,6 +22,7 @@ const AdminOrdersPage = lazy(() => import('./features/admin/pages/AdminOrdersPag
 const AdminReservationsPage = lazy(() => import('./features/admin/pages/AdminReservationsPage'))
 const AdminTablesPage = lazy(() => import('./features/admin/pages/AdminTablesPage'))
 const AdminPaymentsPage = lazy(() => import('./features/admin/pages/AdminPaymentsPage'))
+const AdminApprovalsPage = lazy(() => import('./features/admin/pages/AdminApprovalsPage'))
 const PosFloorPage = lazy(() => import('./features/staff/pos/pages/PosFloorPage'))
 const PosSessionPage = lazy(() => import('./features/staff/pos/pages/PosSessionPage'))
 const KitchenBoardPage = lazy(() => import('./features/staff/pos/pages/KitchenBoardPage'))
@@ -67,6 +68,7 @@ function App() {
                   <Route path="reservations" element={<AdminReservationsPage />} />
                   <Route path="tables" element={<AdminTablesPage />} />
                   <Route path="payments" element={<AdminPaymentsPage />} />
+                  <Route path="approvals" element={<AdminApprovalsPage />} />
                 </Route>
                 <Route path="/staff" element={<Navigate to="/staff/floor" replace />} />
                 <Route path="/staff/floor" element={guard(OPERATIONS, <PosFloorPage />)} />

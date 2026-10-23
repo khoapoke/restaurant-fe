@@ -181,7 +181,7 @@ const main = async () => {
 
   await phoCard.getByRole('button', { name: 'NHẬN MÓN' }).click()
   await phoCard.getByRole('button', { name: 'BẮT ĐẦU NẤU' }).click()
-  await staff.getByRole('region', { name: 'Đang làm' }).locator('article', { hasText: 'Phở bò đặc biệt' }).waitFor()
+  await staff.getByRole('region', { name: 'Đang làm' }).locator('article', { hasText: 'Phở bò đặc biệt' }).filter({ hasText: `QR ${demo.tableName}` }).waitFor()
   pass('Bếp chuyển món sang Đang chế biến')
 
   const guestPho = guest.locator('li', { hasText: 'Phở bò đặc biệt' }).first()
@@ -238,12 +238,12 @@ const main = async () => {
   await guest.getByRole('heading', { name: /^Hóa đơn HD/ }).waitFor({ timeout: 10000 })
   await guest.getByText('Đang chờ xác nhận thanh toán').waitFor()
   await guest.getByRole('img', { name: /Mã VietQR thanh toán/ }).waitFor()
-  await guest.getByText(/^HD\d+ THANH TOAN/).waitFor()
+  await guest.getByText(/^HD\d+V\d+ THANH TOAN/).waitFor()
   pass('Khách thấy hóa đơn, VietQR, nội dung chuyển khoản và trạng thái chờ')
 
   // Thanh toán và đóng phiên.
   await staff.getByRole('radio', { name: 'Chuyển khoản' }).click()
-  await staff.getByPlaceholder('Ví dụ: FT26102100123').fill('FT-LIVE-DEMO-001')
+  await staff.getByPlaceholder('Ví dụ: FT26102100123').fill(`FT-LIVE-DEMO-${Date.now()}`) // mã giao dịch là duy nhất trong sổ (ADR-023)
   await staff.getByRole('button', { name: 'XÁC NHẬN ĐÃ NHẬN CHUYỂN KHOẢN' }).click()
   await guest.getByText(/Đã thanh toán · Chuyển khoản QR/).first().waitFor({ timeout: 10000 })
   pass('Nhân viên xác nhận chuyển khoản; trang khách tự cập nhật “Đã thanh toán”')

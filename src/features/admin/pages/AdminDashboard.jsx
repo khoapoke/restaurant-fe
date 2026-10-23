@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, CalendarDays, RefreshCw, RotateCcw, ShoppingBag, TableProperties, Truck, WalletCards } from 'lucide-react'
+import { AlarmClock, ArrowRight, CalendarDays, Landmark, PackageX, RefreshCw, RotateCcw, ShieldCheck, ShoppingBag, TableProperties, Truck, WalletCards } from 'lucide-react'
 import Button from '../../../components/ui/Button'
 import { useApiResource } from '../../../lib/useApiResource'
 import AdminDataState from '../components/AdminDataState'
@@ -51,8 +51,14 @@ export const AdminDashboard = () => {
     { key: 'pendingOrders', label: 'Đơn chờ xác nhận', to: '/admin/orders', icon: ShoppingBag },
     { key: 'readyForHandoff', label: 'Đơn chờ bàn giao', to: '/admin/orders', icon: Truck },
     { key: 'reservationsToConfirm', label: 'Lượt đặt chờ duyệt', to: '/admin/reservations', icon: CalendarDays },
-    { key: 'refundsPending', label: 'Đơn hủy cần hoàn tiền', to: '/admin/payments?status=PAID', icon: RotateCcw },
+    { key: 'refundsPending', label: 'Đơn cần ghi nhận hoàn tiền', to: '/admin/payments?attention=1', icon: RotateCcw },
+    { key: 'transactionsToReview', label: 'Khoản tiền cần xem xét', to: '/admin/payments?tab=transactions', icon: Landmark },
+    { key: 'approvalsPending', label: 'Yêu cầu chờ quản lý duyệt', to: '/admin/approvals', icon: ShieldCheck },
+    { key: 'deliveryFailed', label: 'Đơn giao thất bại', to: '/admin/orders?fulfillmentStatus=DELIVERY_FAILED', icon: PackageX },
+    { key: 'pickupOverdue', label: 'Khách quá hạn chưa lấy', to: '/admin/orders?fulfillmentStatus=AWAITING_CUSTOMER', icon: AlarmClock },
+    { key: 'driverWaitTooLong', label: 'Món xong chờ tài xế lâu', to: '/admin/orders?fulfillmentStatus=AWAITING_DRIVER', icon: Truck },
   ]
+  const finance = report?.finance || {}
   const fulfillmentTotal = Object.values(report?.orders?.byFulfillmentType || {}).reduce((sum, value) => sum + value, 0)
 
   return (
@@ -86,7 +92,7 @@ export const AdminDashboard = () => {
           </section>
 
           <section className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <Metric label="Doanh thu đã thu" value={formatCurrency(report.revenue.totalPaidRevenue)} hint={`Trung bình ${formatCurrency(report.revenue.averageOrderValue)}/giao dịch${report.revenue.refundedAmount ? ` · hoàn ${formatCurrency(report.revenue.refundedAmount)}` : ''}`} icon={WalletCards} />
+            <Metric label="Tiền đã áp vào đơn bán" value={formatCurrency(report.revenue.totalPaidRevenue)} hint={`Trung bình ${formatCurrency(report.revenue.averageOrderValue)}/đơn${report.revenue.refundedAmount ? ` · hoàn ${formatCurrency(report.revenue.refundedAmount)}` : ''}`} icon={WalletCards} />
             <Metric label="Đơn hàng" value={report.orders.totalCount} hint={`${report.orders.completedCount} hoàn thành · ${report.orders.cancelledCount} đã hủy (${report.orders.completionRate}%)`} icon={ShoppingBag} />
             <Metric label="Đặt chỗ" value={report.reservations.totalBookings} hint={`${report.reservations.confirmedBookings} đã xác nhận · ${report.reservations.pendingBookings} chờ duyệt`} icon={CalendarDays} />
             <Metric label="Bàn đang phục vụ" value={`${report.operations.tables.occupied}/${report.operations.tables.total}`} hint={`${report.operations.activeSessions} phiên POS · ${report.operations.tables.cleaning} bàn chờ vệ sinh`} icon={TableProperties} />
@@ -109,8 +115,35 @@ export const AdminDashboard = () => {
             </article>
             <article className="moc-panel p-6">
               <span className="moc-eyebrow">BÁN CHẠY</span><h2 className="mt-3 moc-serif text-2xl">Món được yêu thích</h2>
-              <div className="mt-6 divide-y divide-[var(--moc-line)]">{report.topSellingDishes.length ? report.topSellingDishes.map((dish, index) => <div key={dish.dishId} className="flex items-center gap-4 py-4"><span className="moc-serif text-2xl text-[#6f1d32]">0{index + 1}</span><div className="min-w-0 flex-1"><p className="font-semibold truncate">{dish.dishName}</p><p className="mt-1 text-sm text-[#625a55]">{dish.totalSold} phần · {formatCurrency(dish.revenue)}</p></div></div>) : <p className="py-10 text-sm text-[#625a55]">Chưa có đơn hoàn thành trong kỳ.</p>}</div>
+              <div className="mt-6 divide-y divide-[var(--moc-line)]">{report.topSellingDishes.length ? report.topSellingDishes.map((dish, index) => <div key={dish.dishId} className="flex items-center gap-4 py-4"><span className="moc-serif text-2xl text-[#6f1d32]">0{index + 1}</span><div className="min-w-0 flex-1"><p className="font-semibold truncate">{dish.dishName}</p><p className="mt-1 text-sm text-[#625a55]">{dish.totalSold} phần bán · {formatCurrency(dish.revenue)}{dish.preparedQuantity > dish.totalSold ? ` · bếp làm ${dish.preparedQuantity} phần (${dish.freeQuantity} phần không tính tiền)` : ''}</p></div></div>) : <p className="py-10 text-sm text-[#625a55]">Chưa có đơn hoàn thành trong kỳ.</p>}</div>
             </article>
+          </section>
+
+          <section className="moc-panel p-6" aria-label="Đối chiếu tài chính">
+            <span className="moc-eyebrow">ĐỐI CHIẾU TIỀN TRONG KỲ</span>
+            <h2 className="mt-3 moc-serif text-2xl">Giá trị bán, tiền nhận, tiền hoàn tách riêng</h2>
+            <dl className="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
+              {[
+                ['Giá trị bán (đơn không hủy, theo ngày đặt)', finance.salesValue],
+                ['Tiền thực nhận (theo ngày tiền về)', finance.moneyReceived],
+                ['Tiền đã hoàn (theo ngày hoàn)', finance.refunded],
+                ['Thực nhận ròng', finance.netReceived],
+                ['Tiền nhận chưa phân bổ', finance.unallocatedBalance],
+                ['Phải hoàn cho khách (chưa ghi nhận)', finance.refundDueBalance],
+                ['Khách còn nợ (chưa thu)', finance.outstandingBalance],
+                ['Giá trị đơn đã hủy', finance.cancelledOrdersValue],
+                ['Món hủy / miễn tiền', (finance.voidedValue || 0) + (finance.waivedValue || 0)],
+                ['Món làm lại (không tính tiền)', finance.remakeValue],
+                ['Thất thu (khách bỏ về)', finance.writeOffValue],
+                ['Tiền cũ chưa rõ ngày nhận', finance.undatedLegacyReceived],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-baseline justify-between gap-4 border-b border-[var(--moc-line)] pb-2">
+                  <dt className="text-[#625a55]">{label}</dt>
+                  <dd className="font-semibold">{formatCurrency(value)}</dd>
+                </div>
+              ))}
+            </dl>
+            {finance.formula && <p className="mt-4 text-xs leading-5 text-[#625a55]">Công thức: {finance.formula}</p>}
           </section>
 
           <section className="grid lg:grid-cols-2 gap-5">

@@ -6,7 +6,7 @@ const formatTime = (value) => new Date(value).toLocaleTimeString('vi-VN', { hour
 
 const SESSION_STATUS_LABEL = { OPEN: 'Đang gọi món', AWAITING_PAYMENT: 'Chờ thanh toán' }
 
-export const TableCard = ({ table, now, onOpen, onSeatReservation, onContinue, onCompleteCleaning, onAcceptCheckIn, onShowQr, cleaning }) => {
+export const TableCard = ({ table, now, onOpen, onSeatReservation, onSeatEarly, onRelease, onExtend, onNoShow, onContinue, onCompleteCleaning, onAcceptCheckIn, onShowQr, cleaning }) => {
   const meta = TABLE_STATUS_META[table.status] || TABLE_STATUS_META[TableStatus.MAINTENANCE]
   const reservation = table.upcomingReservation
   const session = table.activeSession
@@ -14,14 +14,20 @@ export const TableCard = ({ table, now, onOpen, onSeatReservation, onContinue, o
   const signals = tableSignals(table)
   const seatable = [TableStatus.AVAILABLE, TableStatus.RESERVED].includes(table.status)
   const canSeatReservation = seatable && reservation?.isWithinSeatingWindow
-  const canOpenWalkIn = seatable && !reservation?.isWithinSeatingWindow
+  const holdExpired = !!reservation?.holdExpired
+  const canOpenWalkIn = seatable && !reservation?.isWithinSeatingWindow && !holdExpired
+  const late = reservation && reservation.minutesLate > 0
+  const overdue = session?.overdue
+  const nextAtRisk = session?.nextReservation?.atRisk
   const canContinue = table.status === TableStatus.OCCUPIED && session
   const canCompleteCleaning = table.status === TableStatus.CLEANING
 
   const primary = table.pendingCheckIn && seatable
     ? { label: 'NHẬN KHÁCH QR', action: () => onAcceptCheckIn(table) }
     : canSeatReservation
-      ? { label: 'NHẬN KHÁCH ĐẶT TRƯỚC', action: () => onSeatReservation(table) }
+      ? { label: late ? 'KHÁCH ĐẶT ĐÃ ĐẾN · NHẬN BÀN' : 'NHẬN KHÁCH ĐẶT TRƯỚC', action: () => onSeatReservation(table) }
+      : seatable && holdExpired
+        ? { label: 'NHƯỜNG BÀN · MỞ PHIÊN MỚI', action: () => onRelease(table) }
       : canContinue
         ? { label: 'TIẾP TỤC PHIÊN', action: () => onContinue(table) }
         : canCompleteCleaning
@@ -75,6 +81,18 @@ export const TableCard = ({ table, now, onOpen, onSeatReservation, onContinue, o
             </p>
           )}
           {session.reservationId && <p className="text-[#6f1d32] font-semibold">Khách đặt trước #{session.reservationId}</p>}
+          {(overdue || nextAtRisk) && (
+            <p className="flex items-start gap-1.5 font-semibold text-[#8a1c1c]">
+              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                {overdue ? `Quá giờ trả bàn (${formatTime(session.expectedEndAt)})` : `Dự kiến trả bàn ${formatTime(session.expectedEndAt)}`}
+                {session.nextReservation ? ` · lượt đặt ${formatTime(session.nextReservation.reservationTime)} cần bàn trước ${formatTime(session.nextReservation.mustLeaveBy)}` : ''}
+              </span>
+            </p>
+          )}
+          {!overdue && !nextAtRisk && session.expectedEndAt && session.nextReservation && (
+            <p className="text-xs">Phải trả bàn trước {formatTime(session.nextReservation.mustLeaveBy)} cho lượt đặt {formatTime(session.nextReservation.reservationTime)}</p>
+          )}
         </div>
       )}
 
@@ -90,7 +108,16 @@ export const TableCard = ({ table, now, onOpen, onSeatReservation, onContinue, o
           <p className="flex items-center gap-2 font-semibold text-[#6f1d32]"><CalendarClock className="w-4 h-4" /> Đặt lúc {formatTime(reservation.reservationTime)} · {reservation.guestCount} khách</p>
           <p className="mt-1 text-[#211b18]">{reservation.customerName}{reservation.customerPhone && <span className="inline-flex items-center gap-1 text-[#625a55]"> · <Phone className="w-3 h-3" />{reservation.customerPhone}</span>}</p>
           {reservation.note && <p className="mt-1 line-clamp-2 text-[#625a55]">{reservation.note}</p>}
-          {!reservation.isWithinSeatingWindow && <p className="mt-1 text-xs text-[#625a55]">Có thể nhận khách vãng lai trước khung giờ đặt.</p>}
+          {late && !holdExpired && <p className="mt-2 font-semibold text-[#8a1c1c]">Trễ {reservation.minutesLate} phút · giữ bàn đến {formatTime(reservation.holdUntil)}{reservation.extension ? ` (đã gia hạn: ${reservation.extension.reason})` : ''}</p>}
+          {holdExpired && <p className="mt-2 font-semibold text-[#8a1c1c]">Đã quá hạn giữ bàn {formatTime(reservation.holdUntil)}. Liên hệ khách, ghi “Không đến” hoặc nhường bàn. Tự ghi không đến lúc {formatTime(reservation.autoNoShowAt)}.</p>}
+          {!late && !reservation.isWithinSeatingWindow && <p className="mt-1 text-xs text-[#625a55]">Nhận khách từ {formatTime(reservation.seatingOpensAt)}. Có thể mở cho khách vãng lai nếu còn đủ thời gian.</p>}
+          {(reservation.canExtend || reservation.canMarkNoShow || (!reservation.isWithinSeatingWindow && !late && seatable)) && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {reservation.canExtend && <button type="button" onClick={() => onExtend(table)} className="min-h-9 border border-[var(--moc-line)] bg-white px-3 text-xs font-bold hover:border-[#6f1d32]/40">Gia hạn giữ bàn</button>}
+              {reservation.canMarkNoShow && <button type="button" onClick={() => onNoShow(table)} className="min-h-9 border border-red-200 bg-white px-3 text-xs font-bold text-[#8a1c1c] hover:bg-red-50">Ghi không đến</button>}
+              {!reservation.isWithinSeatingWindow && !late && seatable && <button type="button" onClick={() => onSeatEarly(table)} className="min-h-9 border border-[var(--moc-line)] bg-white px-3 text-xs font-bold hover:border-[#6f1d32]/40">Khách đến sớm</button>}
+            </div>
+          )}
         </div>
       )}
 

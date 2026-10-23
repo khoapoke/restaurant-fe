@@ -175,9 +175,20 @@
     color: var(--moc-wine) !important;
   }
 
-  .moc-theme [class*="bg-amber-500"] {
+  /* Nền amber đặc (hoặc khai báo moc-inverse) = bề mặt rượu vang, chữ sáng. */
+  .moc-theme [class~="bg-amber-500"],
+  .moc-theme .moc-inverse[class*="bg-amber-500"] {
     background-color: var(--moc-wine) !important;
     color: #fffaf3 !important;
+  }
+
+  /*
+   * Nền amber mờ (/5, /10, /20…) là khối nhấn nhẹ: chỉ phủ màu rượu vang rất nhạt và giữ chữ
+   * màu mực/rượu vang. Trước đây luật trên khớp cả lớp mờ, biến khối thông tin thành nền đỏ đặc
+   * trong khi chữ con vẫn bị ép về màu tối (chữ chìm, ví dụ khối "Nhận món tại Mộc Dining").
+   */
+  .moc-theme [class*="bg-amber-500/"]:not(.moc-inverse) {
+    background-color: rgba(111, 29, 50, 0.07) !important;
   }
 
   .moc-theme [class*="border-amber"] {
@@ -233,6 +244,8 @@
     border-color: #abefc6 !important;
   }
 
+  .moc-theme .moc-inverse[class*="text-amber"],
+  .moc-theme .moc-inverse [class*="text-amber"],
   .moc-theme .moc-inverse,
   .moc-theme .moc-inverse [class~="text-white"],
   .moc-theme .moc-inverse [class~="text-gray-100"],

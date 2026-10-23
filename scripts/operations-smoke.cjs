@@ -78,7 +78,7 @@ const main = async () => {
   await admin.waitForURL('**/admin')
   await admin.getByRole('heading', { name: 'Tổng quan vận hành' }).waitFor()
   await admin.getByRole('button', { name: '30 ngày' }).click()
-  await admin.getByText('30 NGÀY').waitFor()
+  await admin.getByText('30 NGÀY', { exact: true }).waitFor()
   pass('Admin: dashboard dữ liệu thật, đổi kỳ 30 ngày')
 
   await admin.getByRole('link', { name: 'Đơn hàng', exact: true }).click()
@@ -92,9 +92,11 @@ const main = async () => {
   if (await cancelButton.count()) {
     await cancelButton.click()
     const dialog = admin.getByRole('dialog')
-    await dialog.getByPlaceholder(/Hết nguyên liệu/).fill('abc')
+    // Modal hủy mới: chọn loại lý do + lý do gửi khách + quyết định tiền đã thu (ADR-026).
+    await dialog.getByRole('combobox').first().waitFor()
+    await dialog.getByPlaceholder(/Địa chỉ ngoài bán kính/).fill('abc')
     await dialog.getByRole('button', { name: 'Hủy đơn' }).click()
-    await dialog.getByText('Vui lòng nhập tối thiểu 5 ký tự.').waitFor()
+    await dialog.getByText(/Lý do hủy tối thiểu 5 ký tự/).waitFor()
     await dialog.getByRole('button', { name: 'Quay lại' }).click()
     await dialog.waitFor({ state: 'detached' })
   }

@@ -24,8 +24,8 @@ export const cancelCheckInApi = (tableToken, visitToken) =>
 export const joinTableApi = (tableToken, { guestName, joinCode } = {}, visitToken) =>
   publicApiClient.post(`/public/dine/${tableToken}/join`, { guestName: guestName || null, joinCode: joinCode || null }, { headers: visitHeaders(visitToken) })
 
-export const submitTableOrderApi = (tableToken, visitToken, items, idempotencyKey) =>
-  publicApiClient.post(`/public/dine/${tableToken}/orders`, { items }, {
+export const submitTableOrderApi = (tableToken, visitToken, items, idempotencyKey, expectedTotal = null) =>
+  publicApiClient.post(`/public/dine/${tableToken}/orders`, { items, expectedTotal }, {
     headers: { ...visitHeaders(visitToken), 'Idempotency-Key': idempotencyKey },
   })
 

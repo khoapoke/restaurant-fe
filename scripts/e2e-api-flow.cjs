@@ -36,7 +36,7 @@ const expectEqual = (actual, expected, label) => {
 const pass = (label) => { checks.push(label); console.log(`✓ ${label}`) }
 const uid = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
 
-const login = async (username) => expectStatus(await request('POST', '/auth/login', { body: { username, password: '123' } }), 200, `login ${username}`).accessToken
+const login = async (username, password = '123') => expectStatus(await request('POST', '/auth/login', { body: { username, password } }), 200, `login ${username}`).accessToken
 
 const pad = (value) => String(value).padStart(2, '0')
 const localDateTime = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:00`
@@ -124,7 +124,11 @@ const main = async () => {
   for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY']) {
     expectStatus(await request('PATCH', `/admin/orders/${pickup.orderId}/status`, { token: admin, body: { targetStatus } }), 200, `pickup ${targetStatus}`)
   }
-  const collected = expectStatus(await request('PATCH', `/admin/orders/${pickup.orderId}/fulfillment-status`, { token: admin, body: { targetStatus: 'COLLECTED' } }), 200, 'pickup collected')
+  // Bàn giao phải đúng mã nhận hàng khách thấy trên đơn (DLV-07); mã sai bị từ chối.
+  const pickupCode = expectStatus(await request('GET', `/customer/orders/${pickup.orderId}`, { token: customer }), 200, 'customer pickup detail').pickupCode
+  if (!/^\d{4}$/.test(pickupCode || '')) throw new Error('Pickup code missing on customer order')
+  expectStatus(await request('PATCH', `/admin/orders/${pickup.orderId}/fulfillment-status`, { token: admin, body: { targetStatus: 'COLLECTED', pickupCode: pickupCode === '0000' ? '1111' : '0000' } }), 422, 'wrong pickup code rejected')
+  const collected = expectStatus(await request('PATCH', `/admin/orders/${pickup.orderId}/fulfillment-status`, { token: admin, body: { targetStatus: 'COLLECTED', pickupCode } }), 200, 'pickup collected')
   expectEqual(collected.payment.status, 'PAID', 'cash settled on collection')
   pass(`Tự đến lấy tiền mặt #${pickup.orderId}: xác nhận → bếp → khách nhận, tiền mặt ghi nhận khi bàn giao`)
 
@@ -138,15 +142,17 @@ const main = async () => {
   pass('Khách hủy đơn chờ xác nhận; hủy lần hai bị chặn; đơn lạ trả 404')
 
   // 3. Reservation → POS seating → kitchen → invoice → QR → close → cleaning
+  // Dùng kh2: kh1 có sẵn lượt tối nay, quy tắc ADR-025 không cho một khách có hai lượt chồng giờ.
+  const booker = await login('kh2', 'Password@123')
   const arrival = new Date(Date.now() + 40 * 60000)
   if (arrival.getDate() !== new Date().getDate()) {
     console.log('! Bỏ qua luồng nhận bàn vì 40 phút nữa đã sang ngày mới')
   } else {
-    const available = expectStatus(await request('GET', `/customer/tables/available?date=${localDateTime(arrival).slice(0, 10)}&time=${localDateTime(arrival).slice(11, 16)}&guestCount=2`, { token: customer }), 200, 'available tables').items
+    const available = expectStatus(await request('GET', `/customer/tables/available?date=${localDateTime(arrival).slice(0, 10)}&time=${localDateTime(arrival).slice(11, 16)}&guestCount=2`, { token: booker }), 200, 'available tables').items
     const floorBefore = expectStatus(await request('GET', '/staff/pos/tables', { token: staff }), 200, 'floor').items
     const freeTable = available.find((table) => floorBefore.some((floorTable) => floorTable.tableId === table.tableId && ['AVAILABLE', 'RESERVED'].includes(floorTable.status) && !floorTable.upcomingReservation))
     if (!freeTable) throw new Error('No free table for the reservation flow')
-    const reservation = expectStatus(await request('POST', '/customer/reservations', { token: customer, body: {
+    const reservation = expectStatus(await request('POST', '/customer/reservations', { token: booker, body: {
       tableId: freeTable.tableId, reservationTime: localDateTime(arrival), guestCount: 2, note: 'E2E nhận bàn',
     } }), 201, 'create reservation')
     expectEqual(reservation.canModify, false, 'reservation inside 60 minutes cannot be modified')
@@ -158,8 +164,10 @@ const main = async () => {
     pass(`Khách đặt bàn #${reservation.reservationId}, admin xác nhận → ${table.tableName} giữ chỗ trên POS`)
 
     expectStatus(await request('POST', '/staff/pos/sessions', { token: staff, headers: { 'Idempotency-Key': uid('walkin') }, body: { tableIds: [freeTable.tableId], guestCount: 2 } }), 409, 'walk-in blocked on held table')
-    const session = expectStatus(await request('POST', '/staff/pos/sessions', { token: staff, headers: { 'Idempotency-Key': uid('seat') }, body: { tableIds: [freeTable.tableId], guestCount: 2, reservationId: reservation.reservationId } }), 201, 'seat reservation')
-    pass(`Chặn khách vãng lai, nhận khách đặt trước → phiên #${session.sessionId}`)
+    // Khách đến sớm 40 phút (> 30 phút cho phép): nhân viên bị chặn, quản lý nhận khách kèm lý do (ADR-025).
+    expectStatus(await request('POST', '/staff/pos/sessions', { token: staff, headers: { 'Idempotency-Key': uid('seat') }, body: { tableIds: [freeTable.tableId], guestCount: 2, reservationId: reservation.reservationId } }), 403, 'staff cannot seat outside window')
+    const session = expectStatus(await request('POST', '/staff/pos/sessions', { token: admin, headers: { 'Idempotency-Key': uid('seat') }, body: { tableIds: [freeTable.tableId], guestCount: 2, reservationId: reservation.reservationId, overrideReason: 'E2E: khách đến sớm, bàn đang trống' } }), 201, 'admin seats outside window')
+    pass(`Chặn khách vãng lai, nhân viên không nhận sớm ngoài khung; quản lý nhận khách đặt trước → phiên #${session.sessionId}`)
 
     const order = expectStatus(await request('POST', `/staff/pos/sessions/${session.sessionId}/orders`, { token: staff, body: {} }), [200, 201], 'pos order')
     const dishes = expectStatus(await request('GET', '/customer/dishes?perPage=5&isAvailable=true'), 200, 'dishes').items
@@ -181,15 +189,20 @@ const main = async () => {
     if (!invoice.qr?.qrImageUrl) throw new Error('Invoice QR missing')
     pass(`Gọi thêm món trong cùng phiên, lập/mở lại hóa đơn #${invoice.invoiceId} (có VietQR)`)
 
-    expectStatus(await request('POST', `/staff/invoices/${invoice.invoiceId}/payments`, { token: staff, headers: { 'Idempotency-Key': uid('pay') }, body: { method: 'BANK_TRANSFER_QR', amount: invoice.totalAmount - 1000, transactionCode: uid('FT') } }), 409, 'wrong amount rejected')
-    const paid = expectStatus(await request('POST', `/staff/invoices/${invoice.invoiceId}/payments`, { token: staff, headers: { 'Idempotency-Key': uid('pay') }, body: { method: 'BANK_TRANSFER_QR', amount: invoice.totalAmount, transactionCode: uid('FT') } }), 201, 'pay invoice')
+    // ADR-023: chuyển thiếu được ghi nhận là thanh toán một phần, mã giao dịch ngắn bị từ chối, thu nốt phần còn lại.
+    expectStatus(await request('POST', `/staff/invoices/${invoice.invoiceId}/payments`, { token: staff, headers: { 'Idempotency-Key': uid('pay') }, body: { method: 'BANK_TRANSFER_QR', amount: 1000, transactionCode: 'FT1' } }), 422, 'short reference rejected')
+    const partial = expectStatus(await request('POST', `/staff/invoices/${invoice.invoiceId}/payments`, { token: staff, headers: { 'Idempotency-Key': uid('pay') }, body: { method: 'BANK_TRANSFER_QR', amount: invoice.totalAmount - 1000, transactionCode: uid('FT') } }), 201, 'partial transfer')
+    expectEqual(partial.status, 'OPEN', 'invoice still open after partial payment')
+    expectEqual(partial.outstanding, 1000, 'outstanding after partial payment')
+    expectStatus(await request('POST', `/staff/pos/sessions/${session.sessionId}/close`, { token: staff, body: { expectedVersion: (await request('GET', `/staff/pos/sessions/${session.sessionId}`, { token: staff })).json.data.version } }), 409, 'close blocked while money outstanding')
+    const paid = expectStatus(await request('POST', `/staff/invoices/${invoice.invoiceId}/payments`, { token: staff, headers: { 'Idempotency-Key': uid('pay') }, body: { method: 'CASH', amount: 1000, cashTendered: 2000 } }), 201, 'pay remaining cash')
     expectEqual(paid.status, 'PAID', 'invoice paid')
     const current = expectStatus(await request('GET', `/staff/pos/sessions/${session.sessionId}`, { token: staff }), 200, 'session detail')
     expectStatus(await request('POST', `/staff/pos/sessions/${session.sessionId}/close`, { token: staff, body: { expectedVersion: current.version - 1 } }), 409, 'stale version rejected')
     const closed = expectStatus(await request('POST', `/staff/pos/sessions/${session.sessionId}/close`, { token: staff, body: { expectedVersion: current.version } }), 200, 'close session')
     expectEqual(closed.reservation.status, 'COMPLETED', 'reservation completed')
     expectEqual(closed.tables[0].status, 'CLEANING', 'table cleaning')
-    pass('Thanh toán QR sai số tiền bị chặn; đóng phiên (chống xung đột phiên bản) → đặt bàn hoàn thành, bàn chờ vệ sinh')
+    pass('Chuyển khoản thiếu ghi nhận một phần, chặn đóng phiên khi còn thiếu, thu nốt tiền mặt; đóng phiên (chống xung đột phiên bản) → đặt bàn hoàn thành, bàn chờ vệ sinh')
 
     table = expectStatus(await request('POST', `/staff/pos/tables/${freeTable.tableId}/complete-cleaning`, { token: staff }), 200, 'complete cleaning')
     if (!['AVAILABLE', 'RESERVED'].includes(table.status)) throw new Error(`Unexpected table status after cleaning: ${table.status}`)

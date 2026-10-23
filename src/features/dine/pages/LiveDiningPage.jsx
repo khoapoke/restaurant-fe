@@ -88,6 +88,19 @@ export const LiveDiningPage = () => {
   const session = state?.session
   const inService = !!session?.isCurrent
   const mealEnded = !!session && !session.isCurrent
+  const movedTo = state?.entry?.movedTo
+  const orderingOpen = state?.entry?.orderingOpen !== false
+
+  // Phiên đã được nhân viên chuyển sang bàn khác: mang thẻ khách sang bàn mới (SES-05).
+  const followMove = () => {
+    if (!movedTo?.tableToken) return
+    try {
+      if (dine.visitToken) window.localStorage.setItem(`moc.dine.visit.${movedTo.tableToken}`, dine.visitToken)
+    } catch {
+      // Bộ nhớ bị chặn: khách nhập lại mã bàn ở bàn mới.
+    }
+    window.location.assign(`/dine/${movedTo.tableToken}`)
+  }
 
   const handleSent = useCallback((round) => {
     setCartOpen(false)
@@ -99,7 +112,7 @@ export const LiveDiningPage = () => {
     visitToken: dine.visitToken,
     submitOrder: dine.submitOrder,
     cart,
-    canOrder: !!session?.canOrder,
+    canOrder: !!session?.canOrder && orderingOpen,
     onSent: handleSent,
   })
   const { error: roundError } = rounds
@@ -130,7 +143,15 @@ export const LiveDiningPage = () => {
             <ReconnectBanner status={dine.status} onRetry={dine.refresh} />
             <TableHero state={state} onInvite={() => setInviteOpen(true)} />
 
-            {!session && (
+            {movedTo && (
+              <section className="rounded-3xl border border-[#6f1d32]/30 bg-[#fffdf8] p-5" aria-live="polite">
+                <h2 className="moc-serif text-2xl text-[#211b18]">Bàn của bạn đã được chuyển</h2>
+                <p className="mt-2 text-sm leading-6 text-[#625a55]">Nhân viên đã chuyển nhóm của bạn sang {movedTo.tableNames.join(' + ')}. Món đã gọi và hóa đơn được giữ nguyên.</p>
+                <button type="button" onClick={followMove} className="moc-inverse mt-4 min-h-12 w-full rounded-full bg-[#6f1d32] px-5 text-sm font-bold text-white">Tiếp tục ở {movedTo.tableNames[0]}</button>
+              </section>
+            )}
+
+            {!session && !movedTo && (
               <EntryStage
                 state={state}
                 now={now}
@@ -148,6 +169,9 @@ export const LiveDiningPage = () => {
                 {openRequests.length > 0 && <ServiceRequestList requests={openRequests} now={now} onCancel={(id) => dine.cancelRequest(id).catch(() => {})} />}
                 {(rounds.pending || rounds.notice) && (
                   <PendingRoundCard pending={rounds.pending} status={rounds.status} error={rounds.error} notice={rounds.notice} onRetry={rounds.retry} onDismissNotice={rounds.dismissNotice} onTrack={() => setTab('track')} />
+                )}
+                {!orderingOpen && session.status === 'OPEN' && tab === 'menu' && (
+                  <p className="rounded-2xl bg-[#f3e7d3] px-4 py-3 text-sm text-[#6b4a12]">Bếp đã ngưng nhận món mới sau {state.entry.lastOrderAt}. Bạn vẫn xem được món đã gọi và thanh toán bình thường.</p>
                 )}
                 {session.status === 'AWAITING_PAYMENT' && tab === 'menu' && (
                   <p className="rounded-2xl bg-[#f3e7d3] px-4 py-3 text-sm text-[#6b4a12]">Hóa đơn đã được lập nên thực đơn tạm khóa. Gọi nhân viên nếu bạn muốn gọi thêm món.</p>
@@ -171,7 +195,7 @@ export const LiveDiningPage = () => {
         )}
       </main>
 
-      {inService && session.canOrder && tab === 'menu' && <CartBar totals={cart.totals} onOpen={() => { rounds.clearError(); setCartOpen(true) }} bumpKey={bumpKey} />}
+      {inService && session.canOrder && orderingOpen && tab === 'menu' && <CartBar totals={cart.totals} onOpen={() => { rounds.clearError(); setCartOpen(true) }} bumpKey={bumpKey} />}
       {inService && (
         <DineTabBar
           active={tab}
