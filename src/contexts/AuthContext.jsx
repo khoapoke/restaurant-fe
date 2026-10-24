@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { AUTH_EXPIRED_EVENT, STORAGE_KEYS } from '../features/auth/constants'
 import { loginApi, registerApi, logoutApi } from '../features/auth/services/authService'
+import { clearAllPending, storedAccountId } from '../features/communications/pendingMessages'
 
 const AuthContext = createContext(null)
 
@@ -41,9 +42,28 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpired)
   }, [])
 
+  useEffect(() => {
+    // Tab khác đăng xuất / đăng nhập tài khoản khác: đồng bộ ngay để màn hình (chat, thông báo) của
+    // tài khoản cũ được gỡ và không gửi request bằng phiên mới với dữ liệu cũ.
+    const syncFromOtherTab = (event) => {
+      if (event.key !== null && ![STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.ACCOUNT].includes(event.key)) return
+      const nextToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+      const raw = localStorage.getItem(STORAGE_KEYS.ACCOUNT) || sessionStorage.getItem(STORAGE_KEYS.ACCOUNT)
+      let nextUser
+      try { nextUser = raw ? JSON.parse(raw) : null } catch { nextUser = null }
+      setToken(nextToken || null)
+      setUser(nextToken ? nextUser : null)
+    }
+    window.addEventListener('storage', syncFromOtherTab)
+    return () => window.removeEventListener('storage', syncFromOtherTab)
+  }, [])
+
   const saveAuthData = (tokenValue, accountValue, remember = true) => {
     const storage = remember ? localStorage : sessionStorage
     const otherStorage = remember ? sessionStorage : localStorage
+
+    // Đăng nhập tài khoản khác trên cùng trình duyệt: không giữ tin chat chờ gửi của tài khoản trước.
+    if (String(storedAccountId()) !== String(accountValue?.accountId)) clearAllPending()
 
     // Xóa từ storage kia để tránh xung đột
     otherStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
@@ -62,6 +82,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(STORAGE_KEYS.ACCOUNT)
     sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
     sessionStorage.removeItem(STORAGE_KEYS.ACCOUNT)
+    clearAllPending()
 
     setToken(null)
     setUser(null)

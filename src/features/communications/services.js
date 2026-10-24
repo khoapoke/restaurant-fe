@@ -1,0 +1,18 @@
+import api from '../../lib/axios'
+
+export const noticesApi = (params = {}, signal) => api.get('/customer/notifications', { params, signal })
+export const readNoticeApi = (id) => api.post(`/customer/notifications/${id}/read`)
+export const readAllNoticesApi = () => api.post('/customer/notifications/read-all')
+export const feedbackApi = (id, payload) => api.post(`/customer/notifications/${id}/feedback`, payload)
+export const currentChatApi = (signal) => api.get('/customer/support/current', { signal })
+export const openChatApi = () => api.post('/customer/support')
+export const chatApi = (id, signal, before) => api.get(`/customer/support/${id}`, { signal, params: { before } })
+export const chatActionApi = (id, action) => api.post(`/customer/support/${id}/actions`, { action })
+export const sendChatApi = (id, payload) => api.post(`/customer/support/${id}/messages`, payload)
+export const supportQueueApi = (params, signal) => api.get('/staff/support', { params, signal })
+export const staffChatApi = (id, signal, before) => api.get(`/staff/support/${id}`, { signal, params: { before } })
+export const staffChatActionApi = (id, action, payload = {}) => api.post(`/staff/support/${id}/actions`, { action, ...payload })
+export const supportAssigneesApi = () => api.get('/admin/support/assignees')
+export const staffSendChatApi = (id, payload) => api.post(`/staff/support/${id}/messages`, payload)
+export const deliveriesApi = (params, signal) => api.get('/admin/communications/deliveries', { params, signal })
+export const retryDeliveryApi = (id, payload) => api.post(`/admin/communications/deliveries/${id}/retry`, payload)

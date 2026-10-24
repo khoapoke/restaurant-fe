@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
 import { Role } from '../../features/auth/constants'
 import MocBrand from '../brand/MocBrand'
+import NotificationBell from '../../features/communications/NotificationBell'
 
 const PUBLIC_ITEMS = [
   { label: 'Câu chuyện', href: '/#story' },
@@ -78,6 +79,7 @@ export const MocSiteHeader = () => {
         <div className="flex items-center gap-1 sm:gap-2">
           {isCustomer && (
             <>
+              <NotificationBell key={user?.accountId} />
               <Link to="/reservations" className="relative p-2.5 rounded-full hover:bg-[#6f1d32]/8" aria-label="Đặt bàn">
                 <CalendarDays className="w-[18px] h-[18px]" />
               </Link>

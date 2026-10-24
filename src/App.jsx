@@ -8,6 +8,7 @@ import HomePage from './features/home/pages/HomePage'
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
 import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
+import SupportWidget from './features/communications/SupportWidget'
 
 const CustomerProfilePage = lazy(() => import('./features/customer/profile/pages/CustomerProfilePage'))
 const CustomerCartPage = lazy(() => import('./features/customer/cart/pages/CustomerCartPage'))
@@ -27,6 +28,9 @@ const PosFloorPage = lazy(() => import('./features/staff/pos/pages/PosFloorPage'
 const PosSessionPage = lazy(() => import('./features/staff/pos/pages/PosSessionPage'))
 const KitchenBoardPage = lazy(() => import('./features/staff/pos/pages/KitchenBoardPage'))
 const LiveDiningPage = lazy(() => import('./features/dine/pages/LiveDiningPage'))
+const NotificationsPage = lazy(() => import('./features/communications/NotificationsPage'))
+const StaffSupportPage = lazy(() => import('./features/communications/StaffSupportPage'))
+const DeliveryLogsPage = lazy(() => import('./features/communications/DeliveryLogsPage'))
 
 const CUSTOMER = [Role.CUSTOMER]
 const OPERATIONS = [Role.STAFF, Role.ADMIN]
@@ -60,6 +64,7 @@ function App() {
                 <Route path="/checkout" element={guard(CUSTOMER, <CustomerCheckoutPage />)} />
                 <Route path="/orders" element={guard(CUSTOMER, <CustomerOrdersPage />)} />
                 <Route path="/reservations" element={guard(CUSTOMER, <CustomerReservationsPage />)} />
+                <Route path="/notifications" element={guard(CUSTOMER, <NotificationsPage />)} />
                 <Route path="/admin" element={guard([Role.ADMIN], <AdminShell />)}>
                   <Route index element={<AdminDashboard />} />
                   <Route path="accounts" element={<AdminAccountsPage />} />
@@ -69,14 +74,17 @@ function App() {
                   <Route path="tables" element={<AdminTablesPage />} />
                   <Route path="payments" element={<AdminPaymentsPage />} />
                   <Route path="approvals" element={<AdminApprovalsPage />} />
+                  <Route path="communications" element={<DeliveryLogsPage />} />
                 </Route>
                 <Route path="/staff" element={<Navigate to="/staff/floor" replace />} />
                 <Route path="/staff/floor" element={guard(OPERATIONS, <PosFloorPage />)} />
                 <Route path="/staff/sessions/:sessionId" element={guard(OPERATIONS, <PosSessionPage />)} />
                 <Route path="/staff/kitchen" element={guard(OPERATIONS, <KitchenBoardPage />)} />
+                <Route path="/staff/support" element={guard(OPERATIONS, <StaffSupportPage />)} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
+            <SupportWidget />
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>

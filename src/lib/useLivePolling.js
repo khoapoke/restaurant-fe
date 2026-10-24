@@ -9,6 +9,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  *   quay lại tab thì đồng bộ ngay.
  * - Lỗi mạng: backoff 2× tới `maxBackoff`, trạng thái chuyển `reconnecting` → `offline`.
  *
+ * - Đổi `resetKey` (trang, bộ lọc, hội thoại đang xem) → hủy request cũ và tải ngay; phản hồi của
+ *   key cũ đến muộn bị bỏ. `dataKey` cho biết dữ liệu đang hiển thị thuộc key nào.
+ *
  * `fetcher({ signal, previous })` trả về dữ liệu mới. Trả về `undefined` để giữ nguyên
  * dữ liệu cũ (ví dụ server báo `changed: false`).
  */
@@ -17,8 +20,10 @@ export const useLivePolling = (fetcher, {
   hiddenInterval = 15000,
   maxBackoff = 20000,
   enabled = true,
+  resetKey = '',
 } = {}) => {
   const [data, setData] = useState(null)
+  const [dataKey, setDataKey] = useState(null)
   const [error, setError] = useState(null)
   const [status, setStatus] = useState(enabled ? 'connecting' : 'idle')
   const [lastSyncedAt, setLastSyncedAt] = useState(null)
@@ -66,6 +71,7 @@ export const useLivePolling = (fetcher, {
         const next = await fetcherRef.current({ signal: controller.signal, previous: dataRef.current })
         if (disposed || controller.signal.aborted) return
         if (next !== undefined) applyData(next)
+        setDataKey(resetKey)
         failuresRef.current = 0
         setError(null)
         setStatus('live')
@@ -110,11 +116,11 @@ export const useLivePolling = (fetcher, {
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('online', handleOnline)
     }
-  }, [enabled, interval, hiddenInterval, maxBackoff, applyData])
+  }, [enabled, interval, hiddenInterval, maxBackoff, applyData, resetKey])
 
   const refresh = useCallback(() => runRef.current?.(), [])
 
-  return { data, setData: applyData, error, status, lastSyncedAt, refresh }
+  return { data, dataKey, setData: applyData, error, status, lastSyncedAt, refresh }
 }
 
 export default useLivePolling

@@ -1,4 +1,5 @@
 import { ChefHat, Clock3, LayoutDashboard, LayoutGrid, LogOut, RefreshCw, UserRound } from 'lucide-react'
+import StaffSupportLink from '../../../communications/StaffSupportLink'
 import { NavLink, useNavigate } from 'react-router-dom'
 import MocBrand from '../../../../components/brand/MocBrand'
 import { useAuth } from '../../../../contexts/AuthContext'
@@ -43,6 +44,7 @@ export const PosHeader = ({ syncedAt, onRefresh, refreshing, title = 'Điều h�
             <Clock3 className="w-4 h-4" />
             {['reconnecting', 'offline'].includes(connection) ? <span className="font-semibold text-[#8a1c1c]">Đang kết nối lại...</span> : syncedAt ? `Đồng bộ ${new Date(syncedAt).toLocaleTimeString('vi-VN')}` : 'Chưa đồng bộ'}
           </div>
+          <StaffSupportLink key={user?.accountId} />
           {onRefresh && (
             <button
               type="button"

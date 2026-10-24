@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { CalendarDays, Clock3, MapPin, Pencil, Users, X } from 'lucide-react'
 import MocSiteHeader from '../../../../components/navigation/MocSiteHeader'
 import MocFooter from '../../../../components/navigation/MocFooter'
@@ -9,7 +10,7 @@ import Skeleton from '../../../../components/ui/Skeleton'
 import { useApiResource } from '../../../../lib/useApiResource'
 import ReservationForm from '../components/ReservationForm'
 import { formatReservationDate, RESERVATION_STATUS_LABEL, RESERVATION_STATUS_STYLE } from '../constants'
-import { cancelReservationApi, createReservationApi, getReservationsApi, updateReservationApi } from '../services/reservationService'
+import { cancelReservationApi, createReservationApi, getReservationApi, getReservationsApi, updateReservationApi } from '../services/reservationService'
 
 const ReservationCard = ({ reservation, onEdit, onCancel }) => (
   <article className="border border-[var(--moc-line)] bg-white p-4 sm:p-5">
@@ -37,12 +38,17 @@ const ReservationCard = ({ reservation, onEdit, onCancel }) => (
 )
 
 export const CustomerReservationsPage = () => {
+  const location = useLocation()
+  const targetId = Number(new URLSearchParams(location.search).get('reservationId')) || null
   const [feedback, setFeedback] = useState(null)
   const [editing, setEditing] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [dialog, setDialog] = useState(null)
 
-  const loader = useCallback(() => getReservationsApi({ perPage: 50 }).then((response) => ({ items: response.data.items || [], fetchedAt: Date.now() })), [])
+  const loader = useCallback(async () => {
+    const [response, target] = await Promise.all([getReservationsApi({ perPage: 50 }), targetId ? getReservationApi(targetId) : null])
+    return { items: response.data.items || [], target: target?.data, fetchedAt: Date.now() }
+  }, [targetId])
   const { data, loading, error, reload } = useApiResource(loader, { fallbackError: 'Không thể tải lịch đặt bàn.' })
 
   const { upcoming, history } = useMemo(() => {
@@ -95,6 +101,7 @@ export const CustomerReservationsPage = () => {
       <main className="max-w-[1280px] mx-auto px-5 lg:px-8 py-10 lg:py-16">
         <header><span className="moc-eyebrow">TRẢI NGHIỆM TẠI MỘC</span><h1 className="mt-4 moc-serif text-4xl sm:text-6xl font-medium tracking-[-0.04em]">Đặt bàn</h1><p className="mt-4 max-w-2xl text-sm sm:text-base leading-7 text-[#625a55]">Chọn thời gian, số khách và không gian phù hợp. Mộc sẽ xác nhận để chuẩn bị bàn chỉn chu trước khi bạn đến.</p></header>
         <FeedbackBanner feedback={feedback} onClose={() => setFeedback(null)} className="mt-6" />
+        {data?.target && <section className="mt-6 rounded-xl border-2 border-[#6f1d32] p-4" aria-label="Lượt đặt được chọn từ thông báo"><p className="mb-3 text-sm font-semibold text-[#6f1d32]">Lượt đặt từ thông báo của bạn</p><ReservationCard reservation={data.target} onEdit={startEdit} onCancel={cancel} /></section>}
         <div className="mt-8 grid xl:grid-cols-[1fr_1.05fr] gap-6 items-start">
           <ReservationForm key={editing?.reservationId || 'new'} reservation={editing} onSubmit={save} onCancelEdit={() => setEditing(null)} submitting={submitting} />
           <section className="moc-panel p-5 sm:p-7" aria-labelledby="my-reservations">

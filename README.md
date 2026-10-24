@@ -1,5 +1,16 @@
 # Mộc Dining — Frontend
 
+## Mộc đồng hành · Email, thông báo và chat
+
+- Khách hàng: **chuông thông báo** → `/notifications`; **Hỏi Mộc** ở góc phải → tư vấn Gemini, xem thẻ món/thêm giỏ, chuyển nhân viên và lịch sử trò chuyện.
+- Nhân viên (`staff1`, mật khẩu demo `123`): biểu tượng chat ở POS/Bếp → `/staff/support`. Chọn khách → **Tiếp nhận** → trả lời; AI dừng trong suốt thời gian nhân viên hỗ trợ. **Trả về hàng chờ** (kèm lý do) khi cần người khác; ADMIN có thêm **Chuyển người phụ trách** và **Tiếp quản**. Mọi xác nhận dùng hộp thoại của Mộc, có ghi nhật ký.
+- Quản trị (`admin`): **Nhật ký email** → `/admin/communications`, xem kết quả gửi, góp ý và kiểm tra trước khi gửi lại thư lỗi.
+- Khách phải đăng nhập để bảo vệ lịch sử. Chat đồng bộ mỗi 2,5–3 giây, không phải WebSocket; đổi trang/bộ lọc tải ngay. Tin gửi chưa rõ kết quả được lưu riêng theo từng `clientKey` (hai tab không ghi đè nhau), bấm thử lại sau reload không tạo tin mới, tự bỏ nếu tin đã tới server; bị xóa khi đăng xuất, hết phiên, bị khóa hoặc đổi tài khoản. Chi tiết: [`docs/api/communications.md`](docs/api/communications.md).
+- Chạy thêm `php artisan queue:work database --queue=communications --sleep=1 --timeout=45 --tries=1` và `php artisan schedule:work` tại backend. SMTP/Gemini chỉ cấu hình ở `.env` backend, tuyệt đối không thêm secret vào biến `VITE_*`.
+- Chế độ demo hiện chuyển email về hộp thư kiểm thử, không gửi tới các địa chỉ khách mẫu. SMS/Zalo/Web Push chưa nằm trong milestone này.
+
+Browser E2E: `node scripts/communications-e2e.cjs` (cần Playwright có sẵn qua `NODE_PATH` và Chrome, **không chạy với DB thật**). Mặc định frontend `:5182`, API DB sao chép `:8019`, email tắt; có thể cấu hình `APP_URL`, `API_BASE_URL`, `COMMS_UI_OUTPUT`, `CHROME_PATH`. Kịch bản có một lượt gọi Gemini thật để xác nhận tích hợp (chỉ chạy khi bạn chủ động muốn kiểm tích hợp thật), và kiểm tra chuyển nhân viên/gửi lại sau mất phản hồi/mobile.
+
 React 19 + Vite 8 + Tailwind CSS 4. Backend Laravel nằm ở repo `restaurant-lavarel`.
 Mục lục tài liệu: [`docs/README.md`](docs/README.md).
 

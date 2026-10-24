@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { AUTH_EXPIRED_EVENT, STORAGE_KEYS } from '../features/auth/constants'
 import { translateApiMessage } from './apiError'
+import { clearAllPending } from '../features/communications/pendingMessages'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
@@ -44,6 +45,7 @@ apiClient.interceptors.response.use(
       localStorage.removeItem(STORAGE_KEYS.ACCOUNT)
       sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
       sessionStorage.removeItem(STORAGE_KEYS.ACCOUNT)
+      clearAllPending()
       window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, {
         detail: { reason: isLocked ? 'LOCKED' : 'EXPIRED' },
       }))

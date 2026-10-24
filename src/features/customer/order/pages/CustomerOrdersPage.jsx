@@ -37,7 +37,7 @@ export const CustomerOrdersPage = () => {
   const [bannerNotice, setBannerNotice] = useState(location.state?.successMessage || null)
 
   // Modals state
-  const [detailOrderId, setDetailOrderId] = useState(null)
+  const [detailOrderId, setDetailOrderId] = useState(() => Number(new URLSearchParams(location.search).get('orderId')) || null)
   const [qrOrderId, setQrOrderId] = useState(null)
   const [cancelOrderId, setCancelOrderId] = useState(null)
 
