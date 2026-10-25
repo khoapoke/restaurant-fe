@@ -18,7 +18,8 @@ Mục lục tài liệu: [`docs/README.md`](docs/README.md).
 
 ```bash
 # Backend (thư mục restaurant-lavarel)
-php artisan migrate --seed        # lần đầu, hoặc migrate:fresh --seed để làm sạch dữ liệu dev
+php artisan migrate --seed        # chỉ khi cài mới trên DB MySQL trống
+# DB đang có dữ liệu: sao lưu rồi migrate, không chạy lại seeder hoặc migrate:fresh
 php artisan serve                 # http://127.0.0.1:8000
 
 # Frontend (thư mục này)
