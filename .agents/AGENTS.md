@@ -17,6 +17,7 @@
 - **Mục lục tổng:** `docs/README.md`
 - **Coding standards:** `docs/architecture/fe-standards.md`
 - **Project context:** `docs/architecture/project-context.md`
+- **Kế hoạch triển khai Admin:** `docs/architecture/admin-roadmap.md`
 
 ### Khi làm một module cụ thể, đọc file API tương ứng:
 | Nếu task liên quan đến... | → Đọc file |

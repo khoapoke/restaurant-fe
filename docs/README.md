@@ -13,6 +13,7 @@
 | [`api/enums.md`](./api/enums.md) | **Tất cả Enum/Status values** — ĐỌC KHI CẦN KIỂM TRA GIÁ TRỊ ENUM |
 | [`architecture/fe-standards.md`](./architecture/fe-standards.md) | Coding standards, folder structure, clean code rules |
 | [`architecture/project-context.md`](./architecture/project-context.md) | Tổng quan project: mục tiêu, tech stack, DB tables |
+| [`architecture/admin-roadmap.md`](./architecture/admin-roadmap.md) | **Kế hoạch & Lộ trình triển khai Phân hệ Admin 5 giai đoạn** |
 
 ---
 
