@@ -173,7 +173,7 @@ src/features/admin/
 | **Giai đoạn 2** | **Quản lý Món ăn & Danh mục** | ✅ **Hoàn thành** | Bảng món ăn, thêm/sửa, dị ứng, tag thời tiết, xóa mềm |
 | **Giai đoạn 3** | **Quản lý Đơn hàng & Thanh toán** | ✅ **Hoàn thành** | Tabs trạng thái, duyệt đơn, hủy đơn, hoàn tiền |
 | **Giai đoạn 4** | **Bàn ăn & Điều phối Đặt bàn** | ✅ **Hoàn thành** | Sơ đồ bàn, duyệt đặt bàn, gán bàn |
-| **Giai đoạn 5** | **Quản lý Tài khoản Người dùng** | ⏳ **Sẵn sàng thực thi** | Tìm kiếm tài khoản, Khóa / Mở khóa |
+| **Giai đoạn 5** | **Quản lý Tài khoản Người dùng** | ✅ **Hoàn thành** | Tìm kiếm tài khoản, Khóa / Mở khóa, Lọc vai trò |
 
 ---
 

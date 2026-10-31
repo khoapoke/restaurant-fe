@@ -19,7 +19,7 @@ import AdminOrdersPage from './features/admin/order/pages/AdminOrdersPage'
 import AdminPaymentsPage from './features/admin/order/pages/AdminPaymentsPage'
 import AdminTablesPage from './features/admin/table/pages/AdminTablesPage'
 import AdminReservationsPage from './features/admin/table/pages/AdminReservationsPage'
-import AdminPlaceholderPage from './features/admin/layout/pages/AdminPlaceholderPage'
+import AdminAccountsPage from './features/admin/account/pages/AdminAccountsPage'
 
 import Button from './components/ui/Button'
 import {
@@ -255,22 +255,7 @@ function App() {
               <Route path="payments" element={<AdminPaymentsPage />} />
               <Route path="tables" element={<AdminTablesPage />} />
               <Route path="reservations" element={<AdminReservationsPage />} />
-              <Route
-                path="accounts"
-                element={
-                  <AdminPlaceholderPage
-                    title="Quản lý Người dùng"
-                    stage="Giai đoạn 5"
-                    description="Kiểm soát danh sách tài khoản người dùng, phân quyền và khóa tài khoản vi phạm."
-                    plannedFeatures={[
-                      'Danh sách tài khoản khách hàng & quản trị viên',
-                      'Tìm kiếm theo username, email, số điện thoại',
-                      'Lọc theo trạng thái Hoạt động / Đã khóa',
-                      'Khóa & Mở khóa tài khoản',
-                    ]}
-                  />
-                }
-              />
+              <Route path="accounts" element={<AdminAccountsPage />} />
             </Route>
 
             {/* Fallback route */}
