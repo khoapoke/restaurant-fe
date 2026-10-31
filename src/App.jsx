@@ -17,6 +17,8 @@ import AdminDishPage from './features/admin/dish/pages/AdminDishPage'
 import AdminCategoryPage from './features/admin/dish/pages/AdminCategoryPage'
 import AdminOrdersPage from './features/admin/order/pages/AdminOrdersPage'
 import AdminPaymentsPage from './features/admin/order/pages/AdminPaymentsPage'
+import AdminTablesPage from './features/admin/table/pages/AdminTablesPage'
+import AdminReservationsPage from './features/admin/table/pages/AdminReservationsPage'
 import AdminPlaceholderPage from './features/admin/layout/pages/AdminPlaceholderPage'
 
 import Button from './components/ui/Button'
@@ -251,36 +253,8 @@ function App() {
               <Route path="categories" element={<AdminCategoryPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="payments" element={<AdminPaymentsPage />} />
-              <Route
-                path="tables"
-                element={
-                  <AdminPlaceholderPage
-                    title="Sơ đồ Bàn ăn"
-                    stage="Giai đoạn 4"
-                    description="Quản lý số lượng bàn, sức chứa ghế và tình trạng bàn trống tại nhà hàng."
-                    plannedFeatures={[
-                      'Sơ đồ trực quan danh sách bàn ăn',
-                      'Mã màu trạng thái: Trống, Đã đặt, Đang dùng bữa',
-                      'Thêm bàn mới và điều chỉnh sức chứa',
-                    ]}
-                  />
-                }
-              />
-              <Route
-                path="reservations"
-                element={
-                  <AdminPlaceholderPage
-                    title="Điều phối Đặt bàn"
-                    stage="Giai đoạn 4"
-                    description="Tiếp nhận và duyệt các yêu cầu đặt bàn trực tuyến từ khách hàng."
-                    plannedFeatures={[
-                      'Danh sách yêu cầu đặt bàn theo ngày và khung giờ',
-                      'Xác nhận đặt bàn và gán số bàn tương ứng',
-                      'Từ chối hoặc hủy yêu cầu đặt bàn',
-                    ]}
-                  />
-                }
-              />
+              <Route path="tables" element={<AdminTablesPage />} />
+              <Route path="reservations" element={<AdminReservationsPage />} />
               <Route
                 path="accounts"
                 element={
