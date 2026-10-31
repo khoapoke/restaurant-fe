@@ -15,6 +15,8 @@ import AdminLayout from './features/admin/layout/layouts/AdminLayout'
 import AdminDashboardPage from './features/admin/dashboard/pages/AdminDashboardPage'
 import AdminDishPage from './features/admin/dish/pages/AdminDishPage'
 import AdminCategoryPage from './features/admin/dish/pages/AdminCategoryPage'
+import AdminOrdersPage from './features/admin/order/pages/AdminOrdersPage'
+import AdminPaymentsPage from './features/admin/order/pages/AdminPaymentsPage'
 import AdminPlaceholderPage from './features/admin/layout/pages/AdminPlaceholderPage'
 
 import Button from './components/ui/Button'
@@ -247,38 +249,8 @@ function App() {
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="dishes" element={<AdminDishPage />} />
               <Route path="categories" element={<AdminCategoryPage />} />
-              <Route
-                path="orders"
-                element={
-                  <AdminPlaceholderPage
-                    title="Quản lý Đơn hàng"
-                    stage="Giai đoạn 3"
-                    description="Theo dõi tiến độ đơn, điều phối bếp và giao nhận theo quy trình FSM chuẩn."
-                    plannedFeatures={[
-                      'Lọc đơn theo tab trạng thái (Chờ duyệt, Bếp nấu, Đang giao, v.v.)',
-                      'Xem chi tiết món ăn và thông tin giao nhận',
-                      'Chuyển trạng thái đơn kế tiếp hợp lệ',
-                      'Hủy đơn hàng kèm lý do',
-                    ]}
-                  />
-                }
-              />
-              <Route
-                path="payments"
-                element={
-                  <AdminPlaceholderPage
-                    title="Giao dịch Thanh toán"
-                    stage="Giai đoạn 3"
-                    description="Tra cứu lịch sử thanh toán VietQR / Tiền mặt và xử lý hoàn tiền."
-                    plannedFeatures={[
-                      'Tra cứu lịch sử giao dịch thanh toán',
-                      'Đối soát số tiền đơn hàng và giao dịch',
-                      'Ghi nhận hoàn tiền (refund)',
-                      'Xem log callback từ cổng thanh toán',
-                    ]}
-                  />
-                }
-              />
+              <Route path="orders" element={<AdminOrdersPage />} />
+              <Route path="payments" element={<AdminPaymentsPage />} />
               <Route
                 path="tables"
                 element={
