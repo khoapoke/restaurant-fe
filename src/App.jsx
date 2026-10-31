@@ -8,6 +8,7 @@ import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
 import CustomerCartPage from './features/customer/cart/pages/CustomerCartPage'
 import CustomerCheckoutPage from './features/customer/order/pages/CustomerCheckoutPage'
 import CustomerOrdersPage from './features/customer/order/pages/CustomerOrdersPage'
+import CustomerReservationPage from './features/customer/reservation/pages/CustomerReservationPage'
 
 // Admin Module Components & Layout
 import AdminRoute from './features/admin/layout/routes/AdminRoute'
@@ -31,6 +32,7 @@ import {
   Menu as MenuIcon,
   ShoppingBag,
   Package,
+  CalendarDays,
 } from 'lucide-react'
 
 // Trang chủ Customer
@@ -60,6 +62,13 @@ const HomePage = () => {
               <UtensilsCrossed className="w-3.5 h-3.5 text-amber-500" />
               <span>Thực đơn</span>
             </Link>
+            <Link
+              to="/reservation"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-300 hover:text-white hover:bg-gray-800/60 transition-colors flex items-center gap-1.5"
+            >
+              <CalendarDays className="w-3.5 h-3.5 text-amber-500" />
+              <span>Đặt bàn</span>
+            </Link>
             {isAuthenticated && (
               <Link
                 to="/orders"
@@ -82,11 +91,18 @@ const HomePage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link to="/menu" className="md:hidden">
-            <Button variant="ghost" size="sm" icon={MenuIcon}>
-              Menu
-            </Button>
-          </Link>
+          <div className="flex items-center gap-1.5 md:hidden">
+            <Link to="/menu">
+              <Button variant="ghost" size="sm" icon={MenuIcon}>
+                Menu
+              </Button>
+            </Link>
+            <Link to="/reservation">
+              <Button variant="ghost" size="sm" icon={CalendarDays}>
+                Đặt bàn
+              </Button>
+            </Link>
+          </div>
 
           {/* Cart Badge Button */}
           {isAuthenticated && (
@@ -173,6 +189,11 @@ const HomePage = () => {
               Khám phá Thực đơn & Món ngon
             </Button>
           </Link>
+          <Link to="/reservation">
+            <Button variant="secondary" size="lg" icon={CalendarDays}>
+              Đặt bàn trực tuyến
+            </Button>
+          </Link>
           {isAuthenticated ? (
             <>
               {user?.role === 'ADMIN' ? (
@@ -237,6 +258,8 @@ function App() {
             <Route path="/cart" element={<CustomerCartPage />} />
             <Route path="/checkout" element={<CustomerCheckoutPage />} />
             <Route path="/orders" element={<CustomerOrdersPage />} />
+            <Route path="/reservation" element={<CustomerReservationPage />} />
+            <Route path="/reservations" element={<Navigate to="/reservation" replace />} />
 
             {/* Phân hệ Quản trị (Admin) — Được bảo vệ bởi AdminRoute & AdminLayout */}
             <Route

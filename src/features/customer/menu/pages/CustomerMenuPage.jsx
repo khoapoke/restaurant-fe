@@ -8,6 +8,7 @@ import {
   SearchX,
   Sparkles,
   ShoppingBag,
+  CalendarDays,
 } from 'lucide-react'
 import {
   getCategoriesApi,
@@ -194,6 +195,12 @@ export const CustomerMenuPage = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link to="/reservation">
+              <Button variant="ghost" size="sm" icon={CalendarDays}>
+                Đặt bàn
+              </Button>
+            </Link>
+
             <Link
               to="/cart"
               className="relative p-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
