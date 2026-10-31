@@ -10,15 +10,23 @@ const apiClient = axios.create({
   timeout: 15000,
 })
 
-// Request Interceptor: Gắn Bearer Token vào header nếu có
+// Request Interceptor: Gắn Bearer Token vào header nếu có (trừ route auth public)
 apiClient.interceptors.request.use(
   (config) => {
-    const token =
-      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) ||
-      sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+    const isPublicAuth =
+      config.url?.includes('/auth/login') || config.url?.includes('/auth/register')
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    if (!isPublicAuth) {
+      const token =
+        localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) ||
+        sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    } else {
+      // Đảm bảo request login/register không bị dính token cũ
+      delete config.headers.Authorization
     }
     return config
   },

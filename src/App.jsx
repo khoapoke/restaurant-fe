@@ -8,6 +8,15 @@ import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
 import CustomerCartPage from './features/customer/cart/pages/CustomerCartPage'
 import CustomerCheckoutPage from './features/customer/order/pages/CustomerCheckoutPage'
 import CustomerOrdersPage from './features/customer/order/pages/CustomerOrdersPage'
+
+// Admin Module Components & Layout
+import AdminRoute from './features/admin/layout/routes/AdminRoute'
+import AdminLayout from './features/admin/layout/layouts/AdminLayout'
+import AdminDashboardPage from './features/admin/dashboard/pages/AdminDashboardPage'
+import AdminDishPage from './features/admin/dish/pages/AdminDishPage'
+import AdminCategoryPage from './features/admin/dish/pages/AdminCategoryPage'
+import AdminPlaceholderPage from './features/admin/layout/pages/AdminPlaceholderPage'
+
 import Button from './components/ui/Button'
 import {
   UtensilsCrossed,
@@ -20,7 +29,7 @@ import {
   Package,
 } from 'lucide-react'
 
-// Placeholder cho Customer Home Page
+// Trang chủ Customer
 const HomePage = () => {
   const { user, isAuthenticated, logout } = useAuth()
   const { totalQuantity } = useCart()
@@ -54,6 +63,15 @@ const HomePage = () => {
               >
                 <Package className="w-3.5 h-3.5 text-amber-500" />
                 <span>Đơn hàng</span>
+              </Link>
+            )}
+            {isAuthenticated && user?.role === 'ADMIN' && (
+              <Link
+                to="/admin"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 transition-colors flex items-center gap-1.5 ml-2"
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <span>Trang Quản trị</span>
               </Link>
             )}
           </nav>
@@ -90,6 +108,15 @@ const HomePage = () => {
                 </p>
                 <p className="text-[10px] text-amber-400 uppercase font-mono">{user?.role}</p>
               </div>
+
+              {user?.role === 'ADMIN' && (
+                <Link to="/admin">
+                  <Button variant="primary" size="sm" icon={Shield}>
+                    Quản trị
+                  </Button>
+                </Link>
+              )}
+
               <Link to="/orders">
                 <Button variant="outline" size="sm" icon={Package}>
                   Đơn mua
@@ -133,7 +160,7 @@ const HomePage = () => {
         </h1>
 
         <p className="text-gray-400 max-w-xl text-sm sm:text-base mb-8">
-          Module Auth, Hồ sơ khách hàng, Thực đơn, Giỏ hàng & Thanh toán QR đã sẵn sàng phục vụ.
+          Module Auth, Hồ sơ khách hàng, Thực đơn, Giỏ hàng, Đơn hàng & Phân hệ Quản trị Admin đã sẵn sàng phục vụ.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
@@ -143,11 +170,21 @@ const HomePage = () => {
             </Button>
           </Link>
           {isAuthenticated ? (
-            <Link to="/orders">
-              <Button variant="outline" size="lg" icon={Package}>
-                Lịch sử Đơn hàng của bạn
-              </Button>
-            </Link>
+            <>
+              {user?.role === 'ADMIN' ? (
+                <Link to="/admin">
+                  <Button variant="outline" size="lg" icon={Shield}>
+                    Vào Bảng điều khiển Quản trị
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/orders">
+                  <Button variant="outline" size="lg" icon={Package}>
+                    Lịch sử Đơn hàng của bạn
+                  </Button>
+                </Link>
+              )}
+            </>
           ) : (
             <Link to="/login">
               <Button variant="secondary" size="lg" icon={ArrowRight}>
@@ -181,54 +218,13 @@ const HomePage = () => {
   )
 }
 
-// Placeholder cho Admin Dashboard
-const AdminDashboard = () => {
-  const { user, logout } = useAuth()
-
-  return (
-    <div className="min-h-screen bg-[#090d16] text-gray-100 flex flex-col">
-      <header className="border-b border-gray-800 bg-gray-950 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
-            <Shield className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-bold tracking-wider text-white">LUMIÈRE ADMIN</span>
-            <span className="text-[10px] block text-gray-500 tracking-wider">Trang quản trị hệ thống</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-xs font-semibold text-gray-200">{user?.username}</p>
-            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-400">
-              {user?.role}
-            </span>
-          </div>
-          <Button variant="secondary" size="sm" icon={LogOut} onClick={logout}>
-            Đăng xuất
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex-1 p-8 max-w-5xl mx-auto w-full">
-        <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-8 text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Bảng điều khiển Quản trị viên</h2>
-          <p className="text-sm text-gray-400 max-w-md mx-auto">
-            Bạn đã đăng nhập thành công bằng tài khoản Admin. Sẵn sàng kết nối với các module: Quản lý món ăn, Đơn hàng, Bàn ăn và Báo cáo.
-          </p>
-        </div>
-      </main>
-    </div>
-  )
-}
-
 function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
           <Routes>
+            {/* Phân hệ Khách hàng (Customer) */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -237,7 +233,101 @@ function App() {
             <Route path="/cart" element={<CustomerCartPage />} />
             <Route path="/checkout" element={<CustomerCheckoutPage />} />
             <Route path="/orders" element={<CustomerOrdersPage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+
+            {/* Phân hệ Quản trị (Admin) — Được bảo vệ bởi AdminRoute & AdminLayout */}
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="dishes" element={<AdminDishPage />} />
+              <Route path="categories" element={<AdminCategoryPage />} />
+              <Route
+                path="orders"
+                element={
+                  <AdminPlaceholderPage
+                    title="Quản lý Đơn hàng"
+                    stage="Giai đoạn 3"
+                    description="Theo dõi tiến độ đơn, điều phối bếp và giao nhận theo quy trình FSM chuẩn."
+                    plannedFeatures={[
+                      'Lọc đơn theo tab trạng thái (Chờ duyệt, Bếp nấu, Đang giao, v.v.)',
+                      'Xem chi tiết món ăn và thông tin giao nhận',
+                      'Chuyển trạng thái đơn kế tiếp hợp lệ',
+                      'Hủy đơn hàng kèm lý do',
+                    ]}
+                  />
+                }
+              />
+              <Route
+                path="payments"
+                element={
+                  <AdminPlaceholderPage
+                    title="Giao dịch Thanh toán"
+                    stage="Giai đoạn 3"
+                    description="Tra cứu lịch sử thanh toán VietQR / Tiền mặt và xử lý hoàn tiền."
+                    plannedFeatures={[
+                      'Tra cứu lịch sử giao dịch thanh toán',
+                      'Đối soát số tiền đơn hàng và giao dịch',
+                      'Ghi nhận hoàn tiền (refund)',
+                      'Xem log callback từ cổng thanh toán',
+                    ]}
+                  />
+                }
+              />
+              <Route
+                path="tables"
+                element={
+                  <AdminPlaceholderPage
+                    title="Sơ đồ Bàn ăn"
+                    stage="Giai đoạn 4"
+                    description="Quản lý số lượng bàn, sức chứa ghế và tình trạng bàn trống tại nhà hàng."
+                    plannedFeatures={[
+                      'Sơ đồ trực quan danh sách bàn ăn',
+                      'Mã màu trạng thái: Trống, Đã đặt, Đang dùng bữa',
+                      'Thêm bàn mới và điều chỉnh sức chứa',
+                    ]}
+                  />
+                }
+              />
+              <Route
+                path="reservations"
+                element={
+                  <AdminPlaceholderPage
+                    title="Điều phối Đặt bàn"
+                    stage="Giai đoạn 4"
+                    description="Tiếp nhận và duyệt các yêu cầu đặt bàn trực tuyến từ khách hàng."
+                    plannedFeatures={[
+                      'Danh sách yêu cầu đặt bàn theo ngày và khung giờ',
+                      'Xác nhận đặt bàn và gán số bàn tương ứng',
+                      'Từ chối hoặc hủy yêu cầu đặt bàn',
+                    ]}
+                  />
+                }
+              />
+              <Route
+                path="accounts"
+                element={
+                  <AdminPlaceholderPage
+                    title="Quản lý Người dùng"
+                    stage="Giai đoạn 5"
+                    description="Kiểm soát danh sách tài khoản người dùng, phân quyền và khóa tài khoản vi phạm."
+                    plannedFeatures={[
+                      'Danh sách tài khoản khách hàng & quản trị viên',
+                      'Tìm kiếm theo username, email, số điện thoại',
+                      'Lọc theo trạng thái Hoạt động / Đã khóa',
+                      'Khóa & Mở khóa tài khoản',
+                    ]}
+                  />
+                }
+              />
+            </Route>
+
+            {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

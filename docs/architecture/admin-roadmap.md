@@ -169,9 +169,9 @@ src/features/admin/
 
 | Giai đoạn | Nội dung Module | Trạng thái | Ghi chú |
 |:---:|---|:---:|---|
-| **Giai đoạn 1** | **Admin Layout Shell & Dashboard Báo cáo** | ⏳ **Sẵn sàng thực thi** | Sidebar, Header, Route Guard, Báo cáo Doanh thu/Top món |
-| **Giai đoạn 2** | **Quản lý Món ăn & Danh mục** | ⏸️ Chờ Giai đoạn 1 | Bảng món ăn, thêm/sửa, dị ứng, tag thời tiết, xóa mềm |
-| **Giai đoạn 3** | **Quản lý Đơn hàng & Thanh toán** | ⏸️ Chờ Giai đoạn 2 | Tabs trạng thái, duyệt đơn, hủy đơn, hoàn tiền |
+| **Giai đoạn 1** | **Admin Layout Shell & Dashboard Báo cáo** | ✅ **Hoàn thành** | Sidebar, Header, Route Guard, Báo cáo Doanh thu/Top món |
+| **Giai đoạn 2** | **Quản lý Món ăn & Danh mục** | ✅ **Hoàn thành** | Bảng món ăn, thêm/sửa, dị ứng, tag thời tiết, xóa mềm |
+| **Giai đoạn 3** | **Quản lý Đơn hàng & Thanh toán** | ⏳ **Sẵn sàng thực thi** | Tabs trạng thái, duyệt đơn, hủy đơn, hoàn tiền |
 | **Giai đoạn 4** | **Bàn ăn & Điều phối Đặt bàn** | ⏸️ Chờ Giai đoạn 3 | Sơ đồ bàn, duyệt đặt bàn, gán bàn |
 | **Giai đoạn 5** | **Quản lý Tài khoản Người dùng** | ⏸️ Chờ Giai đoạn 4 | Tìm kiếm tài khoản, Khóa / Mở khóa |
 

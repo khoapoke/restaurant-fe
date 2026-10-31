@@ -56,9 +56,11 @@ export const AuthProvider = ({ children }) => {
     setLoading(true)
     try {
       const response = await loginApi({ username, password, rememberMe })
-      const { accessToken, account } = response.data
-      saveAuthData(accessToken, account, rememberMe)
-      return { success: true, data: response.data }
+      const data = response.data || response
+      const tokenValue = data?.accessToken || data?.token || data?.access_token
+      const accountValue = data?.account || data?.user
+      saveAuthData(tokenValue, accountValue, rememberMe)
+      return { success: true, data }
     } finally {
       setLoading(false)
     }
@@ -68,10 +70,12 @@ export const AuthProvider = ({ children }) => {
     setLoading(true)
     try {
       const response = await registerApi(formData)
-      const { accessToken, account } = response.data
+      const data = response.data || response
+      const tokenValue = data?.accessToken || data?.token || data?.access_token
+      const accountValue = data?.account || data?.user
       // Mặc định lưu localStorage cho người dùng mới đăng ký
-      saveAuthData(accessToken, account, true)
-      return { success: true, data: response.data }
+      saveAuthData(tokenValue, accountValue, true)
+      return { success: true, data }
     } finally {
       setLoading(false)
     }
