@@ -6,11 +6,13 @@ import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils
 import { useAuth } from '../../../../contexts/AuthContext'
 import { useCart } from '../../../../contexts/CartContext'
 import { AlertTriangle, CheckCircle2, ShoppingBag, Loader2, Info } from 'lucide-react'
+import PairedDishesSection from './PairedDishesSection'
 
-export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
+export const DishDetailModal = ({ dishId, isOpen, onClose, onSelectDish }) => {
   const { isAuthenticated } = useAuth()
   const { addToCart } = useCart()
 
+  const [activeDishId, setActiveDishId] = useState(dishId)
   const [dish, setDish] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -20,7 +22,11 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
   const [addError, setAddError] = useState(null)
 
   useEffect(() => {
-    if (!dishId || !isOpen) {
+    setActiveDishId(dishId)
+  }, [dishId])
+
+  useEffect(() => {
+    if (!activeDishId || !isOpen) {
       setDish(null)
       setError(null)
       setQuantity(1)
@@ -33,7 +39,7 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
       setLoading(true)
       setError(null)
       try {
-        const response = await getDishDetailApi(dishId)
+        const response = await getDishDetailApi(activeDishId)
         setDish(response.data)
       } catch (err) {
         setError(err.response?.data?.message || 'Không thể tải chi tiết món ăn.')
@@ -43,7 +49,7 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
     }
 
     fetchDetail()
-  }, [dishId, isOpen])
+  }, [activeDishId, isOpen])
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
@@ -180,6 +186,15 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
               </div>
             </div>
           )}
+
+          {/* Gợi ý món thường được gọi cùng (Neo4j Graph Market Basket) */}
+          <PairedDishesSection
+            dishId={activeDishId}
+            onSelectDish={(newId) => {
+              setActiveDishId(newId)
+              if (onSelectDish) onSelectDish(newId)
+            }}
+          />
 
           {/* Thông báo thêm giỏ hàng thành công */}
           {addedNotice && (

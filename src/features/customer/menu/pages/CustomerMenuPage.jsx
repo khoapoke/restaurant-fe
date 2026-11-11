@@ -21,7 +21,9 @@ import {
   DEFAULT_FALLBACK_WEATHER,
 } from '../constants'
 import { useCart } from '../../../../contexts/CartContext'
+import { useAuth } from '../../../../contexts/AuthContext'
 import WeatherRecommendationAccordion from '../components/WeatherRecommendationAccordion'
+import PersonalizedRecommendationSection from '../components/PersonalizedRecommendationSection'
 import MenuFilterBar from '../components/MenuFilterBar'
 import DishCard from '../components/DishCard'
 import DishDetailModal from '../components/DishDetailModal'
@@ -31,6 +33,7 @@ import Skeleton from '../../../../components/ui/Skeleton'
 
 export const CustomerMenuPage = () => {
   const { totalQuantity } = useCart()
+  const { isAuthenticated } = useAuth()
   // State danh mục & món ăn
   const [categories, setCategories] = useState([])
   const [dishes, setDishes] = useState([])
@@ -258,6 +261,13 @@ export const CustomerMenuPage = () => {
           onSelectDish={(id) => setSelectedDishId(id)}
         />
 
+        {/* Gợi ý món cá nhân hóa dựa trên Neo4j AI (Dành cho khách hàng đã đăng nhập) */}
+        {isAuthenticated && (
+          <PersonalizedRecommendationSection
+            onSelectDish={(id) => setSelectedDishId(id)}
+          />
+        )}
+
         {/* Thanh tìm kiếm & lọc */}
         <MenuFilterBar
           categories={categories}
@@ -348,6 +358,7 @@ export const CustomerMenuPage = () => {
         dishId={selectedDishId}
         isOpen={!!selectedDishId}
         onClose={() => setSelectedDishId(null)}
+        onSelectDish={(id) => setSelectedDishId(id)}
       />
     </div>
   )

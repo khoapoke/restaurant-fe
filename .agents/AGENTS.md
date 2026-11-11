@@ -89,6 +89,7 @@ Chỉ khi người dùng đã trả lời và bấm OK / Xác nhận:
 | Quản lý danh mục & món ăn (Admin) | `docs/api/admin-dish.md` |
 | Quản lý đơn hàng & thanh toán (Admin) | `docs/api/admin-order.md` |
 | Quản lý bàn ăn, đặt bàn & báo cáo (Admin) | `docs/api/admin-table-report.md` |
+| Gợi ý món ăn AI & Neo4j Graph | `docs/api/customer-recommendation.md` |
 
 ---
 
