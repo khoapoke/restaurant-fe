@@ -15,6 +15,7 @@ export const WeatherRecommendationAccordion = ({
   weatherData,
   loading = false,
   onSelectDish,
+  fallbackDishes = [],
 }) => {
   const [isOpen, setIsOpen] = useState(true)
 
@@ -33,13 +34,39 @@ export const WeatherRecommendationAccordion = ({
     )
   }
 
-  if (!weatherData?.weather) return null
+  // Bóc tách an toàn đa cấu trúc: { data: { weather: ... } } hoặc { weather: ... }
+  const actualData = weatherData?.data || weatherData
+  const weatherObj = actualData?.weather || actualData
 
-  const { city, temperatureCelsius, condition, advice } = weatherData.weather
-  const { recommendedDishes = [], excludedAllergens = [] } = weatherData
+  if (!weatherObj || (!weatherObj.condition && !weatherObj.temperatureCelsius && !weatherObj.city)) {
+    return null
+  }
+
+  const city = weatherObj.city || weatherObj.thanh_pho || 'TP. Hồ Chí Minh'
+  const temperatureCelsius = weatherObj.temperatureCelsius ?? weatherObj.nhiet_do ?? 32
+  const condition = weatherObj.condition || weatherObj.thoi_tiet || 'HOT_SUNNY'
+  const advice =
+    weatherObj.advice ||
+    weatherObj.loi_khuyen ||
+    'Thời tiết thích hợp để thưởng thức các món ăn đặc sắc tại Lumière.'
+
+  const excludedAllergens = actualData?.excludedAllergens || actualData?.di_ung_loai_tru || []
+
+  // Danh sách món gợi ý: nếu API thời tiết chưa trả món thì lấy top 4 món từ thực đơn hiện có
+  const rawRecommended = actualData?.recommendedDishes || actualData?.mon_an_goi_y || []
+  const recommendedDishes =
+    rawRecommended.length > 0
+      ? rawRecommended
+      : fallbackDishes.slice(0, 4).map((d) => ({
+          dishId: d.dishId || d.id,
+          dishName: d.dishName || d.ten_mon_an || d.name,
+          price: d.price || d.gia,
+          imageUrl: d.imageUrl || d.hinh_anh,
+          categoryName: d.categoryName || d.category?.categoryName || 'Món ngon gợi ý',
+        }))
 
   const conditionConfig = WEATHER_CONDITIONS[condition] || {
-    label: condition || 'Bình thường',
+    label: condition || 'Nắng đẹp',
     accentColor: 'text-amber-400',
     bgColor: 'bg-amber-500/10',
     borderColor: 'border-amber-500/20',

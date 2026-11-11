@@ -37,3 +37,15 @@ export const DEFAULT_PAGE_SIZE = 12
 
 export const FALLBACK_DISH_IMAGE =
   'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80'
+
+export const DEFAULT_FALLBACK_WEATHER = {
+  weather: {
+    city: 'TP. Hồ Chí Minh',
+    temperatureCelsius: 32,
+    condition: 'HOT_SUNNY',
+    advice:
+      'Thời tiết nắng đẹp ấm áp (32°C), lý tưởng để thưởng thức các món ăn thanh mát và đồ uống giải nhiệt tại Lumière.',
+  },
+  excludedAllergens: [],
+  recommendedDishes: [],
+}

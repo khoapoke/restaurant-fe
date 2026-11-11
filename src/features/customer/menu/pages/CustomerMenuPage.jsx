@@ -15,7 +15,11 @@ import {
   getDishesApi,
   getWeatherRecommendationsApi,
 } from '../services/menuService'
-import { DEFAULT_COORDINATES, DEFAULT_PAGE_SIZE } from '../constants'
+import {
+  DEFAULT_COORDINATES,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_FALLBACK_WEATHER,
+} from '../constants'
 import { useCart } from '../../../../contexts/CartContext'
 import WeatherRecommendationAccordion from '../components/WeatherRecommendationAccordion'
 import MenuFilterBar from '../components/MenuFilterBar'
@@ -84,26 +88,47 @@ export const CustomerMenuPage = () => {
       setWeatherLoading(true)
       const loadWeather = async (lat, lon) => {
         try {
+          console.log(`[Weather] Đang tải gợi ý thời tiết cho tọa độ: lat=${lat}, lon=${lon}...`)
           const res = await getWeatherRecommendationsApi(lat, lon)
-          setWeatherData(res.data)
-        } catch {
-          // Fallback TP.HCM
+          const data = res?.data?.data || res?.data
+          if (data?.weather) {
+            console.log('[Weather] Nhận dữ liệu thời tiết thành công từ API Backend:', data)
+            setWeatherData(data)
+          } else {
+            console.warn('[Weather] API phản hồi nhưng không có cấu trúc weather, sử dụng dữ liệu dự phòng.')
+            setWeatherData(DEFAULT_FALLBACK_WEATHER)
+          }
+        } catch (err) {
+          console.warn('[Weather] API theo tọa độ gặp lỗi hoặc chưa cấu hình OpenWeatherMap, thử tọa độ mặc định TP.HCM:', err)
           try {
             const fallbackRes = await getWeatherRecommendationsApi(
               DEFAULT_COORDINATES.lat,
               DEFAULT_COORDINATES.lon
             )
-            setWeatherData(fallbackRes.data)
-          } catch {}
+            const fallbackData = fallbackRes?.data?.data || fallbackRes?.data
+            if (fallbackData?.weather) {
+              console.log('[Weather] Tải thời tiết mặc định TP.HCM thành công:', fallbackData)
+              setWeatherData(fallbackData)
+            } else {
+              setWeatherData(DEFAULT_FALLBACK_WEATHER)
+            }
+          } catch (fallbackErr) {
+            console.warn('[Weather] API thời tiết Backend không phản hồi, áp dụng dữ liệu dự phòng chuẩn để hiển thị UI:', fallbackErr)
+            setWeatherData(DEFAULT_FALLBACK_WEATHER)
+          }
         } finally {
           setWeatherLoading(false)
         }
       }
 
-      if (navigator.geolocation) {
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => loadWeather(pos.coords.latitude, pos.coords.longitude),
-          () => loadWeather(DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lon)
+          (geoErr) => {
+            console.warn('[Weather] Trình duyệt không cấp quyền GPS hoặc timeout, chuyển sang vị trí mặc định TP.HCM:', geoErr?.message)
+            loadWeather(DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lon)
+          },
+          { timeout: 3500, enableHighAccuracy: false, maximumAge: 60000 }
         )
       } else {
         loadWeather(DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lon)
@@ -229,6 +254,7 @@ export const CustomerMenuPage = () => {
         <WeatherRecommendationAccordion
           weatherData={weatherData}
           loading={weatherLoading}
+          fallbackDishes={dishes}
           onSelectDish={(id) => setSelectedDishId(id)}
         />
 
