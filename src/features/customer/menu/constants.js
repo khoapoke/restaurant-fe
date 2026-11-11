@@ -35,8 +35,7 @@ export const WEATHER_CONDITIONS = {
 
 export const DEFAULT_PAGE_SIZE = 12
 
-export const FALLBACK_DISH_IMAGE =
-  'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80'
+export const FALLBACK_DISH_IMAGE = '/img/food.jpg'
 
 export const DEFAULT_FALLBACK_WEATHER = {
   weather: {

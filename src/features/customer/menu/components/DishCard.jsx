@@ -1,9 +1,10 @@
 import { Eye, AlertTriangle } from 'lucide-react'
-import { FALLBACK_DISH_IMAGE } from '../constants'
+import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 
 export const DishCard = ({ dish, onSelect }) => {
   const isAvailable = dish.isAvailable !== false
   const priceNumber = Number(dish.price || 0)
+  const resolvedImg = resolveDishImage(dish.imageUrl, dish)
 
   return (
     <div
@@ -20,11 +21,9 @@ export const DishCard = ({ dish, onSelect }) => {
         {/* Image Container */}
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-950">
           <img
-            src={dish.imageUrl || FALLBACK_DISH_IMAGE}
+            src={resolvedImg}
             alt={dish.dishName}
-            onError={(e) => {
-              e.target.src = FALLBACK_DISH_IMAGE
-            }}
+            onError={(e) => handleImageError(e, resolveDishImage(null, dish))}
             className={`w-full h-full object-cover transition-transform duration-300
               ${isAvailable ? 'group-hover:scale-105' : 'grayscale'}
             `}

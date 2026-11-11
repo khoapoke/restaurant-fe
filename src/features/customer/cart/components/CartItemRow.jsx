@@ -1,5 +1,5 @@
 import { Trash2, Loader2, AlertCircle } from 'lucide-react'
-import { FALLBACK_DISH_IMAGE } from '../../menu/constants'
+import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 
 export const CartItemRow = ({
   item,
@@ -37,11 +37,9 @@ export const CartItemRow = ({
       <div className="flex items-center gap-3.5 flex-1 min-w-0">
         <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-950 shrink-0 border border-gray-800">
           <img
-            src={item.imageUrl || FALLBACK_DISH_IMAGE}
+            src={resolveDishImage(item.imageUrl, item)}
             alt={item.dishName}
-            onError={(e) => {
-              e.target.src = FALLBACK_DISH_IMAGE
-            }}
+            onError={(e) => handleImageError(e, resolveDishImage(null, item))}
             className={`w-full h-full object-cover ${!isAvailable ? 'grayscale opacity-60' : ''}`}
           />
         </div>

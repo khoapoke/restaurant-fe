@@ -1,5 +1,5 @@
 import { Edit2, Trash2, CheckCircle2, XCircle, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { FALLBACK_DISH_IMG } from '../constants'
+import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 
 export const DishTable = ({
   dishes = [],
@@ -42,12 +42,9 @@ export const DishTable = ({
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
                     <img
-                      src={dish.imageUrl || FALLBACK_DISH_IMG}
+                      src={resolveDishImage(dish.imageUrl, dish)}
                       alt={name}
-                      onError={(e) => {
-                        e.target.onerror = null
-                        e.target.src = FALLBACK_DISH_IMG
-                      }}
+                      onError={(e) => handleImageError(e, resolveDishImage(null, dish))}
                       className="w-10 h-10 rounded-xl object-cover bg-gray-800 border border-gray-700 shrink-0"
                     />
                     <div className="min-w-0 max-w-xs">

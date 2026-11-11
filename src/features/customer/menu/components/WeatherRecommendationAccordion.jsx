@@ -9,7 +9,8 @@ import {
   MapPin,
   ShieldCheck,
 } from 'lucide-react'
-import { WEATHER_CONDITIONS, FALLBACK_DISH_IMAGE } from '../constants'
+import { WEATHER_CONDITIONS } from '../constants'
+import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 
 export const WeatherRecommendationAccordion = ({
   weatherData,
@@ -156,11 +157,9 @@ export const WeatherRecommendationAccordion = ({
                 >
                   <div className="aspect-video w-full rounded-lg overflow-hidden bg-gray-800 relative mb-2">
                     <img
-                      src={dish.imageUrl || FALLBACK_DISH_IMAGE}
+                      src={resolveDishImage(dish.imageUrl, dish)}
                       alt={dish.dishName}
-                      onError={(e) => {
-                        e.target.src = FALLBACK_DISH_IMAGE
-                      }}
+                      onError={(e) => handleImageError(e, resolveDishImage(null, dish))}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     {dish.categoryName && (

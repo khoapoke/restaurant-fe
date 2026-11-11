@@ -14,7 +14,7 @@ import { useAuth } from '../../../../contexts/AuthContext'
 import { useCart } from '../../../../contexts/CartContext'
 import { checkoutApi } from '../services/orderService'
 import { FulfillmentType, PaymentMethod } from '../constants'
-import { FALLBACK_DISH_IMAGE } from '../../menu/constants'
+import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 import QrPaymentModal from '../components/QrPaymentModal'
 import Input from '../../../../components/ui/Input'
 import Button from '../../../../components/ui/Button'
@@ -260,11 +260,9 @@ export const CustomerCheckoutPage = () => {
                 <div key={it.dishId} className="flex items-center justify-between text-xs gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <img
-                      src={it.imageUrl || FALLBACK_DISH_IMAGE}
+                      src={resolveDishImage(it.imageUrl, it)}
                       alt={it.dishName}
-                      onError={(e) => {
-                        e.target.src = FALLBACK_DISH_IMAGE
-                      }}
+                      onError={(e) => handleImageError(e, resolveDishImage(null, it))}
                       className="w-9 h-9 rounded-lg object-cover bg-gray-950 shrink-0"
                     />
                     <div className="truncate">

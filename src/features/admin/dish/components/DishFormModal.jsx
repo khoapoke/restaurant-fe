@@ -3,12 +3,12 @@ import Modal from '../../../../components/ui/Modal'
 import Input from '../../../../components/ui/Input'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
-import { Utensils, X, Plus, Image } from 'lucide-react'
+import { Utensils, X, Plus } from 'lucide-react'
 import {
   ALLERGEN_OPTIONS,
   WEATHER_TAG_OPTIONS,
-  FALLBACK_DISH_IMG,
 } from '../constants'
+import DishImagePicker from './DishImagePicker'
 
 export const DishFormModal = ({
   isOpen,
@@ -206,45 +206,23 @@ export const DishFormModal = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="Đơn giá (VNĐ)"
-            name="price"
-            type="number"
-            placeholder="Ví dụ: 150000"
-            value={formData.price}
-            onChange={handleChange}
-            error={errors.price}
-            required
-          />
+        <Input
+          label="Đơn giá (VNĐ)"
+          name="price"
+          type="number"
+          placeholder="Ví dụ: 150000"
+          value={formData.price}
+          onChange={handleChange}
+          error={errors.price}
+          required
+        />
 
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-gray-300">
-              URL / Tên file hình ảnh
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                name="imageUrl"
-                placeholder="https://... hoặc ten_anh.jpg"
-                value={formData.imageUrl}
-                onChange={handleChange}
-                className="flex-1 px-3 py-2 text-xs bg-gray-950 border border-gray-800 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500"
-              />
-              <div className="w-9 h-9 rounded-xl border border-gray-800 overflow-hidden bg-gray-950 shrink-0 flex items-center justify-center">
-                <img
-                  src={formData.imageUrl || FALLBACK_DISH_IMG}
-                  alt="Preview"
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = FALLBACK_DISH_IMG
-                  }}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Bộ chọn hình ảnh món ăn trực quan (Tab 1: File máy & Mẫu, Tab 2: Dán URL ngoài) */}
+        <DishImagePicker
+          value={formData.imageUrl}
+          dishName={formData.dishName}
+          onChange={(newUrl) => setFormData((prev) => ({ ...prev, imageUrl: newUrl }))}
+        />
 
         <div className="space-y-1">
           <label className="block text-xs font-semibold text-gray-300">Mô tả món ăn</label>

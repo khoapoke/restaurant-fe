@@ -8,7 +8,7 @@ import {
   PAYMENT_METHOD_CONFIG,
   PAYMENT_STATUS_CONFIG,
 } from '../constants'
-import { FALLBACK_DISH_IMAGE } from '../../menu/constants'
+import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 import { Loader2, AlertTriangle, QrCode, XCircle } from 'lucide-react'
 
 export const OrderDetailModal = ({
@@ -135,11 +135,9 @@ export const OrderDetailModal = ({
                 <div key={idx} className="p-3 flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src={it.imageUrl || FALLBACK_DISH_IMAGE}
+                      src={resolveDishImage(it.imageUrl, it)}
                       alt={it.dishName}
-                      onError={(e) => {
-                        e.target.src = FALLBACK_DISH_IMAGE
-                      }}
+                      onError={(e) => handleImageError(e, resolveDishImage(null, it))}
                       className="w-10 h-10 rounded-lg object-cover bg-gray-900 shrink-0 border border-gray-800"
                     />
                     <div className="truncate">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
 import { getDishDetailApi } from '../services/menuService'
-import { FALLBACK_DISH_IMAGE } from '../constants'
+import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { useCart } from '../../../../contexts/CartContext'
 import { AlertTriangle, CheckCircle2, ShoppingBag, Loader2, Info } from 'lucide-react'
@@ -97,11 +97,9 @@ export const DishDetailModal = ({ dishId, isOpen, onClose }) => {
           {/* Ảnh lớn */}
           <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-gray-950">
             <img
-              src={dish.imageUrl || FALLBACK_DISH_IMAGE}
+              src={resolveDishImage(dish.imageUrl, dish)}
               alt={dish.dishName}
-              onError={(e) => {
-                e.target.src = FALLBACK_DISH_IMAGE
-              }}
+              onError={(e) => handleImageError(e, resolveDishImage(null, dish))}
               className="w-full h-full object-cover"
             />
             {dish.category?.categoryName && (

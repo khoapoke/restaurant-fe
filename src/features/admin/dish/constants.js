@@ -18,6 +18,5 @@ export const WEATHER_TAG_OPTIONS = [
   { value: 'PLEASANT_NORMAL', label: 'Dễ chịu', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
 ]
 
-export const FALLBACK_DISH_IMG =
-  'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80'
+export const FALLBACK_DISH_IMG = '/img/food.jpg'
 
