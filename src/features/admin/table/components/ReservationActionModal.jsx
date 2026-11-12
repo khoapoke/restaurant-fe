@@ -2,15 +2,23 @@ import { useState, useEffect } from 'react'
 import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
-import { CheckCircle2, XCircle, Users, Clock, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, XCircle, Users, Check, AlertTriangle, Utensils } from 'lucide-react'
 
+/**
+ * Modal xử lý các thao tác điều phối đặt bàn:
+ * - CONFIRMED: Duyệt gán bàn
+ * - SEATED: Khách vào bàn (bàn chuyển sang OCCUPIED)
+ * - CANCELLED: Hủy lượt đặt đã duyệt
+ * - REJECTED: Từ chối lượt đặt
+ * - COMPLETED: Hoàn tất & giải phóng bàn về AVAILABLE
+ */
 export const ReservationActionModal = ({
   isOpen,
   onClose,
   onConfirm,
   reservation,
   tables = [],
-  actionType = 'CONFIRMED', // 'CONFIRMED' | 'REJECTED' | 'COMPLETED'
+  actionType = 'CONFIRMED',
   isSubmitting = false,
 }) => {
   const [selectedTableId, setSelectedTableId] = useState('')
@@ -43,40 +51,45 @@ export const ReservationActionModal = ({
     reservation.account?.username ||
     'Khách hàng'
 
+  const isConfirmAction = actionType === 'CONFIRMED'
+  const isRejectAction = actionType === 'REJECTED'
+  const isCancelAction = actionType === 'CANCELLED'
+  const isSeatedAction = actionType === 'SEATED'
+  const isCompleteAction = actionType === 'COMPLETED'
+
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (actionType === 'CONFIRMED' && !selectedTableId) {
+    if (isConfirmAction && !selectedTableId) {
       setError('Vui lòng chọn bàn ăn để gán cho lượt đặt này')
       return
     }
-    if (actionType === 'REJECTED' && !adminNote.trim()) {
-      setError('Vui lòng nhập lý do từ chối đặt bàn')
+    if ((isRejectAction || isCancelAction) && !adminNote.trim()) {
+      setError(`Vui lòng nhập lý do ${isRejectAction ? 'từ chối' : 'hủy'} đặt bàn`)
       return
     }
 
     onConfirm({
       reservationId: id,
-      targetStatus: actionType,
+      targetStatus: isSeatedAction ? 'CONFIRMED' : actionType,
       tableId: selectedTableId ? Number(selectedTableId) : undefined,
+      tableStatus: isSeatedAction ? 'OCCUPIED' : undefined,
       adminNote: adminNote.trim() || undefined,
     })
   }
 
-  const isConfirmAction = actionType === 'CONFIRMED'
-  const isRejectAction = actionType === 'REJECTED'
-  const isCompleteAction = actionType === 'COMPLETED'
-
   const titleMap = {
-    CONFIRMED: `Xác nhận đặt bàn #${id}`,
+    CONFIRMED: `Xác nhận duyệt đặt bàn #${id}`,
+    SEATED: `Khách nhận bàn #${id} (Bắt đầu dùng bữa)`,
+    CANCELLED: `Hủy lượt đặt bàn #${id}`,
     REJECTED: `Từ chối đặt bàn #${id}`,
-    COMPLETED: `Hoàn thành lượt dùng bữa #${id}`,
+    COMPLETED: `Hoàn tất lượt dùng bữa #${id}`,
   }
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={titleMap[actionType] || `Duyệt đặt bàn #${id}`}
+      title={titleMap[actionType] || `Thao tác đặt bàn #${id}`}
       maxWidth="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -141,18 +154,34 @@ export const ReservationActionModal = ({
           </div>
         )}
 
+        {/* Mô tả giải phóng bàn */}
+        {(isCompleteAction || isCancelAction || isRejectAction) && (
+          <div className="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-[11px] text-gray-400">
+            ℹ️ Bàn ăn liên kết sẽ được tự động giải phóng và chuyển về trạng thái{' '}
+            <strong className="text-emerald-400">Bàn trống (AVAILABLE)</strong> trên sơ đồ bàn.
+          </div>
+        )}
+
+        {/* Khách vào bàn */}
+        {isSeatedAction && (
+          <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-[11px] text-purple-300">
+            🍽️ Xác nhận khách đã có mặt tại nhà hàng. Bàn ăn sẽ được chuyển sang trạng thái{' '}
+            <strong className="text-white font-bold">Đang có khách (OCCUPIED)</strong> trên sơ đồ bàn.
+          </div>
+        )}
+
         {/* Ô ghi chú Admin */}
         <div className="space-y-1">
           <label className="block text-xs font-semibold text-gray-300">
-            {isRejectAction
-              ? 'Lý do từ chối (bắt buộc) *'
+            {isRejectAction || isCancelAction
+              ? 'Lý do (bắt buộc) *'
               : 'Ghi chú của Admin (tùy chọn)'}
           </label>
           <textarea
             rows={2}
             placeholder={
-              isRejectAction
-                ? 'Nhập lý do từ chối đặt bàn...'
+              isRejectAction || isCancelAction
+                ? 'Nhập lý do...'
                 : 'Ví dụ: Đã chuẩn bị ghế trẻ em, Bàn cạnh cửa sổ...'
             }
             value={adminNote}
@@ -170,14 +199,26 @@ export const ReservationActionModal = ({
             Đóng
           </Button>
           <Button
-            variant={isRejectAction ? 'danger' : 'primary'}
+            variant={isRejectAction || isCancelAction ? 'danger' : 'primary'}
             size="sm"
             type="submit"
             isLoading={isSubmitting}
-            icon={isRejectAction ? XCircle : CheckCircle2}
+            icon={
+              isRejectAction || isCancelAction
+                ? XCircle
+                : isSeatedAction
+                ? Utensils
+                : isCompleteAction
+                ? Check
+                : CheckCircle2
+            }
           >
             {isRejectAction
               ? 'Xác nhận Từ chối'
+              : isCancelAction
+              ? 'Xác nhận Hủy đặt bàn'
+              : isSeatedAction
+              ? 'Vào bàn (Bắt đầu phục vụ)'
               : isCompleteAction
               ? 'Hoàn tất & Trả bàn'
               : 'Xác nhận Duyệt bàn'}
@@ -189,4 +230,3 @@ export const ReservationActionModal = ({
 }
 
 export default ReservationActionModal
-

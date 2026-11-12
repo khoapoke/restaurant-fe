@@ -76,8 +76,14 @@ export const AdminReservationsPage = () => {
         const items = res.data?.items || res.data || []
         setReservations(Array.isArray(items) ? items : [])
 
-        if (res.data?.pagination) {
-          setPagination(res.data.pagination)
+        const paginationData = res?.data?.pagination || res?.pagination
+        if (paginationData) {
+          setPagination({
+            currentPage: Number(paginationData.currentPage || page),
+            perPage: Number(paginationData.perPage || 10),
+            totalItems: Number(paginationData.totalItems || 0),
+            lastPage: Number(paginationData.lastPage || paginationData.totalPages || 1),
+          })
         } else {
           setPagination({
             currentPage: page,
@@ -110,16 +116,22 @@ export const AdminReservationsPage = () => {
       await updateReservationStatusApi(payload.reservationId, {
         targetStatus: payload.targetStatus,
         tableId: payload.tableId,
+        tableStatus: payload.tableStatus,
         adminNote: payload.adminNote,
       })
 
-      showToast(
-        payload.targetStatus === 'CONFIRMED'
+      const toastMessage =
+        payload.tableStatus === 'OCCUPIED'
+          ? 'Khách đã vào bàn! Bàn chuyển sang trạng thái Đang có khách.'
+          : payload.targetStatus === 'CONFIRMED'
           ? 'Đã duyệt đặt bàn thành công!'
+          : payload.targetStatus === 'CANCELLED'
+          ? 'Đã hủy lượt đặt bàn và giải phóng bàn!'
           : payload.targetStatus === 'REJECTED'
           ? 'Đã từ chối lượt đặt bàn!'
-          : 'Đã hoàn tất lượt dùng bữa!'
-      )
+          : 'Đã hoàn tất lượt dùng bữa và giải phóng bàn ăn!'
+
+      showToast(toastMessage)
       setSelectedReservation(null)
       fetchReservations(pagination.currentPage)
     } catch (err) {
@@ -215,15 +227,13 @@ export const AdminReservationsPage = () => {
             onOpenAction={handleOpenAction}
           />
 
-          {pagination.lastPage > 1 && (
-            <div className="flex justify-end pt-2">
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.lastPage}
-                onPageChange={(p) => fetchReservations(p)}
-              />
-            </div>
-          )}
+          <Pagination
+            currentPage={pagination.currentPage}
+            lastPage={pagination.lastPage}
+            totalItems={pagination.totalItems}
+            itemLabel="lượt đặt bàn"
+            onPageChange={(p) => fetchReservations(p)}
+          />
         </div>
       )}
 

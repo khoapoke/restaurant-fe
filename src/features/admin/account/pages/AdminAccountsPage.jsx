@@ -65,8 +65,14 @@ export const AdminAccountsPage = () => {
 
         setAccounts(filteredItems)
 
-        if (res.data?.pagination) {
-          setPagination(res.data.pagination)
+        const paginationData = res?.data?.pagination || res?.pagination
+        if (paginationData) {
+          setPagination({
+            currentPage: Number(paginationData.currentPage || page),
+            perPage: Number(paginationData.perPage || 10),
+            totalItems: Number(paginationData.totalItems || 0),
+            lastPage: Number(paginationData.lastPage || paginationData.totalPages || 1),
+          })
         } else {
           setPagination({
             currentPage: page,
@@ -175,15 +181,13 @@ export const AdminAccountsPage = () => {
             onToggleLock={(acc) => setSelectedAccount(acc)}
           />
 
-          {pagination.lastPage > 1 && (
-            <div className="flex justify-end pt-2">
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.lastPage}
-                onPageChange={(p) => fetchAccounts(p)}
-              />
-            </div>
-          )}
+          <Pagination
+            currentPage={pagination.currentPage}
+            lastPage={pagination.lastPage}
+            totalItems={pagination.totalItems}
+            itemLabel="tài khoản"
+            onPageChange={(p) => fetchAccounts(p)}
+          />
         </div>
       )}
 

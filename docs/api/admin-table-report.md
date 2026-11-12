@@ -14,6 +14,7 @@
 | Danh sách bàn (`BKG-05`) | `GET /api/v1/admin/tables` |
 | Thêm bàn (`BKG-05`) | `POST /api/v1/admin/tables` |
 | Sửa bàn & sức chứa (`BKG-06`) | `PUT /api/v1/admin/tables/{tableId}` |
+| Cập nhật nhanh trạng thái bàn | `PATCH /api/v1/admin/tables/{tableId}/status` |
 | Cấu hình khung giờ (`BKG-07`) | `PUT /api/v1/admin/reservations/time-slots` |
 | Danh sách đặt bàn (`BKG-08`) | `GET /api/v1/admin/reservations` |
 | Xác nhận/Từ chối/Hủy/Hoàn thành (`BKG-09` → `BKG-12`) | `PATCH /api/v1/admin/reservations/{reservationId}/status` |
@@ -22,6 +23,8 @@
 ```json
 {
   "targetStatus": "CONFIRMED",
+  "tableId": 2,
+  "tableStatus": "OCCUPIED",
   "adminNote": "Đã giữ Bàn số 2 cạnh cửa sổ"
 }
 ```

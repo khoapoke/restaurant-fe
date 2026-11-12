@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, RefreshCw, Grid, CheckCircle2, Clock, Users } from 'lucide-react'
+import { Plus, RefreshCw, Grid, CheckCircle2, Clock, Users, Wrench } from 'lucide-react'
 import {
   getAdminTablesApi,
   createTableApi,
   updateTableApi,
+  updateTableStatusApi,
 } from '../services/adminTableService'
 import TableCard from '../components/TableCard'
 import TableFormModal from '../components/TableFormModal'
@@ -74,6 +75,16 @@ export const AdminTablesPage = () => {
     }
   }
 
+  const handleQuickStatusChange = async (tableId, newStatus) => {
+    try {
+      await updateTableStatusApi(tableId, newStatus)
+      showToast('Đã cập nhật trạng thái bàn!')
+      fetchTables()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Không thể cập nhật trạng thái bàn.')
+    }
+  }
+
   const availableCount = tables.filter(
     (t) => (t.status || t.trang_thai) === 'AVAILABLE'
   ).length
@@ -82,6 +93,9 @@ export const AdminTablesPage = () => {
   ).length
   const occupiedCount = tables.filter(
     (t) => (t.status || t.trang_thai) === 'OCCUPIED'
+  ).length
+  const maintenanceCount = tables.filter(
+    (t) => (t.status || t.trang_thai) === 'MAINTENANCE'
   ).length
 
   const filteredTables = tables.filter((t) => {
@@ -128,8 +142,8 @@ export const AdminTablesPage = () => {
         </div>
       </div>
 
-      {/* Metrics Summary Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Metrics Summary Row (5 chỉ số) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
           <span className="text-[11px] text-gray-400 font-medium block">Tổng số bàn</span>
           <span className="text-xl font-bold font-mono text-white mt-0.5 block">
@@ -163,6 +177,15 @@ export const AdminTablesPage = () => {
             {occupiedCount} bàn
           </span>
         </div>
+
+        <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20">
+          <span className="text-[11px] text-rose-400 font-medium block flex items-center gap-1">
+            <Wrench className="w-3.5 h-3.5" /> Đang bảo trì
+          </span>
+          <span className="text-xl font-bold font-mono text-rose-400 mt-0.5 block">
+            {maintenanceCount} bàn
+          </span>
+        </div>
       </div>
 
       {/* Filter Tabs */}
@@ -172,6 +195,7 @@ export const AdminTablesPage = () => {
           { key: 'AVAILABLE', label: `Bàn trống (${availableCount})` },
           { key: 'RESERVED', label: `Đã đặt (${reservedCount})` },
           { key: 'OCCUPIED', label: `Đang dùng bữa (${occupiedCount})` },
+          { key: 'MAINTENANCE', label: `Đang bảo trì (${maintenanceCount})` },
         ].map((item) => (
           <button
             key={item.key}
@@ -230,6 +254,7 @@ export const AdminTablesPage = () => {
               key={table.tableId || table.ma_ban}
               table={table}
               onEdit={handleOpenEdit}
+              onQuickStatusChange={handleQuickStatusChange}
             />
           ))}
         </div>

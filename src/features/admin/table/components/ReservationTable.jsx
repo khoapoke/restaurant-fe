@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, Check, Users, Clock } from 'lucide-react'
+import { CheckCircle2, XCircle, Check, Users, Clock, Utensils } from 'lucide-react'
 import { RESERVATION_STATUS_CONFIG } from '../constants'
 import Button from '../../../../components/ui/Button'
 
@@ -18,7 +18,7 @@ export const ReservationTable = ({
             <th className="py-3 px-4 font-semibold w-32">Bàn ăn</th>
             <th className="py-3 px-4 font-semibold">Ghi chú</th>
             <th className="py-3 px-4 font-semibold text-center w-28">Trạng thái</th>
-            <th className="py-3 px-4 font-semibold text-right w-40">Thao tác</th>
+            <th className="py-3 px-4 font-semibold text-right w-52">Thao tác</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-800/60">
@@ -81,7 +81,7 @@ export const ReservationTable = ({
                 </td>
 
                 <td className="py-3.5 px-4 text-right">
-                  <div className="flex items-center justify-end gap-1.5">
+                  <div className="flex items-center justify-end gap-1.5 flex-wrap">
                     {isPending && (
                       <>
                         <Button
@@ -105,15 +105,35 @@ export const ReservationTable = ({
                     )}
 
                     {isConfirmed && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => onOpenAction(r, 'COMPLETED')}
-                        className="text-[11px] py-1 px-2.5"
-                        icon={Check}
-                      >
-                        Hoàn tất
-                      </Button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onOpenAction(r, 'SEATED')}
+                          className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-purple-500/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/40 flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Khách đã đến nhận bàn"
+                        >
+                          <Utensils className="w-3 h-3" />
+                          Vào bàn
+                        </button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => onOpenAction(r, 'COMPLETED')}
+                          className="text-[11px] py-1 px-2"
+                          icon={Check}
+                          title="Hoàn tất lượt dùng bữa"
+                        >
+                          Hoàn tất
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onOpenAction(r, 'CANCELLED')}
+                          className="text-[11px] py-1 px-1.5 text-red-400 hover:bg-red-500/10"
+                          icon={XCircle}
+                          title="Hủy lượt đặt bàn này"
+                        />
+                      </>
                     )}
                   </div>
                 </td>

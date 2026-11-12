@@ -1,7 +1,7 @@
 import { Users, MapPin, Edit2 } from 'lucide-react'
 import { TABLE_STATUS_CONFIG } from '../constants'
 
-export const TableCard = ({ table, onEdit }) => {
+export const TableCard = ({ table, onEdit, onQuickStatusChange }) => {
   const id = table.tableId || table.ma_ban
   const name = table.tableName || table.ten_ban
   const capacity = table.capacity || table.suc_chua || 4
@@ -27,7 +27,7 @@ export const TableCard = ({ table, onEdit }) => {
         <button
           type="button"
           onClick={() => onEdit(table)}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors cursor-pointer"
           title="Sửa thông tin bàn"
         >
           <Edit2 className="w-3.5 h-3.5" />
@@ -50,13 +50,27 @@ export const TableCard = ({ table, onEdit }) => {
         </div>
       </div>
 
-      <div className="pt-3 mt-2 border-t border-gray-800/60 flex items-center justify-between">
+      <div className="pt-3 mt-2 border-t border-gray-800/60 flex items-center justify-between gap-2">
         <span
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${cfg.color}`}
         >
           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotColor}`} />
           {cfg.label}
         </span>
+
+        {onQuickStatusChange && (
+          <select
+            value={status}
+            onChange={(e) => onQuickStatusChange(id, e.target.value)}
+            className="px-2 py-0.5 text-[10px] font-medium bg-gray-950 border border-gray-800 hover:border-gray-700 rounded-lg text-gray-300 focus:outline-none focus:border-amber-500 cursor-pointer"
+            title="Đổi nhanh trạng thái bàn"
+          >
+            <option value="AVAILABLE">Trống</option>
+            <option value="RESERVED">Đã đặt</option>
+            <option value="OCCUPIED">Có khách</option>
+            <option value="MAINTENANCE">Bảo trì</option>
+          </select>
+        )}
       </div>
     </div>
   )

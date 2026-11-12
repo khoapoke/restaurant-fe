@@ -19,6 +19,10 @@ export const updateTableApi = async (tableId, payload) => {
   return await apiClient.put(`/admin/tables/${tableId}`, payload)
 }
 
+export const updateTableStatusApi = async (tableId, status) => {
+  return await apiClient.patch(`/admin/tables/${tableId}/status`, { status })
+}
+
 // ==================== ĐẶT BÀN (RESERVATIONS) ====================
 
 export const getAdminReservationsApi = async (params = {}) => {

@@ -79,6 +79,7 @@ PENDING_CONFIRMATION → CONFIRMED → PREPARING → READY → DELIVERING → CO
 | `AVAILABLE` | Trống, sẵn sàng |
 | `RESERVED` | Đã được đặt trước |
 | `OCCUPIED` | Đang có khách |
+| `MAINTENANCE` | Đang bảo trì / sửa chữa |
 
 ---
 

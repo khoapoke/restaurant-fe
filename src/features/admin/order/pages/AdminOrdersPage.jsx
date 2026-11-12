@@ -56,8 +56,14 @@ export const AdminOrdersPage = () => {
         const items = res.data?.items || res.data || []
         setOrders(Array.isArray(items) ? items : [])
 
-        if (res.data?.pagination) {
-          setPagination(res.data.pagination)
+        const paginationData = res?.data?.pagination || res?.pagination
+        if (paginationData) {
+          setPagination({
+            currentPage: Number(paginationData.currentPage || page),
+            perPage: Number(paginationData.perPage || 10),
+            totalItems: Number(paginationData.totalItems || 0),
+            lastPage: Number(paginationData.lastPage || paginationData.totalPages || 1),
+          })
         } else {
           setPagination({
             currentPage: page,
@@ -185,15 +191,13 @@ export const AdminOrdersPage = () => {
             actionLoadingId={actionLoadingId}
           />
 
-          {pagination.lastPage > 1 && (
-            <div className="flex justify-end pt-2">
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.lastPage}
-                onPageChange={(p) => fetchOrders(p)}
-              />
-            </div>
-          )}
+          <Pagination
+            currentPage={pagination.currentPage}
+            lastPage={pagination.lastPage}
+            totalItems={pagination.totalItems}
+            itemLabel="đơn hàng"
+            onPageChange={(p) => fetchOrders(p)}
+          />
         </div>
       )}
 

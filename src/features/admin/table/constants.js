@@ -7,6 +7,7 @@ export const TableStatus = {
   AVAILABLE: 'AVAILABLE',
   RESERVED: 'RESERVED',
   OCCUPIED: 'OCCUPIED',
+  MAINTENANCE: 'MAINTENANCE',
 }
 
 export const TABLE_STATUS_CONFIG = {
@@ -27,6 +28,12 @@ export const TABLE_STATUS_CONFIG = {
     color: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
     dotColor: 'bg-purple-500',
     cardBorder: 'border-purple-500/30 hover:border-purple-500/60',
+  },
+  MAINTENANCE: {
+    label: 'Đang bảo trì',
+    color: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
+    dotColor: 'bg-rose-500',
+    cardBorder: 'border-rose-500/30 hover:border-rose-500/60',
   },
 }
 
