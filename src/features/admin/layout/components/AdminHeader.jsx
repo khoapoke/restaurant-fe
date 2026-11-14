@@ -43,7 +43,7 @@ export const AdminHeader = ({ onOpenMobile }) => {
             {currentTitle}
           </h1>
           <p className="text-[10px] text-gray-400 hidden sm:block">
-            Phân hệ Quản trị Nhà hàng Lumière
+            Phân hệ Quản trị Nhà hàng T-ResMK
           </p>
         </div>
       </div>

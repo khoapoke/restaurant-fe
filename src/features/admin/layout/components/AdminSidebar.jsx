@@ -82,7 +82,7 @@ export const AdminSidebar = ({
             {!isCollapsed && (
               <div className="min-w-0 transition-opacity duration-200">
                 <span className="font-bold tracking-wider text-white text-sm block truncate">
-                  LUMIÈRE ADMIN
+                  T-ResMK ADMIN
                 </span>
                 <span className="text-[10px] text-amber-400 tracking-wider font-semibold block uppercase">
                   Management

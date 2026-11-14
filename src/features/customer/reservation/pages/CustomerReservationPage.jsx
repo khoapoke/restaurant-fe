@@ -135,7 +135,7 @@ export const CustomerReservationPage = () => {
               <UtensilsCrossed className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-bold tracking-wider text-white">LUMIÈRE</span>
+              <span className="font-bold tracking-wider text-white">T-ResMK</span>
               <span className="text-[10px] block text-amber-400 tracking-widest uppercase">Restaurant</span>
             </div>
           </Link>
@@ -226,7 +226,7 @@ export const CustomerReservationPage = () => {
               <span>Dịch vụ giữ chỗ trực tuyến</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Đặt bàn tại Lumière
+              Đặt bàn tại T-ResMK
             </h1>
             <p className="text-xs sm:text-sm text-gray-400 mt-1">
               Chọn thời gian và vị trí bàn yêu thích cho bữa tối hoàn hảo của bạn.

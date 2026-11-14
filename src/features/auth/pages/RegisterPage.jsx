@@ -14,7 +14,7 @@ export const RegisterPage = () => {
             <UtensilsCrossed className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-wider text-white">LUMIÈRE</h1>
+            <h1 className="text-xl font-bold tracking-wider text-white">T-ResMK</h1>
             <p className="text-[11px] tracking-widest uppercase text-amber-400 font-medium">Fine Dining & Bar</p>
           </div>
         </div>
@@ -27,7 +27,7 @@ export const RegisterPage = () => {
           </div>
 
           <h2 className="text-3xl font-extrabold tracking-tight text-white leading-snug">
-            Gia nhập cộng đồng thực khách sành điệu cùng Lumière.
+            Gia nhập cộng đồng thực khách sành điệu cùng T-ResMK.
           </h2>
 
           <p className="text-sm text-gray-400 leading-relaxed">
@@ -48,7 +48,7 @@ export const RegisterPage = () => {
 
         {/* Footer info */}
         <div className="relative z-10 text-xs text-gray-500">
-          © {new Date().getFullYear()} Lumière Restaurant. All rights reserved.
+          © {new Date().getFullYear()} T-ResMK Restaurant. All rights reserved.
         </div>
       </div>
 
@@ -61,7 +61,7 @@ export const RegisterPage = () => {
               <UtensilsCrossed className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white tracking-wider">LUMIÈRE</h1>
+              <h1 className="text-lg font-bold text-white tracking-wider">T-ResMK</h1>
               <p className="text-[10px] tracking-widest uppercase text-amber-400 font-medium">Fine Dining & Bar</p>
             </div>
           </div>

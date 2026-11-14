@@ -44,7 +44,7 @@ export const RESERVATION_STATUS_CONFIG = {
   COMPLETED: {
     label: 'Đã hoàn tất bữa ăn',
     color: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
-    desc: 'Cảm ơn bạn đã dùng bữa tại Lumière',
+    desc: 'Cảm ơn bạn đã dùng bữa tại T-ResMK',
   },
   CANCELLED: {
     label: 'Đã hủy',

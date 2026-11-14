@@ -43,7 +43,7 @@ export const DEFAULT_FALLBACK_WEATHER = {
     temperatureCelsius: 32,
     condition: 'HOT_SUNNY',
     advice:
-      'Thời tiết nắng đẹp ấm áp (32°C), lý tưởng để thưởng thức các món ăn thanh mát và đồ uống giải nhiệt tại Lumière.',
+      'Thời tiết nắng đẹp ấm áp (32°C), lý tưởng để thưởng thức các món ăn thanh mát và đồ uống giải nhiệt tại T-ResMK.',
   },
   excludedAllergens: [],
   recommendedDishes: [],

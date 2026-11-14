@@ -49,7 +49,7 @@ export const WeatherRecommendationAccordion = ({
   const advice =
     weatherObj.advice ||
     weatherObj.loi_khuyen ||
-    'Thời tiết thích hợp để thưởng thức các món ăn đặc sắc tại Lumière.'
+    'Thời tiết thích hợp để thưởng thức các món ăn đặc sắc tại T-ResMK.'
 
   const excludedAllergens = actualData?.excludedAllergens || actualData?.di_ung_loai_tru || []
 

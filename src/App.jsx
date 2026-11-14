@@ -49,7 +49,7 @@ const HomePage = () => {
               <UtensilsCrossed className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-bold tracking-wider text-white">LUMIÈRE</span>
+              <span className="font-bold tracking-wider text-white">T-ResMK</span>
               <span className="text-[10px] block text-amber-400 tracking-widest uppercase">Restaurant</span>
             </div>
           </Link>
@@ -176,7 +176,7 @@ const HomePage = () => {
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4">
-          Chào mừng đến với Lumière
+          Chào mừng đến với T-ResMK
         </h1>
 
         <p className="text-gray-400 max-w-xl text-sm sm:text-base mb-8">

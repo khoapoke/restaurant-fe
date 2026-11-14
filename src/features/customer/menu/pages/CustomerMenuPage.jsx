@@ -217,7 +217,7 @@ export const CustomerMenuPage = () => {
                 Thực đơn nhà hàng
               </h1>
               <p className="text-[11px] text-gray-400 tracking-wider">
-                LUMIÈRE FINE DINING & CULINARY
+                T-ResMK FINE DINING & CULINARY
               </p>
             </div>
           </div>
