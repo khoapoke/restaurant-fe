@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .agents/
+.claude/
+.cursox/
+.github/
+design-system/
