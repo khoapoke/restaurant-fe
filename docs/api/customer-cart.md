@@ -1,81 +1,115 @@
-# CUSTOMER — Quản lý Giỏ hàng (`Customer\CartController`)
+# QUẢN LÝ GIỎ HÀNG (CUSTOMER CART APIs)
 
-> **Middleware chung:** `auth:sanctum`, `account.active`, `role:CUSTOMER`
-> Xem quy ước chung tại [`_conventions.md`](./_conventions.md)
-
----
-
-## Endpoints
-
-| Chức năng | Method & URL | Use Case |
-|-----------|-------------|----------|
-| Xem giỏ hàng (`CRT-04`) | `GET /api/v1/customer/cart` | Load giỏ hàng |
-| Thêm món vào giỏ (`CRT-01`) | `POST /api/v1/customer/cart/items` | Thêm món mới |
-| Cập nhật số lượng (`CRT-02`) | `PUT /api/v1/customer/cart/items/{dishId}` | Tăng/giảm số lượng |
-| Xóa món khỏi giỏ (`CRT-03`) | `DELETE /api/v1/customer/cart/items/{dishId}` | Xóa 1 món |
+> 📌 **Tài liệu nghiệp vụ chuyên sâu Backend:** [modules/cart.md](../modules/cart.md)  
+> *(Xem chi tiết: Xử lý Pivot Composite Key `MON_AN_GIO_HANG`, cơ chế tự động khởi tạo Cart qua firstOrCreate)*  
+> Middleware bắt buộc: `auth:sanctum`, `role:CUSTOMER`.  
+> Xem quy ước chung tại [`_conventions.md`](./_conventions.md) và danh mục Enum tại [`enums.md`](./enums.md).
 
 ---
 
-## Request Body (`POST /api/v1/customer/cart/items`)
-```json
-{
-  "dishId": 1,
-  "quantity": 2,
-  "selectedOptions": "Chén tiêu chuẩn",
-  "itemNote": "Không hành lá"
-}
-```
+## 1. Bảng Tổng Hợp Endpoints
 
-## Response (Success - 200 OK)
-> **Lưu ý:** Cấu trúc response **đồng nhất cho mọi thao tác** trên giỏ hàng (GET, POST, PUT, DELETE).
+| Mã API | Method | Endpoint URL | Request Body | Response Payload | Mã HTTP |
+|:---:|:---:|:---|:---|:---|:---:|
+| `CRT-01` | `GET` | `/api/v1/customer/cart` | *(Không)* | `CartResource` | `200 / 401` |
+| `CRT-02` | `POST` | `/api/v1/customer/cart/items` | `{ "dishId": int, "quantity": int >= 1 }` | `CartResource` (cộng dồn số lượng) | `200 / 400 / 422` |
+| `CRT-03` | `PUT` | `/api/v1/customer/cart/items/{dishId}` | `{ "quantity": int >= 0 }` | `CartResource` (nếu qty = 0 tự xóa) | `200 / 400 / 422` |
+| `CRT-04` | `DELETE`| `/api/v1/customer/cart/items/{dishId}` | *(Không)* | `CartResource` đã trừ món | `200 / 404` |
+| `CRT-05` | `DELETE`| `/api/v1/customer/cart/clear` | *(Không)* | `{ "message": "Cart cleared successfully" }` | `200` |
 
+---
+
+## 2. Chi Tiết Request & Response
+
+### 2.1. Tra cứu giỏ hàng hiện tại (`CRT-01`)
+- **Endpoint:** `GET /api/v1/customer/cart`
+- **Headers:** `Authorization: Bearer <token>`, `Accept: application/json`
+
+#### Response Thành công (`200 OK` - `CartResource`):
 ```json
 {
   "success": true,
   "code": 200,
-  "message": "Cart updated successfully",
+  "message": "Cart retrieved successfully",
   "data": {
-    "cartId": 1,
-    "accountId": 3,
+    "cartId": 10,
     "items": [
       {
-        "dishId": 1,
-        "dishName": "Súp bào ngư",
-        "imageUrl": "sup_bao_ngu.jpg",
-        "unitPrice": 150000.00,
+        "dishId": 5,
+        "dishName": "Gỏi ngó sen tôm thịt",
+        "price": 85000,
         "quantity": 2,
-        "subTotal": 300000.00,
-        "isAvailable": true
-      },
-      {
-        "dishId": 2,
-        "dishName": "Bò sốt tiêu đen",
-        "imageUrl": "bo_tieu_den.jpg",
-        "unitPrice": 350000.00,
-        "quantity": 1,
-        "subTotal": 350000.00,
+        "itemTotal": 170000,
+        "imageUrl": "https://example.com/images/goi-ngo-sen.jpg",
         "isAvailable": true
       }
     ],
-    "totalQuantity": 3,
-    "estimatedTotalAmount": 650000.00
-  }
-}
-```
-
-## Response (Error - 400 Bad Request)
-```json
-{
-  "success": false,
-  "code": 400,
-  "message": "Dish is out of stock or quantity is invalid",
+    "totalItems": 1,
+    "totalQuantity": 2,
+    "estimatedTotal": 170000
+  },
   "errors": null
 }
 ```
 
 ---
 
-## Ghi chú nghiệp vụ (Laravel Pivot Handling)
-Bảng `MON_AN_GIO_HANG` dùng khóa chính phức hợp `(ma_gio_hang, ma_mon_an)`, Controller sử dụng quan hệ `BelongsToMany` (`$cart->dishes()`):
-- **Thêm món:** Nếu đã có trong giỏ → `$cart->dishes()->updateExistingPivot($dishId, ['so_luong' => $newQty])`, nếu chưa → `$cart->dishes()->attach($dishId, ['so_luong' => $qty])`.
-- **Xóa món:** `$cart->dishes()->detach($dishId)` — không bao giờ bị lỗi Composite Key.
+### 2.2. Thêm món vào giỏ hàng (`CRT-02`)
+- **Endpoint:** `POST /api/v1/customer/cart/items`
+- **Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`, `Accept: application/json`
+
+#### Request Body:
+```json
+{
+  "dishId": 5,
+  "quantity": 2
+}
+```
+
+#### Response Thành công (`200 OK`): Trả về `CartResource` đã cập nhật.
+
+#### Response Lỗi (`400 Bad Request`):
+```json
+{
+  "success": false,
+  "code": 400,
+  "message": "Món ăn hiện không còn bán hoặc đã bị ngừng phục vụ",
+  "data": null,
+  "errors": null
+}
+```
+
+---
+
+### 2.3. Cập nhật số lượng món ăn (`CRT-03`)
+- **Endpoint:** `PUT /api/v1/customer/cart/items/{dishId}`
+- **Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`, `Accept: application/json`
+
+#### Request Body:
+```json
+{
+  "quantity": 3
+}
+```
+*(Nếu gửi `quantity: 0`, hệ thống sẽ tự động detach món ra khỏi giỏ)*
+
+---
+
+### 2.4. Xóa món ăn khỏi giỏ hàng (`CRT-04`)
+- **Endpoint:** `DELETE /api/v1/customer/cart/items/{dishId}`
+- **Response (`200 OK`):** Trả về `CartResource` sau khi đã xóa món.
+
+---
+
+### 2.5. Làm rỗng giỏ hàng (`CRT-05`)
+- **Endpoint:** `DELETE /api/v1/customer/cart/clear`
+- **Response (`200 OK`):**
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "Cart cleared successfully",
+  "data": null,
+  "errors": null
+}
+```

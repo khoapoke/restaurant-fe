@@ -1,78 +1,106 @@
-# ADMIN — Quản lý Danh mục & Món ăn (`Admin\CategoryController` & `Admin\DishController`)
+# QUẢN LÝ DANH MỤC & MÓN ĂN (ADMIN MENU & DISH APIs)
 
-> **Middleware chung:** `auth:sanctum`, `account.active`, `role:ADMIN`
-> Xem quy ước chung tại [`_conventions.md`](./_conventions.md)
-
----
-
-## Endpoints — Danh mục (`MNU-09` → `MNU-12`)
-
-| Chức năng | Method & URL |
-|-----------|-------------|
-| Thêm danh mục | `POST /api/v1/admin/categories` |
-| Sửa danh mục | `PUT /api/v1/admin/categories/{categoryId}` |
-| Ẩn/Hiện danh mục | `PATCH /api/v1/admin/categories/{categoryId}/visibility` |
-| Xóa mềm danh mục | `DELETE /api/v1/admin/categories/{categoryId}` |
-
-## Endpoints — Món ăn (`MNU-13` → `MNU-17`)
-
-| Chức năng | Method & URL |
-|-----------|-------------|
-| Thêm món ăn | `POST /api/v1/admin/dishes` |
-| Sửa món ăn | `PUT /api/v1/admin/dishes/{dishId}` |
-| Bật/Tắt còn bán | `PATCH /api/v1/admin/dishes/{dishId}/availability` |
-| Ẩn/Hiện món ăn | `PATCH /api/v1/admin/dishes/{dishId}/visibility` |
-| Xóa mềm món ăn | `DELETE /api/v1/admin/dishes/{dishId}` |
+> 📌 **Tài liệu nghiệp vụ chuyên sâu Backend:** [modules/menu.md](../modules/menu.md)  
+> *(Xem chi tiết: Nguyên tắc Xóa mềm Soft Delete bảo toàn khóa ngoại `CHI_TIET_DON_HANG`, Chiến lược xóa bộ nhớ đệm Cache Busting `menu:categories:active`)*  
+> Middleware bắt buộc: `auth:sanctum`, `account.active`, `role:ADMIN`.  
+> Xem quy ước chung tại [`_conventions.md`](./_conventions.md) và danh mục Enum tại [`enums.md`](./enums.md).
 
 ---
 
-## Request Body (`POST /api/v1/admin/dishes`)
+## 1. Bảng Tổng Hợp Endpoints
+
+### 1.1. Quản lý Danh mục (Category Endpoints)
+| Mã API | Method | Endpoint URL | Request Body | Mô tả chức năng | Mã HTTP |
+|:---:|:---:|:---|:---|:---|:---:|
+| `MNU-09` | `POST` | `/api/v1/admin/categories` | `{ "categoryName", "description"? }` | Thêm danh mục mới (Busting Cache) | `201 / 422` |
+| `MNU-10` | `PUT` | `/api/v1/admin/categories/{id}` | `{ "categoryName", "description"? }` | Sửa thông tin danh mục | `200 / 404 / 422` |
+| `MNU-11` | `PATCH`| `/api/v1/admin/categories/{id}/visibility` | `{ "isVisible": boolean }` | Bật/tắt trạng thái hiển thị danh mục | `200 / 404` |
+| `MNU-12` | `DELETE`| `/api/v1/admin/categories/{id}` | *(Không)* | Xóa mềm danh mục (tự động ẩn món bên trong) | `200 / 404` |
+
+### 1.2. Quản lý Món ăn (Dish Endpoints)
+| Mã API | Method | Endpoint URL | Request Body | Mô tả chức năng | Mã HTTP |
+|:---:|:---:|:---|:---|:---|:---:|
+| `MNU-04` | `POST` | `/api/v1/admin/dishes` | Schema Create Dish | Tạo món ăn mới vào thực đơn | `201 / 422` |
+| `MNU-05` | `PUT` | `/api/v1/admin/dishes/{id}` | Schema Update Dish | Chỉnh sửa chi tiết món ăn | `200 / 404 / 422` |
+| `MNU-06` | `DELETE`| `/api/v1/admin/dishes/{id}` | *(Không)* | Xóa mềm món (`da_xoa = true, hien_thi = false`) | `200 / 404` |
+| `MNU-13` | `PATCH`| `/api/v1/admin/dishes/{id}/availability` | `{ "isAvailable": boolean }` | Bật/tắt trạng thái Còn hàng / Hết hàng | `200 / 404` |
+| `MNU-14` | `PATCH`| `/api/v1/admin/dishes/{id}/visibility` | `{ "isVisible": boolean }` | Bật/tắt Ẩn/Hiện món khỏi thực đơn khách | `200 / 404` |
+
+---
+
+## 2. Chi Tiết Request & Response Món Ăn
+
+### 2.1. Thêm món ăn mới (`MNU-04`)
+- **Endpoint:** `POST /api/v1/admin/dishes`
+- **Headers:** `Authorization: Bearer <admin_token>`, `Content-Type: application/json`, `Accept: application/json`
+
+#### Request Body:
 ```json
 {
   "dishName": "Gà nướng Tây Bắc",
-  "price": 280000.00,
-  "description": "Gà đi bộ nướng mật ong và mắc khén",
-  "imageUrl": "ga_nuong.jpg",
+  "price": 280000,
+  "description": "Gà ri thả đồi nướng than hoa kèm mắc khén và hạt dổi",
+  "imageUrl": "/img/dishes/ga-nuong.jpg",
   "categoryId": 2,
-  "ingredients": ["Gà ta", "Mật ong", "Mắc khén"],
-  "allergens": [],
-  "weatherTags": ["RAINY_OR_COLD", "PLEASANT_NORMAL"],
   "isAvailable": true,
-  "isVisible": true
+  "isVisible": true,
+  "allergens": [],
+  "weatherTags": ["RAINY_OR_COLD", "PLEASANT_NORMAL"]
 }
 ```
 
-## Response (Success - 201 Created / 200 OK)
+#### Response Thành công (`201 Created` - `AdminDishResource`):
 ```json
 {
   "success": true,
-  "code": 200,
-  "message": "Dish saved successfully",
+  "code": 201,
+  "message": "Dish created successfully",
   "data": {
-    "dishId": 3,
+    "dishId": 18,
     "dishName": "Gà nướng Tây Bắc",
-    "price": 280000.00,
-    "categoryId": 2,
+    "price": 280000,
+    "description": "Gà ri thả đồi nướng than hoa kèm mắc khén và hạt dổi",
+    "imageUrl": "/img/dishes/ga-nuong.jpg",
     "isAvailable": true,
     "isVisible": true,
-    "isDeleted": false
-  }
+    "isDeleted": false,
+    "allergens": [],
+    "weatherTags": ["RAINY_OR_COLD", "PLEASANT_NORMAL"],
+    "category": {
+      "categoryId": 2,
+      "categoryName": "Món chính"
+    }
+  },
+  "errors": null
 }
 ```
 
-## Response (Error - 422 Unprocessable Entity)
+#### Response Lỗi (`422 Unprocessable Entity`):
 ```json
 {
   "success": false,
   "code": 422,
   "message": "Validation failed",
+  "data": null,
   "errors": {
-    "categoryId": ["The selected category id does not exist in DANH_MUC."]
+    "price": ["Giá món ăn phải là số nguyên dương lớn hơn 0."],
+    "categoryId": ["Danh mục được chọn không tồn tại trong hệ thống."]
   }
 }
 ```
 
 ---
 
-## Ghi chú nghiệp vụ
-> **QUAN TRỌNG:** Khi gọi `DELETE /api/v1/admin/dishes/{dishId}`, tuyệt đối **KHÔNG gọi `$dish->delete()` vật lý** vì sẽ vi phạm khóa ngoại `FK_CTDONHANG_MON_AN` trong bảng `CHI_TIET_DON_HANG`. Thay vào đó, cập nhật cờ xóa mềm (`isDeleted = true`, `isVisible = false`).
+### 2.2. Xóa mềm món ăn (`MNU-06`)
+- **Endpoint:** `DELETE /api/v1/admin/dishes/{id}`
+- **Response (`200 OK`):**
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "Xóa mềm món ăn thành công",
+  "data": null,
+  "errors": null
+}
+```
+*(Ghi chú: Bản ghi trong CSDL được cập nhật `da_xoa = 1, hien_thi = 0`, tuyệt đối không xóa cứng để bảo vệ khóa ngoại đơn hàng)*

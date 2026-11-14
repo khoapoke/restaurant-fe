@@ -1,30 +1,65 @@
-# CUSTOMER — Thực đơn, Tìm kiếm, Lọc & Gợi ý Thời tiết (`Customer\MenuController`)
+# THỰC ĐƠN, TÌM KIẾM & GỢI Ý THỜI TIẾT (CUSTOMER MENU APIs)
 
-> **Middleware chung:** `auth:sanctum`, `account.active`, `role:CUSTOMER`
-> Xem quy ước chung tại [`_conventions.md`](./_conventions.md)
+> 📌 **Tài liệu nghiệp vụ chuyên sâu Backend:** [modules/menu.md](../modules/menu.md)  
+> *(Xem chi tiết: Cơ chế Meilisearch Typo-Tolerance, Redis Caching 3600s, Tự động lọc chất dị ứng theo hồ sơ)*  
+> Xem quy ước chung tại [`_conventions.md`](./_conventions.md) và danh mục Enum tại [`enums.md`](./enums.md).
 
 ---
 
-## 1. Xem danh sách danh mục & món ăn có bộ lọc (`MNU-01`, `MNU-02`, `MNU-03`)
+## 1. Bảng Tổng Hợp Endpoints
 
-### Danh mục
-- **Method & URL:** `GET /api/v1/customer/categories`
+| Mã API | Method | Endpoint URL | Phân quyền | Mô tả chức năng | Mã HTTP |
+|:---:|:---:|:---|:---:|:---|:---:|
+| `MNU-01` | `GET` | `/api/v1/customer/categories` | Public | Danh sách danh mục đang hoạt động (Redis Cache 3600s) | `200` |
+| `MNU-02` | `GET` | `/api/v1/customer/dishes` | Public | Danh sách món ăn phân trang, lọc theo giá, danh mục, Meilisearch | `200 / 400` |
+| `MNU-03` | `GET` | `/api/v1/customer/dishes/{id}` | Public | Xem chi tiết 1 món ăn kèm dị ứng, tag thời tiết | `200 / 404` |
+| `MNU-07` | `GET` | `/api/v1/customer/menu/weather-recommendations` | Public | Gợi ý món ăn theo thời tiết thực tế (OpenWeatherMap) | `200 / 422` |
+| `MNU-08` | `GET` | `/api/v1/customer/dishes/featured` | Public | Danh sách các món ăn nổi bật / bán chạy | `200` |
 
-### Danh sách món ăn
-- **Method & URL:** `GET /api/v1/customer/dishes`
-- **Query Params:**
-  | Param | Type | Required | Mô tả |
-  |-------|------|----------|-------|
-  | `keyword` | string | ❌ | Tìm kiếm theo `ten_mon_an` |
-  | `categoryId` | int | ❌ | Lọc theo `ma_danh_muc` |
-  | `minPrice` | numeric | ❌ | Lọc giá tối thiểu |
-  | `maxPrice` | numeric | ❌ | Lọc giá tối đa |
-  | `isAvailable` | boolean | ❌ | Lọc theo tình trạng còn bán |
-  | `excludeAllergens` | string | ❌ | Chuỗi chất dị ứng cách nhau dấu phẩy (VD: `SHELLFISH,PEANUT`) |
-  | `page` | int | ❌ | Mặc định `1` |
-  | `perPage` | int | ❌ | Mặc định `12` |
+---
 
-- **Response (Success - 200 OK):**
+## 2. Chi Tiết Request & Response
+
+### 2.1. Lấy danh sách danh mục thực đơn (`MNU-01`)
+- **Endpoint:** `GET /api/v1/customer/categories`
+
+#### Response Thành công (`200 OK`):
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "Categories retrieved successfully",
+  "data": [
+    {
+      "categoryId": 1,
+      "categoryName": "Khai vị",
+      "description": "Các món gỏi, súp khai vị nhẹ nhàng",
+      "isActive": true
+    },
+    {
+      "categoryId": 2,
+      "categoryName": "Món chính",
+      "description": "Các món thịt bò, hải sản, cơm và mì đặc sản",
+      "isActive": true
+    }
+  ],
+  "errors": null
+}
+```
+
+---
+
+### 2.2. Lấy danh sách món ăn phân trang & tìm kiếm (`MNU-02`)
+- **Endpoint:** `GET /api/v1/customer/dishes`
+- **Query Parameters:**
+  - `keyword`: Tìm kiếm (Meilisearch chịu lỗi chính tả + tiếng Việt không dấu).
+  - `categoryId`: Lọc theo ID danh mục.
+  - `minPrice`, `maxPrice`: Khoảng giá tìm kiếm.
+  - `isAvailable`: Lọc theo trạng thái còn bán (`true`/`false`).
+  - `page`: Trang hiện tại (mặc định 1).
+  - `perPage`: Số món mỗi trang (mặc định 12).
+
+#### Response Thành công (`200 OK`):
 ```json
 {
   "success": true,
@@ -33,117 +68,98 @@
   "data": {
     "items": [
       {
-        "dishId": 2,
-        "dishName": "Bò sốt tiêu đen",
-        "price": 350000.00,
-        "description": "Thịt bò Mỹ mềm ngon kèm sốt tiêu đen đậm đà",
-        "imageUrl": "bo_tieu_den.jpg",
-        "categoryId": 2,
-        "categoryName": "Món chính",
+        "dishId": 5,
+        "dishName": "Gỏi ngó sen tôm thịt",
+        "price": 85000,
+        "imageUrl": "https://example.com/images/goi-ngo-sen.jpg",
         "isAvailable": true,
-        "ingredients": ["Thịt bò Mỹ", "Tiêu đen", "Bơ lạt"],
-        "allergens": ["DAIRY"]
+        "category": {
+          "categoryId": 1,
+          "categoryName": "Khai vị"
+        }
       }
     ],
     "pagination": {
       "currentPage": 1,
       "perPage": 12,
-      "totalItems": 1,
-      "lastPage": 1
+      "totalItems": 45,
+      "lastPage": 4
     }
-  }
-}
-```
-- **Response (Error - 400 Bad Request):**
-```json
-{
-  "success": false,
-  "code": 400,
-  "message": "minPrice cannot be greater than maxPrice",
+  },
   "errors": null
 }
 ```
-- **Ghi chú nghiệp vụ:** Sử dụng Eloquent Local Scope `Dish::query()->active()->with('category')->when(...)` để lọc linh hoạt và loại bỏ các món có chứa `excludeAllergens`.
 
 ---
 
-## 2. Xem chi tiết món ăn (`MNU-07`)
-- **Method & URL:** `GET /api/v1/customer/dishes/{dishId}`
-- **Response (Success - 200 OK):**
+### 2.3. Xem chi tiết món ăn (`MNU-03`)
+- **Endpoint:** `GET /api/v1/customer/dishes/{id}`
+
+#### Response Thành công (`200 OK`):
 ```json
 {
   "success": true,
   "code": 200,
-  "message": "Dish detail fetched successfully",
+  "message": "Dish details retrieved successfully",
   "data": {
-    "dishId": 1,
-    "dishName": "Súp bào ngư",
-    "price": 150000.00,
-    "description": "Súp bào ngư thượng hạng giàu dinh dưỡng",
-    "imageUrl": "sup_bao_ngu.jpg",
+    "dishId": 5,
+    "dishName": "Gỏi ngó sen tôm thịt",
+    "price": 85000,
+    "description": "Ngó sen tươi giòn trộn tôm sú và thịt ba chỉ nước mắm chua ngọt",
+    "imageUrl": "https://example.com/images/goi-ngo-sen.jpg",
+    "isAvailable": true,
+    "allergens": ["SHELLFISH", "PEANUT"],
+    "weatherTags": ["HOT_SUNNY", "PLEASANT_NORMAL"],
     "category": {
       "categoryId": 1,
       "categoryName": "Khai vị"
-    },
-    "isAvailable": true,
-    "ingredients": ["Bào ngư tươi", "Nấm đông cô", "Trứng gà"],
-    "allergens": ["SHELLFISH", "EGG"]
-  }
+    }
+  },
+  "errors": null
 }
 ```
-- **Response (Error - 404 Not Found):**
+
+#### Response Lỗi (`404 Not Found`):
 ```json
 {
   "success": false,
   "code": 404,
-  "message": "Dish not found or unavailable",
+  "message": "Dish not found or has been disabled",
+  "data": null,
   "errors": null
 }
 ```
-- **Ghi chú nghiệp vụ:** Truy vấn `Dish::active()->with('category')->findOrFail($dishId)`.
 
 ---
 
-## 3. Gợi ý món ăn theo Thời tiết & Tự động loại trừ Dị ứng (Extended Feature)
-- **Method & URL:** `GET /api/v1/customer/recommendations/weather`
-- **Query Params:** `lat` (numeric, required), `lon` (numeric, required).
-- **Response (Success - 200 OK):**
+### 2.4. Gợi ý món ăn theo thời tiết (`MNU-07`)
+- **Endpoint:** `GET /api/v1/customer/menu/weather-recommendations`
+- **Query Parameters:**
+  - `lat`: Vĩ độ (VD: `10.7769`)
+  - `lon`: Kinh độ (VD: `106.7009`)
+
+#### Response Thành công (`200 OK`):
 ```json
 {
   "success": true,
   "code": 200,
-  "message": "Weather recommendations generated successfully",
+  "message": "Weather recommendations retrieved successfully",
   "data": {
     "weather": {
-      "city": "Ho Chi Minh City",
-      "temperatureCelsius": 33.8,
+      "temperature": 32.5,
       "condition": "HOT_SUNNY",
-      "advice": "Trời nắng nóng (33.8°C), ưu tiên các món thanh mát. Đã lọc bỏ món chứa chất gây dị ứng: SHELLFISH, PEANUT."
+      "description": "Trời nắng gắt, đề xuất các món thanh nhiệt và đồ uống giải khát"
     },
-    "excludedAllergens": ["SHELLFISH", "PEANUT"],
-    "recommendedDishes": [
+    "dishes": [
       {
-        "dishId": 4,
+        "dishId": 12,
         "dishName": "Trà đào cam sả",
-        "price": 45000.00,
-        "imageUrl": "tra_dao.jpg",
-        "categoryName": "Đồ uống",
-        "allergens": []
+        "price": 45000,
+        "imageUrl": "https://example.com/images/tra-dao.jpg",
+        "categoryName": "Đồ uống"
       }
     ]
-  }
+  },
+  "errors": null
 }
 ```
-- **Response (Error - 422 Unprocessable Entity):**
-```json
-{
-  "success": false,
-  "code": 422,
-  "message": "Coordinates lat and lon are required",
-  "errors": {
-    "lat": ["The lat field is required."],
-    "lon": ["The lon field is required."]
-  }
-}
-```
-- **Ghi chú nghiệp vụ:** Dùng `Http::timeout(5)->get('https://api.openweathermap.org/data/2.5/weather', ...)` kết hợp `Cache::remember()` trong 15 phút theo tọa độ làm tròn để tối ưu tốc độ (<3 giây) và loại bỏ 100% món chứa chất dị ứng của khách.
