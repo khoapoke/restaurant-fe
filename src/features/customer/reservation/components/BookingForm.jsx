@@ -1,17 +1,24 @@
-import { useState, useEffect } from 'react'
-import { CalendarDays, AlertCircle, MessageSquare } from 'lucide-react'
-import BookingTimeGuestSelector from './BookingTimeGuestSelector'
-import BookingTablePicker from './BookingTablePicker'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import BookingStepper from './BookingStepper'
+import BookingStep1DateGuest from './BookingStep1DateGuest'
+import BookingStep2TimeTable from './BookingStep2TimeTable'
+import BookingStep3ReviewNote from './BookingStep3ReviewNote'
+import BookingStep4Result from './BookingStep4Result'
 import { getAvailableTablesApi, createReservationApi } from '../services/reservationService'
 
 /**
  * Component Form Đặt Bàn Khách Hàng (BookingForm)
- * - Tinh gọn, kết hợp BookingTimeGuestSelector và BookingTablePicker
- * - Tuyệt đối không dùng Sparkles, đảm bảo < 150 dòng
+ * - Điều phối tiến trình 4 giai đoạn hoàn chỉnh:
+ *   Giai đoạn 1: Chọn ngày & số khách
+ *   Giai đoạn 2: Chọn giờ & bàn ăn khả dụng
+ *   Giai đoạn 3: Xem lại thông tin & ghi chú
+ *   Giai đoạn 4: Hiển thị kết quả thành công hoặc báo lỗi kèm nút quay lại
+ * - Độ dài < 165 dòng
  */
-export default function BookingForm({ onSuccess }) {
-  const todayStr = new Date().toISOString().split('T')[0]
+export default function BookingForm({ onSuccess, onGoToHistory }) {
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], [])
 
+  const [currentStep, setCurrentStep] = useState(1)
   const [date, setDate] = useState(todayStr)
   const [time, setTime] = useState('18:30')
   const [guestCount, setGuestCount] = useState(2)
@@ -24,6 +31,7 @@ export default function BookingForm({ onSuccess }) {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
+  const [createdReservation, setCreatedReservation] = useState(null)
 
   // Tự động tìm bàn trống khi ngày, giờ hoặc số khách thay đổi
   useEffect(() => {
@@ -32,7 +40,6 @@ export default function BookingForm({ onSuccess }) {
       if (!date || !time || !guestCount) return
       setLoadingTables(true)
       setSearchError(null)
-      setSelectedTableId(null)
 
       try {
         const res = await getAvailableTablesApi({
@@ -60,12 +67,16 @@ export default function BookingForm({ onSuccess }) {
     }
   }, [date, time, guestCount])
 
+  const selectedTableObj = useMemo(() => {
+    return availableTables.find((t) => (t.tableId || t.id) === selectedTableId)
+  }, [availableTables, selectedTableId])
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     setSubmitError(null)
 
     if (!selectedTableId) {
-      setSubmitError('Vui lòng chọn một bàn ăn trống trong danh sách trước khi xác nhận.')
+      setSubmitError('Vui lòng chọn bàn ăn trước khi xác nhận.')
       return
     }
 
@@ -80,83 +91,96 @@ export default function BookingForm({ onSuccess }) {
       }
 
       const res = await createReservationApi(payload)
-      const newReservationData = res?.data?.data || res?.data || {}
-      const selectedTableObj = availableTables.find((t) => (t.tableId || t.id) === selectedTableId)
+      const data = res?.data?.data || res?.data || {}
 
       const completeReservation = {
-        ...newReservationData,
-        table: newReservationData.table || selectedTableObj,
-        tableName: newReservationData.tableName || selectedTableObj?.tableName || selectedTableObj?.name,
+        ...data,
+        table: data.table || selectedTableObj,
+        tableName: data.tableName || selectedTableObj?.tableName || selectedTableObj?.name,
         guestCount: Number(guestCount),
         reservationTime,
-        status: newReservationData.status || 'PENDING',
+        status: data.status || 'PENDING',
       }
 
+      setCreatedReservation(completeReservation)
       onSuccess?.(completeReservation)
+      setCurrentStep(4)
     } catch (err) {
-      setSubmitError(err?.response?.data?.message || 'Không thể tạo phiếu đặt bàn. Vui lòng kiểm tra lại thông tin.')
+      setSubmitError(err?.response?.data?.message || 'Không thể tạo phiếu đặt bàn. Bàn vừa có khách khác đặt hoặc quá sát giờ.')
+      setCurrentStep(4)
     } finally {
       setSubmitting(false)
     }
   }
 
+  const handleResetToStep1 = useCallback(() => {
+    setSelectedTableId(null)
+    setNote('')
+    setSubmitError(null)
+    setCreatedReservation(null)
+    setCurrentStep(1)
+  }, [])
+
   return (
-    <form onSubmit={handleSubmit} className="p-6 rounded-2xl bg-surface-card border border-border-subtle shadow-sm space-y-6">
-      {/* Khối 1: Chọn Ngày, Giờ & Số Khách */}
-      <BookingTimeGuestSelector
-        date={date}
-        setDate={setDate}
-        time={time}
-        setTime={setTime}
-        guestCount={guestCount}
-        setGuestCount={setGuestCount}
-        todayStr={todayStr}
-      />
+    <div className="p-6 sm:p-8 rounded-2xl bg-surface-card border border-border-subtle shadow-sm space-y-6">
+      {/* Thanh Tiến Trình 4 Giai Đoạn */}
+      <BookingStepper currentStep={currentStep} />
 
-      {/* Khối 2: Lựa Chọn Bàn Ăn Khả Dụng */}
-      <BookingTablePicker
-        tables={availableTables}
-        loading={loadingTables}
-        error={searchError}
-        selectedTableId={selectedTableId}
-        onSelectTable={(id) => {
-          setSelectedTableId(id)
-          setSubmitError(null)
-        }}
-      />
+      {/* Giai đoạn 1: Ngày & Khách */}
+      {currentStep === 1 && (
+        <BookingStep1DateGuest
+          date={date}
+          setDate={setDate}
+          todayStr={todayStr}
+          guestCount={guestCount}
+          setGuestCount={setGuestCount}
+          onNext={() => setCurrentStep(2)}
+        />
+      )}
 
-      {/* Khối 3: Ghi Chú & Xác Nhận Đặt Bàn */}
-      <div className="space-y-4 pt-2 border-t border-border-subtle">
-        <div>
-          <label className="text-xs font-semibold text-text-main flex items-center gap-1.5 mb-2">
-            <MessageSquare className="w-3.5 h-3.5 text-brand-primary" />
-            <span>Yêu cầu đặc biệt (tùy chọn)</span>
-          </label>
-          <textarea
-            rows={2}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Ví dụ: Kỷ niệm ngày cưới, cần ghế trẻ em, dị ứng hải sản, ưu tiên bàn yên tĩnh..."
-            className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-subtle text-xs sm:text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-brand-primary transition-colors resize-none"
-          />
-        </div>
+      {/* Giai đoạn 2: Giờ & Chọn bàn */}
+      {currentStep === 2 && (
+        <BookingStep2TimeTable
+          time={time}
+          setTime={setTime}
+          availableTables={availableTables}
+          loadingTables={loadingTables}
+          searchError={searchError}
+          selectedTableId={selectedTableId}
+          setSelectedTableId={setSelectedTableId}
+          date={date}
+          guestCount={guestCount}
+          onBack={() => setCurrentStep(1)}
+          onNext={() => setCurrentStep(3)}
+        />
+      )}
 
-        {submitError && (
-          <div className="p-3.5 rounded-xl bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{submitError}</span>
-          </div>
-        )}
+      {/* Giai đoạn 3: Xem lại & Ghi chú */}
+      {currentStep === 3 && (
+        <BookingStep3ReviewNote
+          date={date}
+          time={time}
+          guestCount={guestCount}
+          selectedTable={selectedTableObj}
+          note={note}
+          setNote={setNote}
+          submitting={submitting}
+          submitError={submitError}
+          onBack={() => setCurrentStep(2)}
+          onSubmit={handleSubmit}
+        />
+      )}
 
-        <button
-          type="submit"
-          disabled={submitting || loadingTables || !selectedTableId}
-          className="w-full py-3 px-6 rounded-xl text-sm font-semibold bg-brand-primary hover:bg-brand-hover active:bg-brand-active text-surface-bg transition-colors disabled:opacity-50 cursor-pointer shadow-sm flex items-center justify-center gap-2"
-        >
-          <CalendarDays className="w-4 h-4" />
-          <span>{submitting ? 'Đang gửi yêu cầu giữ chỗ...' : 'Xác nhận đặt bàn ngay'}</span>
-        </button>
-      </div>
-    </form>
+      {/* Giai đoạn 4: Kết quả phản hồi */}
+      {currentStep === 4 && (
+        <BookingStep4Result
+          isSuccess={!submitError && Boolean(createdReservation)}
+          reservation={createdReservation}
+          errorMessage={submitError}
+          onGoToHistory={onGoToHistory}
+          onReset={handleResetToStep1}
+        />
+      )}
+    </div>
   )
 }

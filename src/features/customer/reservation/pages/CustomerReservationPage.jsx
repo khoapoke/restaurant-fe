@@ -52,9 +52,6 @@ export default function CustomerReservationPage() {
   }, [activeTab, isAuthenticated, fetchReservations])
 
   const handleBookingSuccess = (newReservation) => {
-    setSuccessBanner('Yêu cầu đặt bàn của bạn đã được gửi thành công! Nhà hàng sẽ duyệt trong ít phút.')
-    setActiveTab('history')
-    setFilterStatus('ALL')
     if (newReservation) {
       setReservations((prev) => [newReservation, ...prev])
     }
@@ -148,7 +145,13 @@ export default function CustomerReservationPage() {
                 </Link>
               </div>
             )}
-            <BookingForm onSuccess={handleBookingSuccess} />
+            <BookingForm
+              onSuccess={handleBookingSuccess}
+              onGoToHistory={() => {
+                setActiveTab('history')
+                setFilterStatus('ALL')
+              }}
+            />
           </div>
         )}
 

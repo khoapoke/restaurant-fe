@@ -57,7 +57,7 @@ Trước khi xin xác nhận từ người dùng, Agent phải cung cấp báo c
 Chỉ khi người dùng đã trả lời và bấm OK / Xác nhận:
 1. **Kiểm tra kỹ trước khi chạm file:** Đọc toàn bộ file cần sửa để nắm ngữ cảnh, tránh overwrite làm mất code cũ.
 2. **Tuân thủ quy chuẩn kỹ thuật:**
-   - **Mỗi component < 200 dòng:** Tách sub-components, modal, form, card riêng biệt.
+   - **Mỗi component < 250 dòng:** Tách sub-components, modal, form, card riêng biệt.
    - **4 trạng thái UI bắt buộc:** `Loading`, `Error` (kèm nút Thử lại), `Empty` (kèm CTA), `Data`.
    - **Enum & Status IN HOA tiếng Anh:** Tham chiếu [`docs/api/enums.md`](./docs/api/enums.md).
    - **Tối ưu hiệu năng:** Bắt buộc dùng `useMemo`, `useCallback` cho Context values và callbacks; dùng `React.lazy()` cho các route trang.
