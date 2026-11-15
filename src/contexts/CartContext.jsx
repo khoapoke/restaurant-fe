@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from './AuthContext'
 import {
   getCartApi,
@@ -54,16 +54,16 @@ export const CartProvider = ({ children }) => {
   }, [isCustomer, fetchCart])
 
   // Thêm món vào giỏ
-  const addToCart = async (payload) => {
+  const addToCart = useCallback(async (payload) => {
     const response = await addToCartApi(payload)
     if (response.data) {
       setCart(response.data)
     }
     return response
-  }
+  }, [])
 
   // Cập nhật số lượng món
-  const updateQuantity = async (dishId, quantity) => {
+  const updateQuantity = useCallback(async (dishId, quantity) => {
     setUpdatingDishIds((prev) => [...prev, dishId])
     try {
       const response = await updateCartItemApi(dishId, quantity)
@@ -74,10 +74,10 @@ export const CartProvider = ({ children }) => {
     } finally {
       setUpdatingDishIds((prev) => prev.filter((id) => id !== dishId))
     }
-  }
+  }, [])
 
   // Xóa món khỏi giỏ
-  const removeFromCart = async (dishId) => {
+  const removeFromCart = useCallback(async (dishId) => {
     setUpdatingDishIds((prev) => [...prev, dishId])
     try {
       const response = await removeCartItemApi(dishId)
@@ -88,24 +88,38 @@ export const CartProvider = ({ children }) => {
     } finally {
       setUpdatingDishIds((prev) => prev.filter((id) => id !== dishId))
     }
-  }
+  }, [])
 
-  const isDishUpdating = (dishId) => updatingDishIds.includes(dishId)
+  const isDishUpdating = useCallback(
+    (dishId) => updatingDishIds.includes(dishId),
+    [updatingDishIds]
+  )
+
+  const value = useMemo(
+    () => ({
+      cart,
+      loading,
+      totalQuantity: cart.totalQuantity || 0,
+      estimatedTotalAmount: cart.estimatedTotalAmount || 0,
+      fetchCart,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      isDishUpdating,
+    }),
+    [
+      cart,
+      loading,
+      fetchCart,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      isDishUpdating,
+    ]
+  )
 
   return (
-    <CartContext.Provider
-      value={{
-        cart,
-        loading,
-        totalQuantity: cart.totalQuantity || 0,
-        estimatedTotalAmount: cart.estimatedTotalAmount || 0,
-        fetchCart,
-        addToCart,
-        updateQuantity,
-        removeFromCart,
-        isDishUpdating,
-      }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   )

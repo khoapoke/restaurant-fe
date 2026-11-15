@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo } from 'react'
 import { STORAGE_KEYS } from '../features/auth/constants'
 import { loginApi, registerApi, logoutApi } from '../features/auth/services/authService'
 
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(false)
 
-  const saveAuthData = (tokenValue, accountValue, remember = true) => {
+  const saveAuthData = useCallback((tokenValue, accountValue, remember = true) => {
     const storage = remember ? localStorage : sessionStorage
     const otherStorage = remember ? sessionStorage : localStorage
 
@@ -40,9 +40,9 @@ export const AuthProvider = ({ children }) => {
 
     setToken(tokenValue)
     setUser(accountValue)
-  }
+  }, [])
 
-  const clearAuthData = () => {
+  const clearAuthData = useCallback(() => {
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
     localStorage.removeItem(STORAGE_KEYS.ACCOUNT)
     sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
@@ -50,9 +50,9 @@ export const AuthProvider = ({ children }) => {
 
     setToken(null)
     setUser(null)
-  }
+  }, [])
 
-  const login = async ({ username, password, rememberMe = false }) => {
+  const login = useCallback(async ({ username, password, rememberMe = false }) => {
     setLoading(true)
     try {
       const response = await loginApi({ username, password, rememberMe })
@@ -64,9 +64,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [saveAuthData])
 
-  const register = async (formData) => {
+  const register = useCallback(async (formData) => {
     setLoading(true)
     try {
       const response = await registerApi(formData)
@@ -79,9 +79,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [saveAuthData])
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setLoading(true)
     try {
       if (token) {
@@ -91,9 +91,9 @@ export const AuthProvider = ({ children }) => {
       clearAuthData()
       setLoading(false)
     }
-  }
+  }, [token, clearAuthData])
 
-  const updateUserProfile = (updatedProfile) => {
+  const updateUserProfile = useCallback((updatedProfile) => {
     setUser((prev) => {
       if (!prev) return prev
       const newAccount = {
@@ -120,22 +120,25 @@ export const AuthProvider = ({ children }) => {
       targetStorage.setItem(STORAGE_KEYS.ACCOUNT, JSON.stringify(newAccount))
       return newAccount
     })
-  }
+  }, [])
+
+  const value = useMemo(
+    () => ({
+      token,
+      user,
+      isAuthenticated: !!token && !!user,
+      role: user?.role || null,
+      loading,
+      login,
+      register,
+      logout,
+      updateUserProfile,
+    }),
+    [token, user, loading, login, register, logout, updateUserProfile]
+  )
 
   return (
-    <AuthContext.Provider
-      value={{
-        token,
-        user,
-        isAuthenticated: !!token && !!user,
-        role: user?.role || null,
-        loading,
-        login,
-        register,
-        logout,
-        updateUserProfile,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
