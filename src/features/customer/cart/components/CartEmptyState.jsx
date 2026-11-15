@@ -26,7 +26,7 @@ export default function CartEmptyState() {
       </div>
 
       <h3 className="text-xl sm:text-2xl font-serif font-bold text-text-main mb-2">
-        Giỏ hàng của bạn đang trống
+        Giỏ hàng đang trống
       </h3>
 
       <p className="text-sm text-text-muted max-w-md leading-relaxed mb-8">

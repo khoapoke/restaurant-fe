@@ -1,16 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import {
-  Package,
-  ArrowLeft,
-  RefreshCw,
-  AlertTriangle,
-  Inbox,
-  CheckCircle2,
-} from 'lucide-react'
+import { Package, RefreshCw, AlertTriangle, Utensils } from 'lucide-react'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { getOrdersApi } from '../services/orderService'
-import { OrderStatus } from '../constants'
+import HomeHeader from '../../Home/components/HomeHeader'
+import HomeFooter from '../../Home/components/HomeFooter'
+import OrderFilterTabs from '../components/OrderFilterTabs'
+import OrderEmptyState from '../components/OrderEmptyState'
 import OrderCard from '../components/OrderCard'
 import OrderDetailModal from '../components/OrderDetailModal'
 import QrPaymentModal from '../components/QrPaymentModal'
@@ -19,7 +15,14 @@ import Button from '../../../../components/ui/Button'
 import Skeleton from '../../../../components/ui/Skeleton'
 import Alert from '../../../../components/ui/Alert'
 
-export const CustomerOrdersPage = () => {
+/**
+ * Trang Lịch Sử Đơn Hàng Khách Hàng (CustomerOrdersPage)
+ * - Tinh tế Fine-Dining & Đồng bộ Navbar HomeHeader / HomeFooter
+ * - Bộ lọc Tab trạng thái có badge đếm số lượng đơn
+ * - Quản lý an toàn 4 trạng thái UI (Loading, Error, Empty, Data)
+ * - Độ dài < 160 dòng
+ */
+export default function CustomerOrdersPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, role } = useAuth()
@@ -35,7 +38,6 @@ export const CustomerOrdersPage = () => {
   const [selectedStatus, setSelectedStatus] = useState('ALL')
   const [bannerNotice, setBannerNotice] = useState(location.state?.successMessage || null)
 
-  // Modals state
   const [detailOrderId, setDetailOrderId] = useState(null)
   const [qrOrderId, setQrOrderId] = useState(null)
   const [cancelOrderId, setCancelOrderId] = useState(null)
@@ -46,7 +48,7 @@ export const CustomerOrdersPage = () => {
     try {
       const response = await getOrdersApi()
       const data = response.data?.items || response.data || []
-      setOrders(data)
+      setOrders(Array.isArray(data) ? data : [])
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải lịch sử đơn hàng.')
     } finally {
@@ -58,121 +60,68 @@ export const CustomerOrdersPage = () => {
     if (isAuthenticated) fetchOrders()
   }, [isAuthenticated, fetchOrders])
 
-  const filteredOrders = orders.filter((o) => {
-    if (selectedStatus === 'ALL') return true
-    return o.status === selectedStatus
-  })
+  const counts = useMemo(() => {
+    const map = { ALL: orders.length }
+    for (const o of orders) {
+      if (o.status) map[o.status] = (map[o.status] || 0) + 1
+    }
+    return map
+  }, [orders])
 
-  const tabs = [
-    { key: 'ALL', label: 'Tất cả đơn' },
-    { key: OrderStatus.PENDING_CONFIRMATION, label: 'Chờ xác nhận' },
-    { key: OrderStatus.CONFIRMED, label: 'Đã xác nhận' },
-    { key: OrderStatus.PREPARING, label: 'Bếp đang nấu' },
-    { key: OrderStatus.DELIVERING, label: 'Đang giao' },
-    { key: OrderStatus.COMPLETED, label: 'Hoàn thành' },
-    { key: OrderStatus.CANCELLED, label: 'Đã hủy' },
-  ]
+  const filteredOrders = useMemo(() => {
+    if (selectedStatus === 'ALL') return orders
+    return orders.filter((o) => o.status === selectedStatus)
+  }, [orders, selectedStatus])
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-gray-100 flex flex-col">
-      <header className="border-b border-gray-800/80 bg-gray-950/70 backdrop-blur-md sticky top-0 z-20 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              title="Về Trang chủ"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-amber-500" /> Lịch sử đơn hàng
-              </h1>
-              <p className="text-[11px] text-gray-400">Theo dõi tiến độ chế biến và giao món</p>
-            </div>
+    <div className="min-h-screen bg-surface-bg text-text-main flex flex-col">
+      <HomeHeader />
+
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-subtle">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-text-main tracking-tight flex items-center gap-2.5">
+              <Package className="w-7 h-7 text-brand-primary" />
+              <span>Lịch sử đơn hàng</span>
+            </h1>
+            <p className="text-xs text-text-muted mt-1">Theo dõi tiến độ chế biến và giao nhận món ăn của bạn</p>
           </div>
+
           <Link to="/menu">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" icon={Utensils}>
               Gọi thêm món
             </Button>
           </Link>
         </div>
-      </header>
 
-      <main className="flex-1 max-w-5xl mx-auto w-full p-4 sm:p-8 space-y-6">
         {bannerNotice && (
-          <Alert
-            type="success"
-            message={bannerNotice}
-            onClose={() => setBannerNotice(null)}
-          />
+          <Alert type="success" message={bannerNotice} onClose={() => setBannerNotice(null)} />
         )}
 
-        {/* Tab Filter theo trạng thái */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setSelectedStatus(tab.key)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer
-                ${
-                  selectedStatus === tab.key
-                    ? 'bg-amber-500 text-gray-950 font-bold shadow-md'
-                    : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <OrderFilterTabs
+          selectedStatus={selectedStatus}
+          onSelectStatus={setSelectedStatus}
+          counts={counts}
+        />
 
-        {/* UI STATE 1: LOADING */}
-        {loading && (
-          <div className="space-y-4">
-            <Skeleton className="h-32 w-full rounded-2xl" />
-            <Skeleton className="h-32 w-full rounded-2xl" />
-            <Skeleton className="h-32 w-full rounded-2xl" />
+        {loading ? (
+          <div className="space-y-4 pt-2">
+            <Skeleton className="h-36 w-full rounded-2xl" />
+            <Skeleton className="h-36 w-full rounded-2xl" />
+            <Skeleton className="h-36 w-full rounded-2xl" />
           </div>
-        )}
-
-        {/* UI STATE 2: ERROR */}
-        {!loading && error && (
-          <div className="p-12 text-center rounded-2xl border border-red-500/20 bg-red-500/5 space-y-3">
-            <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
-            <p className="text-xs text-red-400">{error}</p>
+        ) : error ? (
+          <div className="p-10 text-center rounded-2xl border border-status-error/20 bg-status-error/5 space-y-3">
+            <AlertTriangle className="w-8 h-8 text-status-error mx-auto" />
+            <p className="text-xs text-status-error">{error}</p>
             <Button variant="primary" size="sm" icon={RefreshCw} onClick={fetchOrders}>
               Thử lại
             </Button>
           </div>
-        )}
-
-        {/* UI STATE 3: EMPTY */}
-        {!loading && !error && filteredOrders.length === 0 && (
-          <div className="p-12 text-center rounded-2xl border border-dashed border-gray-800 bg-gray-900/30 space-y-4 my-6">
-            <div className="w-14 h-14 rounded-2xl bg-gray-800/80 flex items-center justify-center text-gray-500 mx-auto">
-              <Inbox className="w-7 h-7" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-200">Không có đơn hàng nào</h3>
-              <p className="text-xs text-gray-500 mt-1">
-                {selectedStatus === 'ALL'
-                  ? 'Bạn chưa đặt món ăn nào tại nhà hàng.'
-                  : 'Không có đơn hàng nào thuộc trạng thái này.'}
-              </p>
-            </div>
-            <Link to="/menu">
-              <Button variant="primary" size="sm">
-                Khám phá Thực đơn
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        {/* UI STATE 4: SUCCESS LIST */}
-        {!loading && !error && filteredOrders.length > 0 && (
-          <div className="space-y-4">
+        ) : filteredOrders.length === 0 ? (
+          <OrderEmptyState selectedStatus={selectedStatus} />
+        ) : (
+          <div className="space-y-4 pt-1">
             {filteredOrders.map((order) => (
               <OrderCard
                 key={order.orderId}
@@ -188,7 +137,7 @@ export const CustomerOrdersPage = () => {
 
       <OrderDetailModal
         orderId={detailOrderId}
-        isOpen={!!detailOrderId}
+        isOpen={Boolean(detailOrderId)}
         onClose={() => setDetailOrderId(null)}
         onOpenQr={(id) => setQrOrderId(id)}
         onOpenCancel={(id) => setCancelOrderId(id)}
@@ -196,7 +145,7 @@ export const CustomerOrdersPage = () => {
 
       <QrPaymentModal
         orderId={qrOrderId}
-        isOpen={!!qrOrderId}
+        isOpen={Boolean(qrOrderId)}
         onClose={() => setQrOrderId(null)}
         onPaymentSuccess={() => {
           fetchOrders()
@@ -206,15 +155,15 @@ export const CustomerOrdersPage = () => {
 
       <CancelOrderModal
         orderId={cancelOrderId}
-        isOpen={!!cancelOrderId}
+        isOpen={Boolean(cancelOrderId)}
         onClose={() => setCancelOrderId(null)}
         onSuccess={() => {
           fetchOrders()
           setBannerNotice('Đơn hàng đã được yêu cầu hủy thành công.')
         }}
       />
+
+      <HomeFooter />
     </div>
   )
 }
-
-export default CustomerOrdersPage

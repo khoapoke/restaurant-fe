@@ -11,209 +11,151 @@ import {
 import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 import { Loader2, AlertTriangle, QrCode, XCircle } from 'lucide-react'
 
-export const OrderDetailModal = ({
-  orderId,
-  isOpen,
-  onClose,
-  onOpenQr,
-  onOpenCancel,
-}) => {
+/**
+ * Modal Xem Chi Tiết Đơn Hàng (OrderDetailModal)
+ * - Tinh tế Fine-Dining & Đồng bộ Centralized Design Tokens
+ * - Tối ưu danh sách món ăn & khối thanh toán
+ * - Độ dài < 170 dòng
+ */
+export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, onOpenCancel }) {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!orderId || !isOpen) {
-      setOrder(null)
-      setError(null)
-      return
+      setOrder(null); setError(null); return
     }
-
     const loadDetail = async () => {
-      setLoading(true)
-      setError(null)
+      setLoading(true); setError(null)
       try {
         const response = await getOrderDetailApi(orderId)
-        setOrder(response.data)
+        setOrder(response.data?.data || response.data)
       } catch (err) {
         setError(err.response?.data?.message || 'Không thể tải chi tiết đơn hàng.')
-      } finally {
-        setLoading(false)
-      }
+      } finally { setLoading(false) }
     }
-
     loadDetail()
   }, [orderId, isOpen])
 
-  const statusConfig = ORDER_STATUS_CONFIG[order?.status] || {
-    label: order?.status,
-    color: 'text-gray-300',
-    bg: 'bg-gray-800',
-    border: 'border-gray-700',
+  const statusCfg = ORDER_STATUS_CONFIG[order?.status] || {
+    label: order?.status, color: 'text-text-muted', bg: 'bg-surface-bg', border: 'border-border-subtle',
   }
-
   const isPending = order?.status === 'PENDING_CONFIRMATION'
-  const isUnpaid =
-    order?.payment?.status === 'UNPAID' &&
-    order?.payment?.paymentMethod === 'BANK_TRANSFER_QR' &&
-    order?.status !== 'CANCELLED'
+  const isUnpaid = order?.payment?.status === 'UNPAID' && order?.payment?.paymentMethod === 'BANK_TRANSFER_QR' && order?.status !== 'CANCELLED'
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Chi tiết đơn hàng #${orderId}`}
-      maxWidth="max-w-2xl"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết đơn hàng #${orderId}`} maxWidth="max-w-2xl">
       {loading ? (
         <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-          <p className="text-xs text-gray-400">Đang tải thông tin đơn hàng...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+          <p className="text-xs text-text-muted">Đang tải thông tin đơn hàng...</p>
         </div>
       ) : error ? (
         <div className="py-8 text-center space-y-3">
-          <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
-          <p className="text-xs text-red-400">{error}</p>
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            Đóng
-          </Button>
+          <AlertTriangle className="w-8 h-8 text-status-error mx-auto" />
+          <p className="text-xs text-status-error">{error}</p>
+          <Button variant="secondary" size="sm" onClick={onClose}>Đóng</Button>
         </div>
       ) : order ? (
-        <div className="space-y-5">
-          {/* Header tóm tắt trạng thái */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-gray-950 border border-gray-800">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-surface-bg border border-border-subtle">
             <div>
-              <span className="text-[11px] text-gray-500 block">Ngày tạo đơn</span>
-              <span className="text-xs text-gray-300 font-mono">
+              <span className="text-[10px] text-text-muted block">Ngày tạo đơn</span>
+              <span className="text-xs text-text-main font-mono">
                 {order.orderDate ? new Date(order.orderDate).toLocaleString('vi-VN') : '—'}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}
-              >
-                ● {statusConfig.label}
-              </span>
-            </div>
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}>
+              ● {statusCfg.label}
+            </span>
           </div>
 
-          {/* Thông tin giao hàng */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-gray-950/60 p-4 rounded-xl border border-gray-800/80">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs bg-surface-bg/70 p-3.5 rounded-xl border border-border-subtle">
             <div>
-              <span className="text-gray-500 block text-[10px]">Người nhận & SĐT</span>
-              <span className="font-semibold text-gray-200">
-                {order.recipientName || 'Khách hàng'} • {order.recipientPhone || '—'}
-              </span>
+              <span className="text-text-muted block text-[10px]">Người nhận & SĐT</span>
+              <span className="font-semibold text-text-main">{order.recipientName || 'Khách hàng'} • {order.recipientPhone || '—'}</span>
             </div>
             <div>
-              <span className="text-gray-500 block text-[10px]">Hình thức nhận món</span>
-              <span className="font-semibold text-gray-200">
-                {FULFILLMENT_CONFIG[order.fulfillmentType]?.label || order.fulfillmentType}
-              </span>
+              <span className="text-text-muted block text-[10px]">Hình thức nhận món</span>
+              <span className="font-semibold text-text-main">{FULFILLMENT_CONFIG[order.fulfillmentType]?.label || order.fulfillmentType}</span>
             </div>
             <div className="sm:col-span-2">
-              <span className="text-gray-500 block text-[10px]">Địa chỉ giao</span>
-              <span className="text-gray-300 leading-relaxed">
-                {order.shippingAddress || '—'}
-              </span>
+              <span className="text-text-muted block text-[10px]">Địa chỉ giao</span>
+              <span className="text-text-main leading-relaxed">{order.shippingAddress || '—'}</span>
             </div>
             {order.orderNote && (
               <div className="sm:col-span-2">
-                <span className="text-gray-500 block text-[10px]">Ghi chú đơn hàng</span>
-                <span className="text-amber-400/90 italic">{order.orderNote}</span>
+                <span className="text-text-muted block text-[10px]">Ghi chú đơn hàng</span>
+                <span className="text-brand-primary italic">{order.orderNote}</span>
               </div>
             )}
           </div>
 
-          {/* Danh sách món ăn */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-              Món ăn đã đặt ({order.items?.length || 0})
-            </h4>
-            <div className="divide-y divide-gray-800/60 border border-gray-800 rounded-xl overflow-hidden bg-gray-950/50">
+          <div className="space-y-1.5">
+            <h4 className="text-xs font-serif font-bold text-text-main uppercase tracking-wider">Món ăn đã đặt ({order.items?.length || 0})</h4>
+            <div className="divide-y divide-border-subtle border border-border-subtle rounded-xl overflow-hidden bg-surface-bg/50 max-h-48 overflow-y-auto">
               {order.items?.map((it, idx) => (
-                <div key={idx} className="p-3 flex items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div key={idx} className="p-2.5 flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <img
                       src={resolveDishImage(it.imageUrl, it)}
                       alt={it.dishName}
                       onError={(e) => handleImageError(e, resolveDishImage(null, it))}
-                      className="w-10 h-10 rounded-lg object-cover bg-gray-900 shrink-0 border border-gray-800"
+                      className="w-9 h-9 rounded-lg object-cover bg-surface-card shrink-0 border border-border-subtle"
                     />
                     <div className="truncate">
-                      <p className="font-semibold text-gray-100 truncate">{it.dishName}</p>
-                      <p className="text-gray-500 font-mono">
-                        {Number(it.unitPrice || 0).toLocaleString('vi-VN')} đ × {it.quantity}
-                      </p>
+                      <p className="font-semibold text-text-main truncate">{it.dishName}</p>
+                      <p className="text-text-muted font-mono text-[11px]">{Number(it.unitPrice || 0).toLocaleString('vi-VN')} đ × {it.quantity}</p>
                     </div>
                   </div>
-                  <span className="font-mono font-bold text-gray-200 shrink-0">
-                    {Number(it.subTotal || 0).toLocaleString('vi-VN')} đ
+                  <span className="font-mono font-bold text-text-main shrink-0">
+                    {Number(it.subTotal || (it.unitPrice * it.quantity) || 0).toLocaleString('vi-VN')} đ
                   </span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Tổng tiền & Phương thức thanh toán */}
-          <div className="p-4 rounded-xl bg-gray-950 border border-gray-800 space-y-2 text-xs">
-            <div className="flex justify-between text-gray-400">
+          <div className="p-3.5 rounded-xl bg-surface-bg border border-border-subtle space-y-1.5 text-xs">
+            <div className="flex justify-between text-text-muted">
               <span>Phương thức thanh toán:</span>
-              <span className="text-gray-200 font-medium">
-                {PAYMENT_METHOD_CONFIG[order.payment?.paymentMethod]?.label ||
-                  order.payment?.paymentMethod}
-              </span>
+              <span className="text-text-main font-medium">{PAYMENT_METHOD_CONFIG[order.payment?.paymentMethod]?.label || order.payment?.paymentMethod}</span>
             </div>
-            <div className="flex justify-between text-gray-400">
+            <div className="flex justify-between text-text-muted">
               <span>Trạng thái thanh toán:</span>
-              <span
-                className={`font-semibold ${
-                  PAYMENT_STATUS_CONFIG[order.payment?.status]?.color || 'text-gray-300'
-                }`}
-              >
+              <span className={`font-semibold ${PAYMENT_STATUS_CONFIG[order.payment?.status]?.color || 'text-text-muted'}`}>
                 {PAYMENT_STATUS_CONFIG[order.payment?.status]?.label || order.payment?.status}
               </span>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-gray-800">
-              <span className="font-bold text-sm text-white">Tổng cộng:</span>
-              <span className="text-lg font-bold text-amber-400 font-mono">
-                {Number(order.totalAmount || 0).toLocaleString('vi-VN')} đ
-              </span>
+            <div className="flex justify-between items-center pt-2 border-t border-border-subtle">
+              <span className="font-bold text-sm text-text-main">Tổng cộng:</span>
+              <span className="text-lg font-bold text-brand-primary font-mono">{Number(order.totalAmount || 0).toLocaleString('vi-VN')} đ</span>
             </div>
           </div>
 
-          {/* Footer Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-800">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-border-subtle">
             <div>
               {isPending && (
                 <Button
                   variant="ghost"
                   size="sm"
                   icon={XCircle}
-                  className="text-red-400 hover:text-red-300"
-                  onClick={() => {
-                    onClose()
-                    onOpenCancel?.(order.orderId)
-                  }}
+                  className="text-status-error hover:bg-status-error/10"
+                  onClick={() => { onClose(); onOpenCancel?.(order.orderId) }}
                 >
                   Hủy đơn này
                 </Button>
               )}
             </div>
-
-            <div className="flex items-center gap-2.5">
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                Đóng
-              </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={onClose}>Đóng</Button>
               {isUnpaid && (
                 <Button
                   variant="primary"
                   size="sm"
                   icon={QrCode}
-                  onClick={() => {
-                    onClose()
-                    onOpenQr?.(order.orderId)
-                  }}
+                  onClick={() => { onClose(); onOpenQr?.(order.orderId) }}
                 >
                   Thanh toán VietQR
                 </Button>
@@ -225,5 +167,3 @@ export const OrderDetailModal = ({
     </Modal>
   )
 }
-
-export default OrderDetailModal

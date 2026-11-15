@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
 import {
@@ -11,27 +11,30 @@ import {
   Copy,
   Check,
   CheckCircle2,
-  Clock,
   RefreshCw,
   AlertTriangle,
   Loader2,
 } from 'lucide-react'
+import QrCountdownTimer from './QrCountdownTimer'
 
-export const QrPaymentModal = ({
+/**
+ * Modal Thanh Toán Chuyển Khoản VietQR (QrPaymentModal)
+ * - Tối ưu hóa render & cô lập bộ đếm thời gian
+ * - Đồng bộ Centralized Design Tokens
+ * - Độ dài < 170 dòng
+ */
+export default function QrPaymentModal({
   orderId,
   isOpen,
   onClose,
   onPaymentSuccess,
-}) => {
+}) {
   const [qrData, setQrData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isPaid, setIsPaid] = useState(false)
   const [copiedField, setCopiedField] = useState(null)
-  const [timeLeft, setTimeLeft] = useState(900) // 15 phút (giây)
-
   const pollingTimerRef = useRef(null)
-  const countdownTimerRef = useRef(null)
 
   // 1. Sinh mã QR khi mở Modal
   useEffect(() => {
@@ -40,7 +43,6 @@ export const QrPaymentModal = ({
       setError(null)
       setIsPaid(false)
       clearInterval(pollingTimerRef.current)
-      clearInterval(countdownTimerRef.current)
       return
     }
 
@@ -49,44 +51,24 @@ export const QrPaymentModal = ({
       setError(null)
       try {
         const response = await generateQrApi(orderId)
-        setQrData(response.data)
-        setTimeLeft(900)
+        setQrData(response.data?.data || response.data)
       } catch (err) {
         setError(err.response?.data?.message || 'Không thể tạo mã QR thanh toán.')
       } finally {
         setLoading(false)
       }
     }
-
     loadQr()
   }, [orderId, isOpen])
 
-  // 2. Countdown timer
+  // 2. Auto-polling kiểm tra thanh toán mỗi 3.5 giây
   useEffect(() => {
-    if (!isOpen || isPaid || !qrData) return
-
-    countdownTimerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdownTimerRef.current)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(countdownTimerRef.current)
-  }, [isOpen, isPaid, qrData])
-
-  // 3. Auto-polling kiểm tra thanh toán
-  useEffect(() => {
-    if (!isOpen || !orderId || isPaid || timeLeft <= 0) return
-
+    if (!isOpen || !orderId || isPaid) return
     pollingTimerRef.current = setInterval(async () => {
       try {
         const res = await getPaymentStatusApi(orderId)
-        const status = res.data?.status
-        if (status === 'PAID') {
+        const paymentData = res.data?.data || res.data
+        if (paymentData?.status === 'PAID' || paymentData?.isPaid === true) {
           setIsPaid(true)
           clearInterval(pollingTimerRef.current)
           onPaymentSuccess?.(orderId)
@@ -95,21 +77,20 @@ export const QrPaymentModal = ({
     }, 3500)
 
     return () => clearInterval(pollingTimerRef.current)
-  }, [isOpen, orderId, isPaid, timeLeft, onPaymentSuccess])
+  }, [isOpen, orderId, isPaid, onPaymentSuccess])
 
-  const handleCopy = (text, fieldName) => {
-    navigator.clipboard.writeText(text)
+  const handleCopy = useCallback((text, fieldName) => {
+    navigator.clipboard.writeText(String(text || ''))
     setCopiedField(fieldName)
     setTimeout(() => setCopiedField(null), 2000)
-  }
+  }, [])
 
   const handleRetry = async () => {
     setLoading(true)
     setError(null)
     try {
       const response = await retryPaymentApi(orderId)
-      setQrData(response.data)
-      setTimeLeft(900)
+      setQrData(response.data?.data || response.data)
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tạo lại mã QR.')
     } finally {
@@ -117,32 +98,21 @@ export const QrPaymentModal = ({
     }
   }
 
-  const formatTime = (secs) => {
-    const m = Math.floor(secs / 60)
-    const s = secs % 60
-    return `${m}:${s < 10 ? '0' : ''}${s}`
-  }
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Thanh toán chuyển khoản VietQR"
-      maxWidth="max-w-md"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Thanh toán chuyển khoản VietQR" maxWidth="max-w-md">
       {loading ? (
         <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-          <p className="text-xs text-gray-400">Đang khởi tạo mã QR thanh toán...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+          <p className="text-xs text-text-muted">Đang khởi tạo mã QR thanh toán...</p>
         </div>
       ) : isPaid ? (
         <div className="py-8 flex flex-col items-center justify-center text-center space-y-4 animate-in zoom-in-95 duration-200">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-status-success/15 text-status-success border border-status-success/30 flex items-center justify-center">
             <CheckCircle2 className="w-10 h-10" />
           </div>
-          <div>
-            <h3 className="text-xl font-bold text-white">Thanh toán thành công!</h3>
-            <p className="text-xs text-gray-400 mt-1 max-w-xs">
+          <div className="space-y-1">
+            <h3 className="text-xl font-serif font-bold text-text-main">Thanh toán thành công!</h3>
+            <p className="text-xs text-text-muted max-w-xs leading-relaxed">
               Nhà hàng đã nhận được chuyển khoản cho đơn hàng #{orderId}. Bếp đang tiến hành chuẩn bị món ăn cho bạn.
             </p>
           </div>
@@ -152,83 +122,61 @@ export const QrPaymentModal = ({
         </div>
       ) : error ? (
         <div className="py-8 text-center space-y-3">
-          <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
-          <p className="text-xs text-red-400">{error}</p>
+          <AlertTriangle className="w-8 h-8 text-status-error mx-auto" />
+          <p className="text-xs text-status-error">{error}</p>
           <Button variant="secondary" size="sm" onClick={handleRetry} icon={RefreshCw}>
             Thử lại
           </Button>
         </div>
       ) : qrData ? (
         <div className="space-y-4">
-          {/* Ảnh QR */}
-          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-700 shadow-xl relative">
-            <img
-              src={qrData.qrImageUrl}
-              alt="Mã QR VietQR"
-              className="w-56 h-56 object-contain"
-            />
-            <div className="mt-2 text-center text-gray-900 font-semibold text-xs flex items-center gap-1.5">
-              <QrCode className="w-4 h-4 text-amber-600" />
+          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-brand-primary/40 shadow-xl shadow-brand-primary/5">
+            <img src={qrData.qrImageUrl || qrData.qrCodeUrl} alt="Mã QR VietQR" className="w-56 h-56 object-contain" />
+            <div className="mt-2 text-center text-zinc-900 font-semibold text-xs flex items-center gap-1.5">
+              <QrCode className="w-4 h-4 text-brand-primary" />
               <span>Quét bằng app ngân hàng bất kỳ</span>
             </div>
           </div>
 
-          {/* Đếm ngược */}
-          <div className="flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-gray-950 border border-gray-800">
-            <span className="text-gray-400 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-amber-500" />
-              Thời gian quét mã còn:
-            </span>
-            <span
-              className={`font-mono font-bold ${
-                timeLeft < 180 ? 'text-red-400 animate-pulse' : 'text-amber-400'
-              }`}
-            >
-              {formatTime(timeLeft)}
-            </span>
-          </div>
+          <QrCountdownTimer initialSeconds={900} onExpire={() => {}} />
 
-          {/* Thông tin chuyển khoản */}
           <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-950 border border-gray-800">
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-surface-bg border border-border-subtle">
               <div>
-                <span className="text-gray-500 block text-[10px]">Số tiền thanh toán</span>
-                <span className="font-mono font-bold text-amber-400 text-sm">
+                <span className="text-text-muted block text-[10px]">Số tiền thanh toán</span>
+                <span className="font-mono font-bold text-brand-primary text-sm">
                   {Number(qrData.amount || 0).toLocaleString('vi-VN')} đ
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => handleCopy(qrData.amount, 'amount')}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-card transition-colors cursor-pointer"
                 title="Sao chép số tiền"
               >
-                {copiedField === 'amount' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copiedField === 'amount' ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-950 border border-gray-800">
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-surface-bg border border-border-subtle">
               <div>
-                <span className="text-gray-500 block text-[10px]">Nội dung chuyển khoản (bắt buộc)</span>
-                <span className="font-mono font-bold text-gray-100 text-xs">
-                  {qrData.transferContent}
-                </span>
+                <span className="text-text-muted block text-[10px]">Nội dung chuyển khoản (bắt buộc)</span>
+                <span className="font-mono font-bold text-text-main text-xs">{qrData.transferContent}</span>
               </div>
               <button
                 type="button"
                 onClick={() => handleCopy(qrData.transferContent, 'content')}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-card transition-colors cursor-pointer"
                 title="Sao chép nội dung"
               >
-                {copiedField === 'content' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copiedField === 'content' ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
-          <p className="text-[11px] text-gray-500 text-center italic">
+          <p className="text-[11px] text-text-muted text-center italic">
             Hệ thống đang tự động lắng nghe kết quả chuyển khoản...
           </p>
-
           <Button variant="ghost" size="sm" onClick={onClose} className="w-full">
             Đóng cửa sổ (sẽ thanh toán sau)
           </Button>
@@ -237,5 +185,3 @@ export const QrPaymentModal = ({
     </Modal>
   )
 }
-
-export default QrPaymentModal

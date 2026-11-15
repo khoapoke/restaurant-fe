@@ -67,14 +67,12 @@ export const ORDER_STATUS_CONFIG = {
 
 export const FulfillmentType = {
   DELIVERY: 'DELIVERY',
-  DINE_IN: 'DINE_IN',
-  TAKEAWAY: 'TAKEAWAY',
+  PICKUP: 'PICKUP',
 }
 
 export const FULFILLMENT_CONFIG = {
   DELIVERY: { label: 'Giao hàng tận nơi' },
-  DINE_IN: { label: 'Ăn tại nhà hàng' },
-  TAKEAWAY: { label: 'Tự đến mang về' },
+  PICKUP: { label: 'Nhận tại nhà hàng' },
 }
 
 export const PaymentMethod = {
