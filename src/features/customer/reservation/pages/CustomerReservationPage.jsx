@@ -148,20 +148,14 @@ export const CustomerReservationPage = () => {
               <UtensilsCrossed className="w-3.5 h-3.5 text-amber-500" />
               <span>Thực đơn</span>
             </Link>
-            <Link
-              to="/reservation"
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 transition-colors flex items-center gap-1.5"
-            >
-              <CalendarDays className="w-3.5 h-3.5 text-amber-500" />
-              <span>Đặt bàn</span>
-            </Link>
+
             {isAuthenticated && (
               <Link
                 to="/orders"
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-300 hover:text-white hover:bg-gray-800/60 transition-colors flex items-center gap-1.5"
               >
                 <Package className="w-3.5 h-3.5 text-amber-500" />
-                <span>Đơn hàng</span>
+                <span>Đơn hàng à</span>
               </Link>
             )}
             {isAuthenticated && user?.role === 'ADMIN' && (
@@ -192,7 +186,7 @@ export const CustomerReservationPage = () => {
             </Link>
           )}
 
-          {isAuthenticated ? (
+          {isAuthenticated && (
             <div className="flex items-center gap-2">
               <Link to="/profile">
                 <Button variant="ghost" size="sm" icon={User}>
@@ -203,16 +197,7 @@ export const CustomerReservationPage = () => {
                 Đăng xuất
               </Button>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link to="/login">
-                <Button variant="ghost" size="sm">Đăng nhập</Button>
-              </Link>
-              <Link to="/register">
-                <Button variant="primary" size="sm">Đăng ký</Button>
-              </Link>
-            </div>
-          )}
+          ) }
         </div>
       </header>
 
