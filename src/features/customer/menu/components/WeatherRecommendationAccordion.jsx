@@ -3,7 +3,7 @@ import {
   Sun,
   CloudRain,
   CloudSun,
-  Sparkles,
+  Flame,
   ChevronDown,
   ChevronUp,
   MapPin,
@@ -117,7 +117,7 @@ export const WeatherRecommendationAccordion = ({
 
         <div className="flex items-center gap-3">
           <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <Sparkles className="w-3 h-3" />
+            <Flame className="w-3 h-3" />
             <span>{recommendedDishes.length} món phù hợp</span>
           </span>
           <button

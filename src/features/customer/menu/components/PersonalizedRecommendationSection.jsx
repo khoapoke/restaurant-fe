@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Sparkles, Plus, Check, Loader2, Heart, ChevronRight, RefreshCw } from 'lucide-react'
+import { Heart, Plus, Check, Loader2, ChevronRight, RefreshCw, Flame } from 'lucide-react'
 import { getPersonalizedRecommendationsApi } from '../services/recommendationService'
 import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 import { useCart } from '../../../../contexts/CartContext'
@@ -57,7 +57,7 @@ export const PersonalizedRecommendationSection = ({ onSelectDish }) => {
     return (
       <div className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-amber-500/5 via-amber-600/5 to-transparent border border-amber-500/20">
         <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-amber-400">
-          <Sparkles className="w-4 h-4 animate-spin" />
+          <Flame className="w-4 h-4 animate-pulse" />
           <span>Hệ thống AI đang phân tích khẩu vị của bạn...</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

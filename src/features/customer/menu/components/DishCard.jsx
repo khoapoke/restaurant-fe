@@ -1,83 +1,114 @@
-import { Eye, AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
+import { Eye, AlertTriangle, ShoppingBag, Check, Loader2 } from 'lucide-react'
 import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
+import { useCart } from '../../../../contexts/CartContext'
+import { useAuth } from '../../../../contexts/AuthContext'
 
-export const DishCard = ({ dish, onSelect }) => {
+/**
+ * Thẻ Món Ăn Chuẩn Design System (DishCard)
+ * - Tỉ lệ ảnh 4:3, Lazy Loading, Fallback an toàn
+ * - Giá tiền font-mono vàng Amber, Badge dị ứng & Tình trạng hết món
+ * - Tích hợp Thêm nhanh vào giỏ hàng và Xem chi tiết (Chuyển trang)
+ * - Độ dài < 135 dòng
+ */
+export default function DishCard({ dish, onSelect }) {
+  const { addToCart } = useCart()
+  const { isAuthenticated } = useAuth()
+  const [isAdding, setIsAdding] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
+
   const isAvailable = dish.isAvailable !== false
   const priceNumber = Number(dish.price || 0)
   const resolvedImg = resolveDishImage(dish.imageUrl, dish)
 
+  const handleQuickAdd = async (e) => {
+    e.stopPropagation()
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thêm món vào giỏ hàng!')
+      return
+    }
+    setIsAdding(true)
+    try {
+      await addToCart({ dishId: dish.dishId || dish.id, quantity: 1 })
+      setJustAdded(true)
+      setTimeout(() => setJustAdded(false), 2000)
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Không thể thêm món vào giỏ.')
+    } finally {
+      setIsAdding(false)
+    }
+  }
+
   return (
     <div
-      onClick={() => onSelect(dish.dishId)}
-      className={`group flex flex-col justify-between rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden
-        ${
-          isAvailable
-            ? 'bg-gray-900/60 border-gray-800/80 hover:border-amber-500/50 hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-0.5'
-            : 'bg-gray-950/60 border-gray-800/40 opacity-70'
-        }
-      `}
+      onClick={() => onSelect && onSelect(dish.dishId || dish.id)}
+      className={`group flex flex-col justify-between rounded-2xl bg-surface-card border border-border-subtle transition-all duration-300 cursor-pointer overflow-hidden shadow-sm hover:shadow-md ${
+        isAvailable
+          ? 'hover:border-border-strong hover:-translate-y-0.5'
+          : 'opacity-70 grayscale-[20%]'
+      }`}
     >
       <div>
-        {/* Image Container */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-950">
+        {/* Khung Ảnh Tỉ lệ 4:3 */}
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-bg">
           <img
             src={resolvedImg}
             alt={dish.dishName}
+            loading="lazy"
+            decoding="async"
             onError={(e) => handleImageError(e, resolveDishImage(null, dish))}
-            className={`w-full h-full object-cover transition-transform duration-300
-              ${isAvailable ? 'group-hover:scale-105' : 'grayscale'}
-            `}
+            className={`w-full h-full object-cover transition-transform duration-500 ${
+              isAvailable ? 'group-hover:scale-105' : 'grayscale'
+            }`}
           />
 
           {/* Badge danh mục */}
           {dish.categoryName && (
-            <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-950/80 text-gray-200 backdrop-blur-md border border-gray-800">
+            <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-surface-bg/85 text-brand-primary backdrop-blur-md border border-border-subtle">
               {dish.categoryName}
             </span>
           )}
 
-          {/* Trạng thái còn / hết món */}
+          {/* Trạng thái tạm hết món */}
           {!isAvailable && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-status-error/20 text-status-error border border-status-error/30">
                 Tạm hết món
               </span>
             </div>
           )}
 
-          {/* Nút overlay xem nhanh */}
+          {/* Overlay hover nút xem chi tiết */}
           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-gray-950 text-xs font-bold shadow-lg shadow-black/40">
-              <Eye className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-bg/90 text-text-main text-xs font-semibold backdrop-blur-sm border border-border-subtle shadow-md">
+              <Eye className="w-3.5 h-3.5 text-brand-primary" />
               Xem chi tiết
             </span>
           </div>
         </div>
 
-        {/* Nội dung text */}
+        {/* Nội dung thông tin món */}
         <div className="p-4 space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm sm:text-base font-bold text-gray-100 group-hover:text-amber-400 transition-colors line-clamp-1">
-              {dish.dishName}
-            </h3>
-          </div>
+          <h3 className="text-sm sm:text-base font-bold text-text-main group-hover:text-brand-primary transition-colors line-clamp-1">
+            {dish.dishName}
+          </h3>
 
-          <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed min-h-[2rem]">
-            {dish.description || 'Hương vị hảo hạng được chế biến từ những nguyên liệu tươi ngon nhất.'}
+          <p className="text-xs text-text-muted line-clamp-2 leading-relaxed min-h-[2rem]">
+            {dish.description || 'Tuyệt phẩm ẩm thực tuyển chọn từ nguyên liệu thượng hạng.'}
           </p>
 
-          {/* Nhãn cảnh báo dị ứng */}
+          {/* Cảnh báo dị ứng nếu có */}
           {dish.allergens && dish.allergens.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1 pt-1">
-              <span className="text-[10px] text-amber-400/90 flex items-center gap-0.5">
+            <div className="flex flex-wrap items-center gap-1 pt-0.5">
+              <span className="text-[10px] text-brand-primary flex items-center gap-0.5 font-medium">
                 <AlertTriangle className="w-2.5 h-2.5" /> Chứa:
               </span>
-              {dish.allergens.map((allergen) => (
+              {dish.allergens.map((alg) => (
                 <span
-                  key={allergen}
-                  className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-red-500/10 text-red-300 border border-red-500/20"
+                  key={alg}
+                  className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-status-error/10 text-status-error border border-status-error/20"
                 >
-                  {allergen}
+                  {alg}
                 </span>
               ))}
             </div>
@@ -85,31 +116,41 @@ export const DishCard = ({ dish, onSelect }) => {
         </div>
       </div>
 
-      {/* Footer: Giá & Nút */}
-      <div className="p-4 pt-0 mt-2 border-t border-gray-800/40 flex items-center justify-between">
+      {/* Footer thẻ: Giá & Nút thêm nhanh */}
+      <div className="p-4 pt-0 mt-1 border-t border-border-subtle flex items-center justify-between">
         <div>
-          <span className="text-[10px] text-gray-500 block">Giá niêm yết</span>
-          <span className="text-base font-bold text-amber-400 font-mono">
+          <span className="text-[10px] text-text-dim block">Giá niêm yết</span>
+          <span className="text-sm sm:text-base font-bold text-brand-primary font-mono">
             {priceNumber.toLocaleString('vi-VN')} đ
           </span>
         </div>
 
         <button
           type="button"
-          disabled={!isAvailable}
-          className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer
-            ${
-              isAvailable
-                ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-gray-950 border border-amber-500/30'
-                : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-            }
-          `}
+          onClick={handleQuickAdd}
+          disabled={!isAvailable || isAdding}
+          title="Thêm nhanh vào giỏ"
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+            justAdded
+              ? 'bg-status-success text-surface-bg'
+              : 'bg-surface-bg hover:bg-brand-primary hover:text-surface-bg border border-border-subtle text-text-body'
+          }`}
         >
-          {isAvailable ? 'Chọn món' : 'Hết hàng'}
+          {isAdding ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : justAdded ? (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              <span>Đã thêm</span>
+            </>
+          ) : (
+            <>
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Thêm</span>
+            </>
+          )}
         </button>
       </div>
     </div>
   )
 }
-
-export default DishCard

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Sparkles, Plus, Check, Loader2, RefreshCw } from 'lucide-react'
+import { Plus, Check, Loader2, RefreshCw, UtensilsCrossed } from 'lucide-react'
 import { getPairedDishesApi } from '../services/recommendationService'
 import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 import { useCart } from '../../../../contexts/CartContext'
@@ -7,9 +7,9 @@ import { useAuth } from '../../../../contexts/AuthContext'
 
 /**
  * Component hiển thị các món ăn thường được gọi cùng với món hiện tại (Neo4j Market Basket Graph)
- * Tích hợp trong DishDetailModal. Quy chuẩn: < 200 dòng, 4 trạng thái UI.
+ * Tích hợp trong DishDetailPage. Quy chuẩn: < 200 dòng, 4 trạng thái UI.
  */
-export const PairedDishesSection = ({ dishId, onSelectDish }) => {
+export default function PairedDishesSection({ dishId, onSelectDish }) {
   const { addToCart } = useCart()
   const { isAuthenticated } = useAuth()
 
@@ -64,14 +64,14 @@ export const PairedDishesSection = ({ dishId, onSelectDish }) => {
 
   if (loading) {
     return (
-      <div className="pt-3 border-t border-gray-800">
-        <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-amber-400">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span>Đang tìm món kết hợp hoàn hảo từ AI...</span>
+      <div className="pt-4 border-t border-border-subtle">
+        <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-brand-primary">
+          <UtensilsCrossed className="w-4 h-4 animate-pulse" />
+          <span>Đang tìm món kết hợp hoàn hảo từ Neo4j Graph...</span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 rounded-xl bg-gray-900 animate-pulse border border-gray-800" />
+            <div key={i} className="h-32 rounded-xl bg-surface-card animate-pulse border border-border-subtle" />
           ))}
         </div>
       </div>
@@ -80,14 +80,14 @@ export const PairedDishesSection = ({ dishId, onSelectDish }) => {
 
   if (error) {
     return (
-      <div className="pt-2 border-t border-gray-800 flex items-center justify-between text-xs text-gray-500">
+      <div className="pt-3 border-t border-border-subtle flex items-center justify-between text-xs text-text-muted">
         <span>{error}</span>
         <button
           type="button"
           onClick={fetchPairedDishes}
-          className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300"
+          className="inline-flex items-center gap-1 text-brand-primary hover:text-brand-hover"
         >
-          <RefreshCw className="w-3 h-3" /> Thử lại
+          <RefreshCw className="w-3.5 h-3.5" /> Thử lại
         </button>
       </div>
     )
@@ -98,77 +98,73 @@ export const PairedDishesSection = ({ dishId, onSelectDish }) => {
   }
 
   return (
-    <div className="pt-4 border-t border-gray-800 space-y-2.5">
-      <div className="flex items-center justify-between">
-        <h4 className="text-xs font-semibold text-gray-200 flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>Thường được gọi cùng món này</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 font-normal">
-            Neo4j AI
-          </span>
-        </h4>
-        <span className="text-[11px] text-gray-500">Bấm để thêm nhanh</span>
+    <div className="pt-6">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-6 h-6 rounded-md bg-surface-card border border-border-subtle flex items-center justify-center text-brand-primary">
+          <UtensilsCrossed className="w-3.5 h-3.5" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-text-main">
+            Thường được kết hợp cùng
+          </h3>
+          <p className="text-[11px] text-text-muted">
+            Dựa trên phân tích khẩu vị và trải nghiệm thực khách tại nhà hàng
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         {items.map((item) => {
           const id = item.dishId || item.id || item.ma_mon_an
+          const name = item.dishName || item.ten_mon_an || item.name
+          const price = Number(item.price || item.gia || 0)
+          const img = resolveDishImage(item.imageUrl || item.hinh_anh, item)
           const isAdded = addedIds.includes(id)
           const isAddingThis = addingId === id
-          const pairedCount = item.pairedCount || 0
 
           return (
             <div
               key={id}
               onClick={() => onSelectDish && onSelectDish(id)}
-              className="group relative flex flex-col justify-between p-2 rounded-xl bg-gray-950 border border-gray-800 hover:border-amber-500/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-amber-500/5"
+              className="group p-2.5 rounded-xl bg-surface-card border border-border-subtle hover:border-border-strong transition-all cursor-pointer flex flex-col justify-between"
             >
-              <div className="space-y-1.5">
-                <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-gray-900">
+              <div>
+                <div className="aspect-[4/3] w-full rounded-lg overflow-hidden bg-surface-bg mb-2">
                   <img
-                    src={resolveDishImage(item.imageUrl, item)}
-                    alt={item.dishName}
-                    onError={(e) => handleImageError(e)}
+                    src={img}
+                    alt={name}
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => handleImageError(e, resolveDishImage(null, item))}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  {pairedCount > 0 && (
-                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-gray-950/80 text-amber-300 backdrop-blur-xs border border-amber-500/30">
-                      🔥 {pairedCount} lượt
-                    </span>
-                  )}
                 </div>
-
-                <div className="space-y-0.5">
-                  <h5 className="text-[11px] font-medium text-gray-200 line-clamp-1 group-hover:text-amber-400 transition-colors">
-                    {item.dishName}
-                  </h5>
-                  <p className="text-[11px] font-bold text-amber-400">
-                    {Number(item.price || 0).toLocaleString('vi-VN')} đ
-                  </p>
-                </div>
+                <h4 className="text-xs font-semibold text-text-main group-hover:text-brand-primary transition-colors line-clamp-1 mb-1">
+                  {name}
+                </h4>
               </div>
 
-              <div className="pt-2">
+              <div className="flex items-center justify-between pt-1 mt-1 border-t border-border-subtle">
+                <span className="text-xs font-bold text-brand-primary font-mono">
+                  {price.toLocaleString('vi-VN')} đ
+                </span>
                 <button
                   type="button"
-                  disabled={isAddingThis}
                   onClick={(e) => handleQuickAdd(e, item)}
-                  className={`w-full py-1 px-2 rounded-lg text-[10px] font-semibold flex items-center justify-center gap-1 transition-all ${
+                  disabled={isAddingThis}
+                  title="Thêm nhanh vào giỏ"
+                  className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
                     isAdded
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                      : 'bg-amber-500/15 hover:bg-amber-500 text-amber-300 hover:text-gray-950 border border-amber-500/30'
+                      ? 'bg-status-success text-surface-bg'
+                      : 'bg-surface-bg border border-border-subtle text-text-main hover:text-brand-primary hover:border-border-strong'
                   }`}
                 >
                   {isAddingThis ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
                   ) : isAdded ? (
-                    <>
-                      <Check className="w-3 h-3" /> Đã thêm
-                    </>
+                    <Check className="w-3 h-3" />
                   ) : (
-                    <>
-                      <Plus className="w-3 h-3" /> Thêm vào giỏ
-                    </>
+                    <Plus className="w-3 h-3" />
                   )}
                 </button>
               </div>
@@ -179,6 +175,3 @@ export const PairedDishesSection = ({ dishId, onSelectDish }) => {
     </div>
   )
 }
-
-export default PairedDishesSection
-

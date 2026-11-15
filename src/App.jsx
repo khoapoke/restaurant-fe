@@ -5,6 +5,7 @@ import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
 import CustomerProfilePage from './features/customer/profile/pages/CustomerProfilePage'
 import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
+import DishDetailPage from './features/customer/menu/pages/DishDetailPage'
 import CustomerCartPage from './features/customer/cart/pages/CustomerCartPage'
 import CustomerCheckoutPage from './features/customer/order/pages/CustomerCheckoutPage'
 import CustomerOrdersPage from './features/customer/order/pages/CustomerOrdersPage'
@@ -38,6 +39,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<CustomerProfilePage />} />
             <Route path="/menu" element={<CustomerMenuPage />} />
+            <Route path="/menu/:dishId" element={<DishDetailPage />} />
             <Route path="/cart" element={<CustomerCartPage />} />
             <Route path="/checkout" element={<CustomerCheckoutPage />} />
             <Route path="/orders" element={<CustomerOrdersPage />} />
