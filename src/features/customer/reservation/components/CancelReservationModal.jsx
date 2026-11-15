@@ -1,33 +1,23 @@
 import { useState } from 'react'
 import { AlertTriangle, XCircle } from 'lucide-react'
 import Modal from '../../../../components/ui/Modal'
-import Button from '../../../../components/ui/Button'
 import { cancelCustomerReservationApi } from '../services/reservationService'
 
-export const CancelReservationModal = ({ isOpen, onClose, reservation, onSuccess }) => {
+/**
+ * Modal Xác Nhận Hủy Lượt Đặt Bàn (CancelReservationModal)
+ * - Chuẩn hóa sang Design Tokens
+ * - Độ dài < 110 dòng
+ */
+export default function CancelReservationModal({ isOpen, onClose, reservation, onSuccess }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   if (!reservation) return null
 
   const id = reservation?.reservationId || reservation?.id || reservation?.ma_dat_ban
-  const tableObj = reservation?.table || reservation?.ban_an || reservation?.banAn || {}
-  const tableName =
-    tableObj.tableName ||
-    tableObj.table_name ||
-    tableObj.name ||
-    tableObj.ten_ban ||
-    reservation?.tableName ||
-    reservation?.ten_ban ||
-    (reservation?.tableId || reservation?.table_id || reservation?.ma_ban
-      ? `Bàn số ${reservation.tableId || reservation.table_id || reservation.ma_ban}`
-      : 'Bàn chưa xác định')
-
-  const timeStr =
-    reservation?.reservationTime ||
-    reservation?.reservation_time ||
-    reservation?.thoi_gian ||
-    reservation?.thoi_gian_dat
+  const tableObj = reservation?.table || reservation?.ban_an || {}
+  const tableName = tableObj.tableName || reservation?.tableName || `Bàn số ${reservation?.tableId || id}`
+  const timeStr = reservation?.reservationTime || reservation?.reservation_time || reservation?.thoi_gian
 
   const handleCancel = async () => {
     setLoading(true)
@@ -37,7 +27,6 @@ export const CancelReservationModal = ({ isOpen, onClose, reservation, onSuccess
       onSuccess?.()
       onClose?.()
     } catch (err) {
-      console.error('Cancel reservation error:', err)
       setError(
         err?.response?.data?.message ||
         'Không thể hủy lượt đặt bàn này. Có thể đã sát giờ quy định (< 60 phút).'
@@ -51,46 +40,48 @@ export const CancelReservationModal = ({ isOpen, onClose, reservation, onSuccess
     <Modal isOpen={isOpen} onClose={onClose} title="Hủy lượt đặt bàn" maxWidth="max-w-md">
       <div className="space-y-4">
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-xl bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
-        <div className="p-4 rounded-xl bg-gray-950/60 border border-gray-800 text-xs space-y-2">
-          <p className="text-gray-300">
-            <span className="text-gray-500">Mã đặt:</span> <span className="font-mono text-amber-400 font-bold">#{id}</span>
+        <div className="p-4 rounded-xl bg-surface-card border border-border-subtle text-xs space-y-2">
+          <p className="text-text-muted">
+            Mã đặt: <span className="font-mono text-brand-primary font-bold">#{id}</span>
           </p>
-          <p className="text-gray-300">
-            <span className="text-gray-500">Bàn:</span> <span className="text-white font-medium">{tableName}</span>
+          <p className="text-text-muted">
+            Bàn ăn: <span className="text-text-main font-semibold">{tableName}</span>
           </p>
-          <p className="text-gray-300">
-            <span className="text-gray-500">Thời gian hẹn:</span> <span className="text-white font-medium">{timeStr}</span>
+          <p className="text-text-muted">
+            Thời gian hẹn: <span className="text-text-main font-semibold">{timeStr}</span>
           </p>
         </div>
 
-        <p className="text-xs text-gray-400">
-          Bạn có chắc chắn muốn hủy lượt đặt bàn này không? Sau khi hủy, bàn sẽ được giải phóng để phục vụ khách hàng khác.
+        <p className="text-xs text-text-muted leading-relaxed">
+          Bạn có chắc chắn muốn hủy lượt đặt bàn này không? Sau khi xác nhận hủy, bàn sẽ được hoàn lại để phục vụ các thượng khách khác.
         </p>
 
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>
-            Đóng
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            icon={XCircle}
-            onClick={handleCancel}
-            loading={loading}
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-subtle">
+          <button
+            type="button"
+            onClick={onClose}
             disabled={loading}
+            className="px-4 py-2 rounded-lg text-xs font-medium text-text-muted hover:text-text-main hover:bg-surface-card transition-colors cursor-pointer"
           >
-            {loading ? 'Đang hủy...' : 'Xác nhận hủy'}
-          </Button>
+            Đóng
+          </button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-status-error hover:bg-status-error/90 text-surface-bg transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+          >
+            <XCircle className="w-4 h-4" />
+            <span>{loading ? 'Đang hủy...' : 'Xác nhận hủy'}</span>
+          </button>
         </div>
       </div>
     </Modal>
   )
 }
-
-export default CancelReservationModal
