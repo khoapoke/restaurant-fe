@@ -1,8 +1,11 @@
 import HomeHeader from '../components/HomeHeader'
 import HomeHeroSection from '../components/HomeHeroSection'
 import HomeQuickBooking from '../components/HomeQuickBooking'
+import HomeStorySection from '../components/HomeStorySection'
 import HomeFeaturedDishes from '../components/HomeFeaturedDishes'
+import HomeAmbianceSection from '../components/HomeAmbianceSection'
 import HomeFeaturesSection from '../components/HomeFeaturesSection'
+import HomeTestimonialsSection from '../components/HomeTestimonialsSection'
 import HomeFooter from '../components/HomeFooter'
 
 /**
@@ -26,11 +29,20 @@ export default function HomePage() {
         {/* Tiện ích Đặt bàn nhanh */}
         <HomeQuickBooking />
 
+        {/* Triết lý ẩm thực & Câu chuyện Bếp trưởng */}
+        <HomeStorySection />
+
         {/* Món ăn Signature của Bếp trưởng */}
         <HomeFeaturedDishes />
 
+        {/* Không gian kiến trúc & Phòng VIP */}
+        <HomeAmbianceSection />
+
         {/* Điểm nhấn công nghệ (Neo4j AI, Đặt bàn, VietQR) */}
         <HomeFeaturesSection />
+
+        {/* Đánh giá từ thực khách VIP & Niềm tin thương hiệu */}
+        <HomeTestimonialsSection />
       </main>
 
       {/* 3. Chân trang Footer */}

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCart } from '@/contexts/CartContext'
 import { BRAND_NAME, BRAND_TAGLINE } from '@/constants/brand'
+import { AnimatedBackground } from '@/components/core/animated-background'
 import {
   Menu,
   X,
@@ -103,28 +104,36 @@ export default function HomeHeader() {
             </div>
           </Link>
 
-          {/* Cụm 2: Menu Điều Hướng Trung Tâm (Desktop Menu Bar: lg+) */}
-          <nav className="hidden lg:flex items-center gap-8">
-            {navLinks.map((item) => {
-              const active = isActive(item.to)
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`relative py-2 text-sm font-medium transition-colors cursor-pointer ${
-                    active
-                      ? 'text-text-main font-semibold'
-                      : 'text-text-muted hover:text-text-main'
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {/* Underline Indicator phát sáng nhẹ khi trang đang active */}
-                  {active && (
-                    <span className="absolute -bottom-4.5 left-0 right-0 h-[2px] bg-brand-primary rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-                  )}
-                </Link>
-              )
-            })}
+          {/* Cụm 2: Menu Điều Hướng Trung Tâm (Desktop Menu Bar: lg+) với AnimatedBackground Hover Pill */}
+          <nav className="hidden lg:flex items-center gap-1 p-1 rounded-xl bg-surface-card/40 border border-border-subtle/50 backdrop-blur-sm">
+            <AnimatedBackground
+              defaultValue={navLinks.find((item) => isActive(item.to))?.to}
+              className="rounded-lg bg-surface-card border border-border-subtle shadow-sm"
+              transition={{
+                type: 'spring',
+                bounce: 0.15,
+                duration: 0.3,
+              }}
+              enableHover={true}
+            >
+              {navLinks.map((item) => {
+                const active = isActive(item.to)
+                return (
+                  <Link
+                    key={item.to}
+                    data-id={item.to}
+                    to={item.to}
+                    className={`px-4 py-1.5 text-xs font-medium transition-colors cursor-pointer rounded-lg ${
+                      active
+                        ? 'text-brand-primary font-semibold'
+                        : 'text-text-muted hover:text-text-main'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                  </Link>
+                )
+              })}
+            </AnimatedBackground>
           </nav>
 
           {/* Cụm 3: Tiện Ích Phải (CTA Đặt Bàn, Giỏ Hàng, Tài Khoản & Mobile Hamburger) */}

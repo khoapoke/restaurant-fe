@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Network,
 } from 'lucide-react'
+import TextEffect from '@/components/core/text-effect'
 
 /**
  * Component Hero Section Trang Chủ (HomeHeroSection)
@@ -27,10 +28,16 @@ export default function HomeHeroSection() {
           <span>Ẩm thực tinh tế & Trải nghiệm đẳng cấp</span>
         </div>
 
-        {/* Tiêu đề chính H1 */}
+        {/* Tiêu đề chính H1 với hiệu ứng TextEffect */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-text-main mb-5 leading-tight">
-          Hương vị tinh hoa tại{' '}
-          <span className="whitespace-nowrap text-brand-primary">{BRAND_NAME}</span>
+          <TextEffect per="word" as="span" preset="fade">
+            Hương vị tinh hoa tại
+          </TextEffect>{' '}
+          <span className="whitespace-nowrap text-brand-primary">
+            <TextEffect per="char" as="span" preset="slide" delay={0.25}>
+              {BRAND_NAME}
+            </TextEffect>
+          </span>
         </h1>
 
         {/* Mô tả súc tích theo chuẩn Content-Minimalist */}
