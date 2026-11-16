@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ShoppingBag } from 'lucide-react'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { useCart } from '../../../../contexts/CartContext'
@@ -8,21 +8,23 @@ import HomeFooter from '../../Home/components/HomeFooter'
 import CartItemRow from '../components/CartItemRow'
 import CartSummaryCard from '../components/CartSummaryCard'
 import CartEmptyState from '../components/CartEmptyState'
+import CartOrderSuccessState from '../components/CartOrderSuccessState'
 import CartOrderFlow from '../components/CartOrderFlow'
 import DeleteCartItemModal from '../components/DeleteCartItemModal'
+import QrPaymentModal from '../../order/components/QrPaymentModal'
 import Skeleton from '../../../../components/ui/Skeleton'
 import Alert from '../../../../components/ui/Alert'
 
 /**
  * Trang Giỏ Hàng Khách Hàng (CustomerCartPage)
- * - Đồng bộ Navbar HomeHeader (Badge giỏ hàng, Avatar Hover Logout) & HomeFooter
- * - Bố cục Fine-Dining 2 cột bất đối xứng (8/12 - 4/12)
- * - Thanh chỉ báo tiến trình đặt hàng CartOrderFlow
- * - Quản lý an toàn trạng thái xóa bằng DeleteCartItemModal
- * - Độ dài < 150 dòng
+ * - Tích hợp Chặng 3 Đặt món thành công (CartOrderSuccessState)
+ * - Đồng bộ Navbar HomeHeader & HomeFooter
+ * - Quản lý an toàn 4 trạng thái UI (Loading, Empty, Data, Success)
+ * - Độ dài < 170 dòng
  */
 export default function CustomerCartPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isAuthenticated, role } = useAuth()
   const {
     cart,
@@ -34,6 +36,8 @@ export default function CustomerCartPage() {
     isDishUpdating,
   } = useCart()
 
+  const successOrder = location.state?.orderSuccess ? location.state : null
+
   useEffect(() => {
     if (!isAuthenticated) navigate('/login')
     else if (role === 'ADMIN') navigate('/admin')
@@ -42,6 +46,7 @@ export default function CustomerCartPage() {
   const [deleteModalItem, setDeleteModalItem] = useState(null)
   const [toastMessage, setToastMessage] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showQrModal, setShowQrModal] = useState(false)
 
   const items = cart?.items || []
   const hasUnavailableItems = items.some((i) => i.isAvailable === false)
@@ -62,10 +67,6 @@ export default function CustomerCartPage() {
     }
   }
 
-  const handleCheckoutClick = () => {
-    navigate('/checkout')
-  }
-
   return (
     <div className="min-h-screen bg-surface-bg text-text-main flex flex-col">
       <HomeHeader />
@@ -76,17 +77,21 @@ export default function CustomerCartPage() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-text-main tracking-tight flex items-center gap-2.5">
               <ShoppingBag className="w-7 h-7 text-brand-primary" />
-              <span>Giỏ hàng của bạn</span>
+              <span>{successOrder ? 'Đặt món hoàn tất' : 'Giỏ hàng của bạn'}</span>
             </h1>
             <p className="text-xs text-text-muted mt-1">
-              {items.length > 0 ? `${totalQuantity} món đang được chuẩn bị đặt` : 'Khám phá và đặt ngay món ăn bạn yêu thích'}
+              {successOrder
+                ? `Đơn hàng #${successOrder.orderId} đã được ghi nhận vào hệ thống`
+                : items.length > 0
+                ? `${totalQuantity} món đang được chuẩn bị đặt`
+                : 'Khám phá và đặt ngay món ăn bạn yêu thích'}
             </p>
           </div>
 
-          <CartOrderFlow currentStep={1} />
+          <CartOrderFlow currentStep={successOrder ? 3 : 1} />
         </div>
 
-        {/* Thông báo Alert */}
+        {/* Thông báo Alert nếu có */}
         {toastMessage && (
           <Alert
             type={toastMessage.type || 'info'}
@@ -95,25 +100,30 @@ export default function CustomerCartPage() {
           />
         )}
 
-        {/* Trạng thái 1: Loading */}
-        {loading && items.length === 0 ? (
+        {/* Trạng thái 1: Đặt hàng thành công (Chặng 3) */}
+        {successOrder ? (
+          <CartOrderSuccessState
+            orderData={successOrder}
+            onOpenQrModal={() => setShowQrModal(true)}
+            onNavigateOrders={() => navigate('/orders')}
+          />
+        ) : loading && items.length === 0 ? (
+          /* Trạng thái 2: Đang tải giỏ hàng */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
             <div className="lg:col-span-8 space-y-4">
               <Skeleton className="h-24 w-full rounded-2xl" />
               <Skeleton className="h-24 w-full rounded-2xl" />
-              <Skeleton className="h-24 w-full rounded-2xl" />
             </div>
             <div className="lg:col-span-4">
-              <Skeleton className="h-72 w-full rounded-2xl" />
+              <Skeleton className="h-64 w-full rounded-2xl" />
             </div>
           </div>
         ) : items.length === 0 ? (
-          /* Trạng thái 2: Giỏ hàng trống */
+          /* Trạng thái 3: Giỏ hàng trống */
           <CartEmptyState />
         ) : (
-          /* Trạng thái 3: Danh sách món ăn & Thẻ thanh toán */
+          /* Trạng thái 4: Danh sách món ăn & Thẻ thanh toán */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
-            {/* Cột trái (8/12) */}
             <div className="lg:col-span-8 space-y-3">
               <div className="flex items-center justify-between pb-1">
                 <h3 className="text-sm font-semibold text-text-main">
@@ -135,13 +145,12 @@ export default function CustomerCartPage() {
               ))}
             </div>
 
-            {/* Cột phải (4/12) */}
             <div className="lg:col-span-4">
               <CartSummaryCard
                 totalQuantity={totalQuantity}
                 estimatedTotalAmount={estimatedTotalAmount}
                 hasUnavailableItems={hasUnavailableItems}
-                onCheckout={handleCheckoutClick}
+                onCheckout={() => navigate('/checkout')}
               />
             </div>
           </div>
@@ -157,7 +166,22 @@ export default function CustomerCartPage() {
         isDeleting={isDeleting}
       />
 
-  
+      {/* Modal thanh toán QR khi bấm nút từ màn hình thành công */}
+      {successOrder && (
+        <QrPaymentModal
+          orderId={successOrder.orderId}
+          isOpen={showQrModal}
+          onClose={() => setShowQrModal(false)}
+          onPaymentSuccess={() => {
+            setShowQrModal(false)
+            navigate('/orders', {
+              state: { successMessage: `Thanh toán thành công đơn #${successOrder.orderId}!` },
+            })
+          }}
+        />
+      )}
+
+      <HomeFooter />
     </div>
   )
 }

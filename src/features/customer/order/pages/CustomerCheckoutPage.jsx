@@ -12,25 +12,19 @@ import CheckoutFulfillmentSelector from '../components/CheckoutFulfillmentSelect
 import CheckoutRecipientForm from '../components/CheckoutRecipientForm'
 import CheckoutPaymentSelector from '../components/CheckoutPaymentSelector'
 import CheckoutOrderSummary from '../components/CheckoutOrderSummary'
-import QrPaymentModal from '../components/QrPaymentModal'
 import Alert from '../../../../components/ui/Alert'
 
 /**
  * Trang Thanh Toán & Đặt Món (CustomerCheckoutPage)
  * - Tinh tế Fine-Dining & Bố cục 2 cột (7/12 - 5/12)
  * - Đồng bộ Navbar HomeHeader, Footer, Stepper CartOrderFlow (Step 2)
- * - Tự động điền thông tin người dùng từ hồ sơ
+ * - Sau khi đặt đơn thành công, điều hướng về Giỏ hàng hiển thị Chặng 3 hoàn tất
  * - Độ dài < 160 dòng
  */
 export default function CustomerCheckoutPage() {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const { cart, totalQuantity, estimatedTotalAmount, fetchCart } = useCart()
-
-  useEffect(() => {
-    if (!isAuthenticated) navigate('/login')
-    else if (!cart.items || cart.items.length === 0) navigate('/cart')
-  }, [isAuthenticated, cart.items, navigate])
 
   const [formData, setFormData] = useState({
     recipientName: user?.userProfile?.fullName || user?.username || '',
@@ -40,6 +34,18 @@ export default function CustomerCheckoutPage() {
     paymentMethod: PaymentMethod.BANK_TRANSFER_QR,
     orderNote: '',
   })
+
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [errorMessage, setErrorMessage] = useState(null)
+
+  useEffect(() => {
+    if (!isAuthenticated) navigate('/login')
+    else if (!isSubmitting && !isSuccess && (!cart.items || cart.items.length === 0)) {
+      navigate('/cart')
+    }
+  }, [isAuthenticated, cart.items, isSubmitting, isSuccess, navigate])
 
   useEffect(() => {
     if (user) {
@@ -51,12 +57,6 @@ export default function CustomerCheckoutPage() {
       }))
     }
   }, [user])
-
-  const [errors, setErrors] = useState({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState(null)
-  const [createdOrderId, setCreatedOrderId] = useState(null)
-  const [showQrModal, setShowQrModal] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -96,17 +96,25 @@ export default function CustomerCheckoutPage() {
 
       const newOrder = response.data?.data || response.data
       const orderId = newOrder?.orderId || newOrder?.order_id || newOrder?.id
+
+      // Đánh dấu thành công để tránh useEffect tự động redirect về cart do giỏ hàng rỗng
+      setIsSuccess(true)
       await fetchCart()
 
-      if (formData.paymentMethod === PaymentMethod.BANK_TRANSFER_QR) {
-        setCreatedOrderId(orderId)
-        setShowQrModal(true)
-      } else {
-        navigate('/orders', { state: { successMessage: `Đặt hàng thành công đơn #${orderId}!` } })
-      }
+      // Điều hướng về giỏ hàng kèm state chặng 3 hoàn tất
+      navigate('/cart', {
+        state: {
+          orderSuccess: true,
+          orderId,
+          paymentMethod: formData.paymentMethod,
+          totalAmount: newOrder?.totalAmount || estimatedTotalAmount,
+          fulfillmentType: formData.fulfillmentType,
+          orderDate: newOrder?.orderDate || new Date().toISOString(),
+        },
+        replace: true,
+      })
     } catch (err) {
       setErrorMessage(err.response?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.')
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -129,7 +137,9 @@ export default function CustomerCheckoutPage() {
               <h1 className="text-2xl sm:text-3xl font-serif font-bold text-text-main tracking-tight">
                 Thanh toán & Giao nhận
               </h1>
-              <p className="text-xs text-text-muted mt-0.5">Xác nhận thông tin nhận món và chọn phương thức thanh toán</p>
+              <p className="text-xs text-text-muted mt-0.5">
+                Xác nhận thông tin nhận món và chọn phương thức thanh toán
+              </p>
             </div>
           </div>
           <CartOrderFlow currentStep={2} />
@@ -165,16 +175,6 @@ export default function CustomerCheckoutPage() {
           </div>
         </form>
       </main>
-
-      <QrPaymentModal
-        orderId={createdOrderId}
-        isOpen={showQrModal}
-        onClose={() => { setShowQrModal(false); navigate('/orders') }}
-        onPaymentSuccess={() => {
-          setShowQrModal(false)
-          navigate('/orders', { state: { successMessage: `Thanh toán thành công đơn #${createdOrderId}!` } })
-        }}
-      />
 
       <HomeFooter />
     </div>
