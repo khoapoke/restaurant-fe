@@ -11,12 +11,6 @@ import {
 import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 import { Loader2, AlertTriangle, QrCode, XCircle } from 'lucide-react'
 
-/**
- * Modal Xem Chi Tiết Đơn Hàng (OrderDetailModal)
- * - Tinh tế Fine-Dining & Đồng bộ Centralized Design Tokens
- * - Tối ưu danh sách món ăn & khối thanh toán
- * - Độ dài < 170 dòng
- */
 export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, onOpenCancel }) {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -38,11 +32,18 @@ export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, o
     loadDetail()
   }, [orderId, isOpen])
 
-  const statusCfg = ORDER_STATUS_CONFIG[order?.status] || {
-    label: order?.status, color: 'text-text-muted', bg: 'bg-surface-bg', border: 'border-border-subtle',
+  const status = order?.status || order?.trang_thai
+  const statusCfg = ORDER_STATUS_CONFIG[status] || {
+    label: status, color: 'text-text-muted', bg: 'bg-surface-bg', border: 'border-border-subtle',
   }
-  const isPending = order?.status === 'PENDING_CONFIRMATION'
-  const isUnpaid = order?.payment?.status === 'UNPAID' && order?.payment?.paymentMethod === 'BANK_TRANSFER_QR' && order?.status !== 'CANCELLED'
+  const isPending = status === 'PENDING_CONFIRMATION'
+
+  const payStatus = order?.payment?.status || order?.payment?.trang_thai || 'UNPAID'
+  const payMethod = order?.payment?.paymentMethod || order?.payment?.method || order?.paymentMethod
+  const isUnpaid =
+    (payStatus === 'UNPAID' || payStatus === 'CHUA_THANH_TOAN') &&
+    (payMethod === 'BANK_TRANSFER_QR' || payMethod === 'Chuyển khoản') &&
+    status !== 'CANCELLED'
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết đơn hàng #${orderId}`} maxWidth="max-w-2xl">
@@ -58,7 +59,7 @@ export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, o
           <Button variant="secondary" size="sm" onClick={onClose}>Đóng</Button>
         </div>
       ) : order ? (
-        <div className="space-y-4">
+        <div className="space-y-4 font-sans">
           <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-surface-bg border border-border-subtle">
             <div>
               <span className="text-[10px] text-text-muted block">Ngày tạo đơn</span>
@@ -120,12 +121,12 @@ export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, o
           <div className="p-3.5 rounded-xl bg-surface-bg border border-border-subtle space-y-1.5 text-xs">
             <div className="flex justify-between text-text-muted">
               <span>Phương thức thanh toán:</span>
-              <span className="text-text-main font-medium">{PAYMENT_METHOD_CONFIG[order.payment?.paymentMethod]?.label || order.payment?.paymentMethod}</span>
+              <span className="text-text-main font-medium">{PAYMENT_METHOD_CONFIG[payMethod]?.label || payMethod}</span>
             </div>
             <div className="flex justify-between text-text-muted">
               <span>Trạng thái thanh toán:</span>
-              <span className={`font-semibold ${PAYMENT_STATUS_CONFIG[order.payment?.status]?.color || 'text-text-muted'}`}>
-                {PAYMENT_STATUS_CONFIG[order.payment?.status]?.label || order.payment?.status}
+              <span className={`font-semibold ${PAYMENT_STATUS_CONFIG[payStatus]?.color || 'text-text-muted'}`}>
+                {PAYMENT_STATUS_CONFIG[payStatus]?.label || payStatus}
               </span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-border-subtle">
@@ -142,7 +143,7 @@ export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, o
                   size="sm"
                   icon={XCircle}
                   className="text-status-error hover:bg-status-error/10"
-                  onClick={() => { onClose(); onOpenCancel?.(order.orderId) }}
+                  onClick={() => { onClose(); onOpenCancel?.(order.orderId || order.id) }}
                 >
                   Hủy đơn này
                 </Button>
@@ -155,7 +156,7 @@ export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, o
                   variant="primary"
                   size="sm"
                   icon={QrCode}
-                  onClick={() => { onClose(); onOpenQr?.(order.orderId) }}
+                  onClick={() => { onClose(); onOpenQr?.(order.orderId || order.id) }}
                 >
                   Thanh toán VietQR
                 </Button>

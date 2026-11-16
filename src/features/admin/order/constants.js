@@ -1,6 +1,6 @@
 /**
  * Constants & Enums cho Quản lý Đơn hàng & Thanh toán (Admin)
- * Tham chiếu docs/api/enums.md và docs/api/admin-order.md
+ * Tham chiếu docs/system_conventions.md, docs/modules/order.md và docs/modules/payment.md
  * 100% Centralized Design Tokens
  */
 
@@ -24,11 +24,11 @@ export const ORDER_STATUS_CONFIG = {
     color: 'text-status-info bg-status-info/10 border-status-info/30',
   },
   PREPARING: {
-    label: 'Đang nấu món',
+    label: 'Đang chuẩn bị',
     color: 'text-brand-hover bg-brand-primary/10 border-brand-primary/30',
   },
   READY: {
-    label: 'Sẵn sàng giao',
+    label: 'Món sẵn sàng',
     color: 'text-status-info bg-status-info/10 border-status-info/30',
   },
   DELIVERING: {
@@ -36,7 +36,7 @@ export const ORDER_STATUS_CONFIG = {
     color: 'text-brand-primary bg-brand-primary/15 border-brand-primary/30',
   },
   COMPLETED: {
-    label: 'Đã hoàn thành',
+    label: 'Đã hoàn tất',
     color: 'text-status-success bg-status-success/10 border-status-success/30',
   },
   CANCELLED: {
@@ -45,7 +45,7 @@ export const ORDER_STATUS_CONFIG = {
   },
 }
 
-// Luồng chuyển trạng thái 1 chạm (Next Step Transition)
+// Luồng chuyển trạng thái 1 chạm (Next Step Transition theo FSM)
 export const NEXT_STATUS_MAP = {
   PENDING_CONFIRMATION: {
     target: 'CONFIRMED',
@@ -54,7 +54,7 @@ export const NEXT_STATUS_MAP = {
   },
   CONFIRMED: {
     target: 'PREPARING',
-    actionLabel: 'Bếp nấu món',
+    actionLabel: 'Bắt đầu nấu',
     btnVariant: 'secondary',
   },
   PREPARING: {
@@ -84,7 +84,7 @@ export const PaymentStatus = {
 export const PAYMENT_STATUS_CONFIG = {
   UNPAID: {
     label: 'Chưa thanh toán',
-    color: 'text-text-muted bg-surface-elevated border-border-strong',
+    color: 'text-status-warning bg-status-warning/10 border-status-warning/30',
   },
   PAID: {
     label: 'Đã thanh toán',
@@ -106,6 +106,6 @@ export const PaymentMethod = {
 }
 
 export const PAYMENT_METHOD_CONFIG = {
-  BANK_TRANSFER_QR: { label: 'Chuyển khoản QR' },
+  BANK_TRANSFER_QR: { label: 'Chuyển khoản VietQR' },
   CASH: { label: 'Tiền mặt' },
 }

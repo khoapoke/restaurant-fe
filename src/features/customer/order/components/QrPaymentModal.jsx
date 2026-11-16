@@ -5,6 +5,7 @@ import {
   generateQrApi,
   getPaymentStatusApi,
   retryPaymentApi,
+  mockPaymentApi,
 } from '../services/orderService'
 import {
   QrCode,
@@ -14,15 +15,10 @@ import {
   RefreshCw,
   AlertTriangle,
   Loader2,
+  Zap,
 } from 'lucide-react'
 import QrCountdownTimer from './QrCountdownTimer'
 
-/**
- * Modal Thanh Toán Chuyển Khoản VietQR (QrPaymentModal)
- * - Tối ưu hóa render & cô lập bộ đếm thời gian
- * - Đồng bộ Centralized Design Tokens
- * - Độ dài < 170 dòng
- */
 export default function QrPaymentModal({
   orderId,
   isOpen,
@@ -34,9 +30,10 @@ export default function QrPaymentModal({
   const [error, setError] = useState(null)
   const [isPaid, setIsPaid] = useState(false)
   const [copiedField, setCopiedField] = useState(null)
+  const [isMocking, setIsMocking] = useState(false)
   const pollingTimerRef = useRef(null)
 
-  // 1. Sinh mã QR khi mở Modal
+  // 1. Sinh mã QR khi mở Modal (PAY-01)
   useEffect(() => {
     if (!orderId || !isOpen) {
       setQrData(null)
@@ -61,7 +58,7 @@ export default function QrPaymentModal({
     loadQr()
   }, [orderId, isOpen])
 
-  // 2. Auto-polling kiểm tra thanh toán mỗi 3.5 giây
+  // 2. Auto-polling kiểm tra thanh toán mỗi 3.5 giây (PAY-02)
   useEffect(() => {
     if (!isOpen || !orderId || isPaid) return
     pollingTimerRef.current = setInterval(async () => {
@@ -98,6 +95,22 @@ export default function QrPaymentModal({
     }
   }
 
+  // PAY-08: Giả lập thanh toán thành công
+  const handleMockPayment = async () => {
+    setIsMocking(true)
+    setError(null)
+    try {
+      await mockPaymentApi(orderId)
+      setIsPaid(true)
+      clearInterval(pollingTimerRef.current)
+      onPaymentSuccess?.(orderId)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể giả lập thanh toán lúc này.')
+    } finally {
+      setIsMocking(false)
+    }
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Thanh toán chuyển khoản VietQR" maxWidth="max-w-md">
       {loading ? (
@@ -113,11 +126,11 @@ export default function QrPaymentModal({
           <div className="space-y-1">
             <h3 className="text-xl font-serif font-bold text-text-main">Thanh toán thành công!</h3>
             <p className="text-xs text-text-muted max-w-xs leading-relaxed">
-              Nhà hàng đã nhận được chuyển khoản cho đơn hàng #{orderId}. Bếp đang tiến hành chuẩn bị món ăn cho bạn.
+              Nhà hàng đã xác nhận thanh toán cho đơn hàng #{orderId}. Bếp đang tiến hành chuẩn bị món ăn cho bạn.
             </p>
           </div>
           <Button variant="primary" size="md" onClick={onClose} className="w-full">
-            Hoàn tất & Xem đơn hàng
+            Hoàn tất & Đóng cửa sổ
           </Button>
         </div>
       ) : error ? (
@@ -129,12 +142,12 @@ export default function QrPaymentModal({
           </Button>
         </div>
       ) : qrData ? (
-        <div className="space-y-4">
+        <div className="space-y-4 font-sans">
           <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-brand-primary/40 shadow-xl shadow-brand-primary/5">
             <img src={qrData.qrImageUrl || qrData.qrCodeUrl} alt="Mã QR VietQR" className="w-56 h-56 object-contain" />
             <div className="mt-2 text-center text-zinc-900 font-semibold text-xs flex items-center gap-1.5">
               <QrCode className="w-4 h-4 text-brand-primary" />
-              <span>Quét bằng app ngân hàng bất kỳ</span>
+              <span>Quét bằng app ngân hàng bất kỳ (Napas 247)</span>
             </div>
           </div>
 
@@ -174,11 +187,25 @@ export default function QrPaymentModal({
             </div>
           </div>
 
-          <p className="text-[11px] text-text-muted text-center italic">
-            Hệ thống đang tự động lắng nghe kết quả chuyển khoản...
+          {/* Quick Mock Pay Action for testing */}
+          <div className="pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Zap}
+              isLoading={isMocking}
+              onClick={handleMockPayment}
+              className="w-full text-xs text-brand-primary border-brand-primary/30 hover:bg-brand-primary/10"
+            >
+              ⚡ Giả lập thanh toán thành công (Mock Pay)
+            </Button>
+          </div>
+
+          <p className="text-[10px] text-text-muted text-center italic">
+            Hệ thống đang tự động lắng nghe xác nhận chuyển khoản...
           </p>
           <Button variant="ghost" size="sm" onClick={onClose} className="w-full">
-            Đóng cửa sổ (sẽ thanh toán sau)
+            Đóng cửa sổ (thanh toán sau)
           </Button>
         </div>
       ) : null}

@@ -6,43 +6,41 @@ import {
 } from '../constants'
 import Button from '../../../../components/ui/Button'
 
-/**
- * Thẻ Đơn Hàng (OrderCard)
- * - Tinh tế Fine-Dining & Centralized Design Tokens
- * - Hiển thị mã đơn, thời gian, trạng thái, món tóm tắt, tổng tiền & hành động
- * - Độ dài < 125 dòng
- */
 export default function OrderCard({
   order,
   onViewDetail,
   onOpenQr,
   onOpenCancel,
 }) {
-  const statusConfig = ORDER_STATUS_CONFIG[order.status] || {
-    label: order.status,
+  const status = order.status || order.trang_thai
+  const statusConfig = ORDER_STATUS_CONFIG[status] || {
+    label: status,
     color: 'text-text-muted',
     bg: 'bg-surface-bg',
     border: 'border-border-subtle',
   }
 
-  const paymentStatusConfig = PAYMENT_STATUS_CONFIG[order.payment?.status] || {
-    label: order.payment?.status || 'Chưa thanh toán',
+  const payStatus = order.payment?.status || order.payment?.trang_thai || 'UNPAID'
+  const payMethod = order.payment?.paymentMethod || order.payment?.method || order.paymentMethod
+
+  const paymentStatusConfig = PAYMENT_STATUS_CONFIG[payStatus] || {
+    label: payStatus === 'UNPAID' ? 'Chưa thanh toán' : payStatus,
     color: 'text-text-muted',
   }
 
-  const isPending = order.status === 'PENDING_CONFIRMATION'
+  const isPending = status === 'PENDING_CONFIRMATION'
   const isUnpaid =
-    order.payment?.status === 'UNPAID' &&
-    order.payment?.paymentMethod === 'BANK_TRANSFER_QR' &&
-    order.status !== 'CANCELLED'
+    (payStatus === 'UNPAID' || payStatus === 'CHUA_THANH_TOAN') &&
+    (payMethod === 'BANK_TRANSFER_QR' || payMethod === 'Chuyển khoản') &&
+    status !== 'CANCELLED'
 
   return (
-    <div className="bg-surface-card border border-border-subtle hover:border-border-strong rounded-2xl p-5 space-y-4 transition-all duration-150 shadow-sm">
+    <div className="bg-surface-card border border-border-subtle hover:border-border-strong rounded-2xl p-5 space-y-4 transition-all duration-150 shadow-sm font-sans">
       {/* Hàng 1: Mã đơn, Thời gian & Trạng thái */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border-subtle">
         <div className="flex items-center gap-2.5">
           <span className="font-mono font-bold text-sm sm:text-base text-text-main">
-            #{order.orderId}
+            #{order.orderId || order.id}
           </span>
           <span className="text-border-strong">•</span>
           <span className="text-xs text-text-muted flex items-center gap-1.5">
@@ -95,7 +93,7 @@ export default function OrderCard({
           {isPending && (
             <button
               type="button"
-              onClick={() => onOpenCancel(order.orderId)}
+              onClick={() => onOpenCancel(order.orderId || order.id)}
               className="text-xs text-status-error hover:underline flex items-center gap-1 cursor-pointer font-medium"
             >
               <XCircle className="w-3.5 h-3.5" />
@@ -110,7 +108,7 @@ export default function OrderCard({
               variant="outline"
               size="sm"
               icon={QrCode}
-              onClick={() => onOpenQr(order.orderId)}
+              onClick={() => onOpenQr(order.orderId || order.id)}
             >
               Mã QR
             </Button>
@@ -120,7 +118,7 @@ export default function OrderCard({
             variant="secondary"
             size="sm"
             icon={Eye}
-            onClick={() => onViewDetail(order.orderId)}
+            onClick={() => onViewDetail(order.orderId || order.id)}
           >
             Chi tiết
           </Button>

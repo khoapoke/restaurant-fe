@@ -1,19 +1,13 @@
-import { RotateCcw, CreditCard, Banknote } from 'lucide-react'
+import { RotateCcw, CreditCard, Banknote, CheckCircle2 } from 'lucide-react'
 import {
   PAYMENT_STATUS_CONFIG,
   PAYMENT_METHOD_CONFIG,
 } from '../constants'
 import Button from '../../../../components/ui/Button'
 
-/**
- * Bảng Lịch Sử Giao Dịch Thanh Toán (PaymentTable)
- * - 100% Centralized Design Tokens
- * - Hỗ trợ hành động Hoàn tiền cho đơn PAID
- * - Độ dài < 95 dòng
- */
-export const PaymentTable = ({ payments = [], onOpenRefund }) => {
+export const PaymentTable = ({ payments = [], onOpenRefund, onOpenConfirmPayment }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm">
+    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm font-sans">
       <table className="w-full text-left text-xs">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted text-[10px] uppercase tracking-wider bg-surface-bg/50">
@@ -23,7 +17,7 @@ export const PaymentTable = ({ payments = [], onOpenRefund }) => {
             <th className="py-3 px-4 font-semibold text-right w-32">Số tiền</th>
             <th className="py-3 px-4 font-semibold text-center w-32">Trạng thái</th>
             <th className="py-3 px-4 font-semibold w-36">Thời gian</th>
-            <th className="py-3 px-4 font-semibold text-right w-28">Thao tác</th>
+            <th className="py-3 px-4 font-semibold text-right w-36">Thao tác</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border-subtle/60">
@@ -37,6 +31,7 @@ export const PaymentTable = ({ payments = [], onOpenRefund }) => {
             const statusCfg = PAYMENT_STATUS_CONFIG[status] || PAYMENT_STATUS_CONFIG.UNPAID
             const methodLabel = PAYMENT_METHOD_CONFIG[method]?.label || method || 'Khác'
             const canRefund = status === 'PAID'
+            const canConfirm = status === 'UNPAID' || status === 'CHUA_THANH_TOAN'
 
             return (
               <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
@@ -78,17 +73,33 @@ export const PaymentTable = ({ payments = [], onOpenRefund }) => {
                 </td>
 
                 <td className="py-3.5 px-4 text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!canRefund}
-                    onClick={() => onOpenRefund(p)}
-                    className="text-[11px] py-1 px-2.5 disabled:opacity-30 disabled:cursor-not-allowed"
-                    icon={RotateCcw}
-                    title={canRefund ? 'Ghi nhận hoàn tiền' : 'Chỉ hoàn tiền được khi đơn đã PAID'}
-                  >
-                    Hoàn tiền
-                  </Button>
+                  <div className="flex items-center justify-end gap-1.5">
+                    {canConfirm && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => onOpenConfirmPayment?.(p)}
+                        className="text-[10px] py-1 px-2.5"
+                        icon={CheckCircle2}
+                        title="Xác nhận tiền đã vào tài khoản"
+                      >
+                        Xác nhận
+                      </Button>
+                    )}
+
+                    {canRefund && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onOpenRefund(p)}
+                        className="text-[11px] py-1 px-2.5"
+                        icon={RotateCcw}
+                        title="Ghi nhận hoàn tiền cho đơn đã thanh toán"
+                      >
+                        Hoàn tiền
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             )

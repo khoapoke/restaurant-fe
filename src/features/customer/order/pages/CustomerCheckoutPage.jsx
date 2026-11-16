@@ -14,13 +14,6 @@ import CheckoutPaymentSelector from '../components/CheckoutPaymentSelector'
 import CheckoutOrderSummary from '../components/CheckoutOrderSummary'
 import Alert from '../../../../components/ui/Alert'
 
-/**
- * Trang Thanh Toán & Đặt Món (CustomerCheckoutPage)
- * - Tinh tế Fine-Dining & Bố cục 2 cột (7/12 - 5/12)
- * - Đồng bộ Navbar HomeHeader, Footer, Stepper CartOrderFlow (Step 2)
- * - Sau khi đặt đơn thành công, điều hướng về Giỏ hàng hiển thị Chặng 3 hoàn tất
- * - Độ dài < 160 dòng
- */
 export default function CustomerCheckoutPage() {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
@@ -97,11 +90,9 @@ export default function CustomerCheckoutPage() {
       const newOrder = response.data?.data || response.data
       const orderId = newOrder?.orderId || newOrder?.order_id || newOrder?.id
 
-      // Đánh dấu thành công để tránh useEffect tự động redirect về cart do giỏ hàng rỗng
       setIsSuccess(true)
       await fetchCart()
 
-      // Điều hướng về giỏ hàng kèm state chặng 3 hoàn tất
       navigate('/cart', {
         state: {
           orderSuccess: true,
@@ -114,13 +105,17 @@ export default function CustomerCheckoutPage() {
         replace: true,
       })
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.')
+      if (err.response?.status === 429) {
+        setErrorMessage('Hệ thống đang xử lý đơn hàng của bạn. Vui lòng chờ vài giây và không bấm liên tục!')
+      } else {
+        setErrorMessage(err.response?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.')
+      }
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-surface-bg text-text-main flex flex-col">
+    <div className="min-h-screen bg-surface-bg text-text-main flex flex-col font-sans">
       <HomeHeader />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">

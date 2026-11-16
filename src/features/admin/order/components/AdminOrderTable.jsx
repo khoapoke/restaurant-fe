@@ -1,4 +1,4 @@
-import { Eye, XCircle, ArrowRight } from 'lucide-react'
+import { Eye, XCircle, ArrowRight, Banknote } from 'lucide-react'
 import {
   ORDER_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
@@ -6,21 +6,16 @@ import {
 } from '../constants'
 import Button from '../../../../components/ui/Button'
 
-/**
- * Bảng Danh Sách Đơn Hàng (AdminOrderTable)
- * - 100% Centralized Design Tokens
- * - Chuyển trạng thái 1 chạm (Next Status Transition)
- * - Độ dài < 140 dòng
- */
 export const AdminOrderTable = ({
   orders = [],
   onViewDetail,
   onNextStatus,
   onCancel,
+  onConfirmPayment,
   actionLoadingId = null,
 }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm">
+    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm font-sans">
       <table className="w-full text-left text-xs">
         <thead>
           <tr className="border-b border-border-subtle text-text-muted text-[10px] uppercase tracking-wider bg-surface-bg/50">
@@ -30,23 +25,28 @@ export const AdminOrderTable = ({
             <th className="py-3 px-4 font-semibold text-right w-28">Tổng tiền</th>
             <th className="py-3 px-4 font-semibold text-center w-28">Thanh toán</th>
             <th className="py-3 px-4 font-semibold text-center w-32">Tiến độ đơn</th>
-            <th className="py-3 px-4 font-semibold text-right w-44">Thao tác</th>
+            <th className="py-3 px-4 font-semibold text-right w-48">Thao tác</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border-subtle/60">
           {orders.map((order) => {
-            const id = order.orderId || order.ma_don_hang
+            const id = order.orderId || order.ma_don_hang || order.id
             const status = order.status || order.trang_thai
             const statusCfg = ORDER_STATUS_CONFIG[status] || {
               label: status,
               color: 'text-text-muted bg-surface-elevated border-border-strong',
             }
 
-            const paymentStatus = order.payment?.status || 'UNPAID'
+            const paymentStatus = order.payment?.status || order.payment?.trang_thai || 'UNPAID'
+            const payMethod = order.payment?.paymentMethod || order.payment?.method || order.paymentMethod
             const payCfg = PAYMENT_STATUS_CONFIG[paymentStatus] || PAYMENT_STATUS_CONFIG.UNPAID
             const nextStep = NEXT_STATUS_MAP[status]
             const isActionLoading = actionLoadingId === id
             const canCancel = status !== 'COMPLETED' && status !== 'CANCELLED'
+            const canConfirmPay =
+              (paymentStatus === 'UNPAID' || paymentStatus === 'CHUA_THANH_TOAN') &&
+              (payMethod === 'BANK_TRANSFER_QR' || payMethod === 'Chuyển khoản') &&
+              status !== 'CANCELLED'
 
             return (
               <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
@@ -92,12 +92,24 @@ export const AdminOrderTable = ({
 
                 <td className="py-3.5 px-4 text-right">
                   <div className="flex items-center justify-end gap-1.5">
+                    {canConfirmPay && (
+                      <button
+                        type="button"
+                        onClick={() => onConfirmPayment?.(order)}
+                        disabled={isActionLoading}
+                        className="p-1.5 rounded-lg text-status-success hover:bg-status-success/10 border border-status-success/30 transition-colors cursor-pointer"
+                        title="Xác nhận đã nhận chuyển khoản"
+                      >
+                        <Banknote className="w-4 h-4" />
+                      </button>
+                    )}
+
                     {nextStep && (
                       <Button
                         variant={nextStep.btnVariant || 'primary'}
                         size="sm"
                         isLoading={isActionLoading}
-                        onClick={() => onNextStatus(id, nextStep.target)}
+                        onClick={() => onNextStatus(id, nextStep.target, order)}
                         className="text-[11px] py-1 px-2.5"
                         icon={ArrowRight}
                       >

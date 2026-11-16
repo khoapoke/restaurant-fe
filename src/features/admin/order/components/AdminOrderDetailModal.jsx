@@ -7,14 +7,9 @@ import {
   PAYMENT_STATUS_CONFIG,
   PAYMENT_METHOD_CONFIG,
 } from '../constants'
-import { Loader2, MapPin, Phone, User, Clock, AlertTriangle } from 'lucide-react'
+import { Loader2, MapPin, Phone, User, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
-/**
- * Modal Chi Tiết Đơn Hàng (AdminOrderDetailModal)
- * - 100% Centralized Design Tokens
- * - Độ dài < 150 dòng
- */
-export const AdminOrderDetailModal = ({ orderId, isOpen, onClose }) => {
+export const AdminOrderDetailModal = ({ orderId, isOpen, onClose, onConfirmPayment }) => {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -31,7 +26,7 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose }) => {
       setError(null)
       try {
         const response = await getAdminOrderDetailApi(orderId)
-        setOrder(response.data)
+        setOrder(response.data?.data || response.data)
       } catch (err) {
         setError(err.response?.data?.message || 'Không thể tải chi tiết đơn hàng.')
       } finally {
@@ -42,14 +37,21 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose }) => {
     loadDetail()
   }, [orderId, isOpen])
 
-  const statusConfig = ORDER_STATUS_CONFIG[order?.status] || {
-    label: order?.status,
+  const status = order?.status || order?.trang_thai
+  const statusConfig = ORDER_STATUS_CONFIG[status] || {
+    label: status,
     color: 'text-text-muted bg-surface-elevated border-border-strong',
   }
 
-  const paymentStatus = order?.payment?.status || 'UNPAID'
+  const paymentStatus = order?.payment?.status || order?.payment?.trang_thai || 'UNPAID'
+  const payMethod = order?.payment?.paymentMethod || order?.payment?.method || order?.paymentMethod
   const payConfig = PAYMENT_STATUS_CONFIG[paymentStatus] || PAYMENT_STATUS_CONFIG.UNPAID
-  const methodLabel = PAYMENT_METHOD_CONFIG[order?.payment?.paymentMethod]?.label || 'Chưa chọn'
+  const methodLabel = PAYMENT_METHOD_CONFIG[payMethod]?.label || payMethod || 'Chưa chọn'
+
+  const canConfirmPayment =
+    (paymentStatus === 'UNPAID' || paymentStatus === 'CHUA_THANH_TOAN') &&
+    (payMethod === 'BANK_TRANSFER_QR' || payMethod === 'Chuyển khoản') &&
+    status !== 'CANCELLED'
 
   return (
     <Modal
@@ -69,9 +71,9 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose }) => {
           <p className="text-xs text-status-error">{error}</p>
         </div>
       ) : order ? (
-        <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+        <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1 font-sans text-xs">
           {/* Header bar: Status + Date */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-bg border border-border-subtle text-xs">
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-bg border border-border-subtle">
             <div className="flex items-center gap-2">
               <span className={`px-2.5 py-1 rounded-full font-bold border text-[11px] ${statusConfig.color}`}>
                 {statusConfig.label}
@@ -86,8 +88,29 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose }) => {
             </span>
           </div>
 
+          {/* Quick Manual Payment Confirmation Banner */}
+          {canConfirmPayment && (
+            <div className="p-3 rounded-xl bg-status-warning/10 border border-status-warning/30 flex items-center justify-between gap-3">
+              <span className="text-[11px] text-status-warning font-medium">
+                Đơn hàng chuyển khoản QR này chưa được ghi nhận thanh toán.
+              </span>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={CheckCircle2}
+                onClick={() => {
+                  onClose()
+                  onConfirmPayment?.(order)
+                }}
+                className="text-[11px] py-1 px-2.5 shrink-0"
+              >
+                Xác nhận đã nhận tiền
+              </Button>
+            </div>
+          )}
+
           {/* Delivery & Customer Info */}
-          <div className="p-3.5 rounded-xl bg-surface-bg border border-border-subtle space-y-2 text-xs">
+          <div className="p-3.5 rounded-xl bg-surface-bg border border-border-subtle space-y-2">
             <h4 className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">
               Thông tin nhận hàng
             </h4>
@@ -119,7 +142,7 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose }) => {
             </h4>
             <div className="divide-y divide-border-subtle border border-border-subtle rounded-xl bg-surface-bg overflow-hidden">
               {(order.items || []).map((item, idx) => (
-                <div key={idx} className="p-3 flex items-center justify-between text-xs gap-3">
+                <div key={idx} className="p-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="font-mono font-bold text-brand-primary text-xs w-6 shrink-0">
                       x{item.quantity}

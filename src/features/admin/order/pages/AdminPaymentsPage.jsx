@@ -4,20 +4,16 @@ import {
   getAdminPaymentsApi,
   reconcilePaymentApi,
   refundPaymentApi,
+  confirmPaymentApi,
 } from '../services/adminOrderService'
 import PaymentTable from '../components/PaymentTable'
 import RefundModal from '../components/RefundModal'
+import AdminManualPaymentModal from '../components/AdminManualPaymentModal'
 import Pagination from '../../../../components/ui/Pagination'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
 
-/**
- * Trang Quản Lý Thanh Toán & Đối Soát (AdminPaymentsPage)
- * - 100% Centralized Design Tokens
- * - Quản lý an toàn 4 trạng thái UI (Loading, Error, Empty, Data)
- * - Độ dài < 170 dòng
- */
 export const AdminPaymentsPage = () => {
   const [payments, setPayments] = useState([])
   const [pagination, setPagination] = useState({ currentPage: 1, perPage: 10, totalItems: 0, lastPage: 1 })
@@ -28,7 +24,9 @@ export const AdminPaymentsPage = () => {
 
   // Modals state
   const [refundingPayment, setRefundingPayment] = useState(null)
+  const [confirmingPayment, setConfirmingPayment] = useState(null)
   const [isRefunding, setIsRefunding] = useState(false)
+  const [isConfirming, setIsConfirming] = useState(false)
   const [isReconciling, setIsReconciling] = useState(false)
 
   const showToast = (msg) => {
@@ -41,16 +39,17 @@ export const AdminPaymentsPage = () => {
     setError(null)
     try {
       const res = await getAdminPaymentsApi({ page, perPage: 10 })
-      const items = res.data?.items || res.data || []
-      setPayments(Array.isArray(items) ? items : [])
+      const raw = res.data?.data ?? res.data
+      const items = Array.isArray(raw) ? raw : (raw?.items || raw?.data || [])
+      setPayments(items)
 
-      const pData = res?.data?.pagination || res?.pagination
+      const pData = res?.data?.pagination || res?.pagination || raw?.meta
       if (pData) {
         setPagination({
-          currentPage: Number(pData.currentPage || page),
-          perPage: Number(pData.perPage || 10),
-          totalItems: Number(pData.totalItems || 0),
-          lastPage: Number(pData.lastPage || pData.totalPages || 1),
+          currentPage: Number(pData.currentPage || pData.current_page || page),
+          perPage: Number(pData.perPage || pData.per_page || 10),
+          totalItems: Number(pData.totalItems || pData.total || 0),
+          lastPage: Number(pData.lastPage || pData.last_page || 1),
         })
       } else {
         setPagination({ currentPage: page, perPage: 10, totalItems: items.length, lastPage: Math.ceil(items.length / 10) || 1 })
@@ -91,8 +90,25 @@ export const AdminPaymentsPage = () => {
     }
   }
 
+  // PAY-03: Xác nhận thanh toán thủ công
+  const handleManualConfirm = async (note) => {
+    if (!confirmingPayment) return
+    const paymentId = confirmingPayment.paymentId || confirmingPayment.ma_thanh_toan
+    setIsConfirming(true)
+    try {
+      await confirmPaymentApi(paymentId, note)
+      showToast(`Đã xác nhận thanh toán thành công cho giao dịch #${paymentId}!`)
+      setConfirmingPayment(null)
+      fetchPayments(pagination.currentPage)
+    } catch (err) {
+      alert(err.response?.data?.message || 'Không thể xác nhận giao dịch lúc này.')
+    } finally {
+      setIsConfirming(false)
+    }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface-card border border-border-subtle shadow-sm">
         <div className="flex items-center gap-3">
@@ -147,7 +163,11 @@ export const AdminPaymentsPage = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          <PaymentTable payments={payments} onOpenRefund={(p) => setRefundingPayment(p)} />
+          <PaymentTable
+            payments={payments}
+            onOpenRefund={(p) => setRefundingPayment(p)}
+            onOpenConfirmPayment={(p) => setConfirmingPayment(p)}
+          />
           <Pagination
             currentPage={pagination.currentPage}
             lastPage={pagination.lastPage}
@@ -165,6 +185,16 @@ export const AdminPaymentsPage = () => {
         onConfirm={handleRefundConfirm}
         payment={refundingPayment}
         isRefunding={isRefunding}
+      />
+
+      {/* Modal Xác nhận thanh toán thủ công */}
+      <AdminManualPaymentModal
+        isOpen={Boolean(confirmingPayment)}
+        onClose={() => setConfirmingPayment(null)}
+        onConfirm={handleManualConfirm}
+        paymentId={confirmingPayment?.paymentId || confirmingPayment?.ma_thanh_toan}
+        amount={confirmingPayment?.amount || confirmingPayment?.so_tien}
+        isLoading={isConfirming}
       />
     </div>
   )

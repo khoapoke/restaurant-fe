@@ -4,22 +4,18 @@ import {
   getAdminOrdersApi,
   updateOrderStatusApi,
   cancelAdminOrderApi,
+  confirmOrderPaymentApi,
 } from '../services/adminOrderService'
 import AdminOrderStatusTabs from '../components/AdminOrderStatusTabs'
 import AdminOrderTable from '../components/AdminOrderTable'
 import AdminOrderDetailModal from '../components/AdminOrderDetailModal'
 import AdminCancelOrderModal from '../components/AdminCancelOrderModal'
+import AdminManualPaymentModal from '../components/AdminManualPaymentModal'
 import Pagination from '../../../../components/ui/Pagination'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
 
-/**
- * Trang Quản Lý Đơn Hàng (AdminOrdersPage)
- * - 100% Centralized Design Tokens
- * - Quản lý an toàn 4 trạng thái UI (Loading, Error, Empty, Data)
- * - Độ dài < 180 dòng
- */
 export const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([])
   const [statusFilter, setStatusFilter] = useState('ALL')
@@ -32,7 +28,9 @@ export const AdminOrdersPage = () => {
   // Modals state
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [cancellingOrder, setCancellingOrder] = useState(null)
+  const [confirmingOrder, setConfirmingOrder] = useState(null)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false)
   const [actionLoadingId, setActionLoadingId] = useState(null)
 
   const showToast = (msg) => {
@@ -48,16 +46,17 @@ export const AdminOrdersPage = () => {
       if (statusFilter !== 'ALL') params.status = statusFilter
 
       const res = await getAdminOrdersApi(params)
-      const items = res.data?.items || res.data || []
-      setOrders(Array.isArray(items) ? items : [])
+      const raw = res.data?.data ?? res.data
+      const items = Array.isArray(raw) ? raw : (raw?.items || raw?.data || [])
+      setOrders(items)
 
-      const pData = res?.data?.pagination || res?.pagination
+      const pData = res?.data?.pagination || res?.pagination || raw?.meta
       if (pData) {
         setPagination({
-          currentPage: Number(pData.currentPage || page),
-          perPage: Number(pData.perPage || 10),
-          totalItems: Number(pData.totalItems || 0),
-          lastPage: Number(pData.lastPage || pData.totalPages || 1),
+          currentPage: Number(pData.currentPage || pData.current_page || page),
+          perPage: Number(pData.perPage || pData.per_page || 10),
+          totalItems: Number(pData.totalItems || pData.total || 0),
+          lastPage: Number(pData.lastPage || pData.last_page || 1),
         })
       } else {
         setPagination({ currentPage: page, perPage: 10, totalItems: items.length, lastPage: Math.ceil(items.length / 10) || 1 })
@@ -71,7 +70,21 @@ export const AdminOrdersPage = () => {
 
   useEffect(() => { fetchOrders(1) }, [fetchOrders])
 
-  const handleNextStatus = async (orderId, targetStatus) => {
+  // Chuyển bước FSM
+  const handleNextStatus = async (orderId, targetStatus, order) => {
+    // Kiểm tra quy tắc FSM 3.2: Chặn hoàn thành nếu chưa thanh toán QR
+    const payStatus = order?.payment?.status || order?.payment?.trang_thai
+    const payMethod = order?.payment?.paymentMethod || order?.payment?.method || order?.paymentMethod
+    if (
+      targetStatus === 'COMPLETED' &&
+      (payMethod === 'BANK_TRANSFER_QR' || payMethod === 'Chuyển khoản') &&
+      payStatus !== 'PAID'
+    ) {
+      alert('Đơn hàng chuyển khoản VietQR chưa được thanh toán. Vui lòng xác nhận đã nhận tiền trước khi hoàn thành đơn.')
+      setConfirmingOrder(order)
+      return
+    }
+
     setActionLoadingId(orderId)
     try {
       await updateOrderStatusApi(orderId, targetStatus)
@@ -84,6 +97,7 @@ export const AdminOrdersPage = () => {
     }
   }
 
+  // Hủy đơn hàng
   const handleCancelConfirm = async (orderId, cancelReason) => {
     setIsCancelling(true)
     try {
@@ -98,8 +112,25 @@ export const AdminOrdersPage = () => {
     }
   }
 
+  // ORD-13: Xác nhận đã nhận tiền cho đơn hàng
+  const handleConfirmOrderPayment = async (note) => {
+    if (!confirmingOrder) return
+    const orderId = confirmingOrder.orderId || confirmingOrder.ma_don_hang || confirmingOrder.id
+    setIsConfirmingPayment(true)
+    try {
+      await confirmOrderPaymentApi(orderId, note)
+      showToast(`Đã xác nhận thanh toán thành công cho đơn #${orderId}!`)
+      setConfirmingOrder(null)
+      fetchOrders(pagination.currentPage)
+    } catch (err) {
+      alert(err.response?.data?.message || 'Không thể xác nhận thanh toán lúc này.')
+    } finally {
+      setIsConfirmingPayment(false)
+    }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface-card border border-border-subtle shadow-sm">
         <div className="flex items-center gap-3">
@@ -142,6 +173,7 @@ export const AdminOrdersPage = () => {
             onViewDetail={(id) => setSelectedOrderId(id)}
             onNextStatus={handleNextStatus}
             onCancel={(order) => setCancellingOrder(order)}
+            onConfirmPayment={(order) => setConfirmingOrder(order)}
             actionLoadingId={actionLoadingId}
           />
           <Pagination
@@ -159,6 +191,7 @@ export const AdminOrdersPage = () => {
         orderId={selectedOrderId}
         isOpen={Boolean(selectedOrderId)}
         onClose={() => setSelectedOrderId(null)}
+        onConfirmPayment={(order) => setConfirmingOrder(order)}
       />
 
       <AdminCancelOrderModal
@@ -167,6 +200,15 @@ export const AdminOrdersPage = () => {
         onConfirm={handleCancelConfirm}
         order={cancellingOrder}
         isCancelling={isCancelling}
+      />
+
+      <AdminManualPaymentModal
+        isOpen={Boolean(confirmingOrder)}
+        onClose={() => setConfirmingOrder(null)}
+        onConfirm={handleConfirmOrderPayment}
+        orderId={confirmingOrder?.orderId || confirmingOrder?.ma_don_hang || confirmingOrder?.id}
+        amount={confirmingOrder?.totalAmount || confirmingOrder?.tong_tien}
+        isLoading={isConfirmingPayment}
       />
     </div>
   )

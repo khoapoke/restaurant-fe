@@ -1,6 +1,7 @@
 /**
  * Order & Payment Constants & Enums
- * Tuân thủ docs/api/enums.md và docs/api/customer-order.md
+ * Tuân thủ docs/system_conventions.md, docs/modules/order.md và docs/modules/payment.md
+ * 100% Centralized Design Tokens
  */
 
 export const OrderStatus = {
@@ -16,51 +17,51 @@ export const OrderStatus = {
 export const ORDER_STATUS_CONFIG = {
   PENDING_CONFIRMATION: {
     label: 'Chờ xác nhận',
-    color: 'text-amber-400',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/30',
+    color: 'text-status-warning',
+    bg: 'bg-status-warning/10',
+    border: 'border-status-warning/30',
     step: 1,
   },
   CONFIRMED: {
     label: 'Đã xác nhận',
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/30',
+    color: 'text-status-info',
+    bg: 'bg-status-info/10',
+    border: 'border-status-info/30',
     step: 2,
   },
   PREPARING: {
-    label: 'Bếp đang nấu',
-    color: 'text-indigo-400',
-    bg: 'bg-indigo-500/10',
-    border: 'border-indigo-500/30',
+    label: 'Đang chuẩn bị',
+    color: 'text-brand-hover',
+    bg: 'bg-brand-primary/10',
+    border: 'border-brand-primary/30',
     step: 3,
   },
   READY: {
     label: 'Món đã sẵn sàng',
-    color: 'text-cyan-400',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/30',
+    color: 'text-status-info',
+    bg: 'bg-status-info/10',
+    border: 'border-status-info/30',
     step: 4,
   },
   DELIVERING: {
     label: 'Đang giao hàng',
-    color: 'text-purple-400',
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/30',
+    color: 'text-brand-primary',
+    bg: 'bg-brand-primary/15',
+    border: 'border-brand-primary/30',
     step: 5,
   },
   COMPLETED: {
-    label: 'Hoàn thành',
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/30',
+    label: 'Đã hoàn tất',
+    color: 'text-status-success',
+    bg: 'bg-status-success/10',
+    border: 'border-status-success/30',
     step: 6,
   },
   CANCELLED: {
     label: 'Đã hủy',
-    color: 'text-red-400',
-    bg: 'bg-red-500/10',
-    border: 'border-red-500/30',
+    color: 'text-status-error',
+    bg: 'bg-status-error/10',
+    border: 'border-status-error/30',
     step: 0,
   },
 }
@@ -81,7 +82,7 @@ export const PaymentMethod = {
 }
 
 export const PAYMENT_METHOD_CONFIG = {
-  BANK_TRANSFER_QR: { label: 'Chuyển khoản QR (VietQR)' },
+  BANK_TRANSFER_QR: { label: 'Chuyển khoản VietQR' },
   CASH: { label: 'Tiền mặt khi nhận hàng' },
 }
 
@@ -93,8 +94,8 @@ export const PaymentStatus = {
 }
 
 export const PAYMENT_STATUS_CONFIG = {
-  UNPAID: { label: 'Chưa thanh toán', color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  PAID: { label: 'Đã thanh toán', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  REFUNDED: { label: 'Đã hoàn tiền', color: 'text-purple-400', bg: 'bg-purple-500/10' },
-  FAILED: { label: 'Thanh toán lỗi', color: 'text-red-400', bg: 'bg-red-500/10' },
+  UNPAID: { label: 'Chưa thanh toán', color: 'text-status-warning', bg: 'bg-status-warning/10' },
+  PAID: { label: 'Đã thanh toán', color: 'text-status-success', bg: 'bg-status-success/10' },
+  REFUNDED: { label: 'Đã hoàn tiền', color: 'text-brand-primary', bg: 'bg-brand-primary/10' },
+  FAILED: { label: 'Thanh toán lỗi', color: 'text-status-error', bg: 'bg-status-error/10' },
 }
