@@ -2,6 +2,11 @@ import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
 import { AlertTriangle, Trash2 } from 'lucide-react'
 
+/**
+ * Modal Xác Nhận Xóa Danh Mục (DeleteCategoryModal)
+ * - 100% Centralized Design Tokens
+ * - Độ dài < 55 dòng
+ */
 export const DeleteCategoryModal = ({
   isOpen,
   onClose,
@@ -11,7 +16,7 @@ export const DeleteCategoryModal = ({
 }) => {
   if (!category) return null
 
-  const categoryName = category.categoryName || category.ten_danh_muc || 'này'
+  const catName = category.categoryName || category.ten_danh_muc || 'này'
 
   return (
     <Modal
@@ -21,20 +26,20 @@ export const DeleteCategoryModal = ({
       maxWidth="max-w-sm"
     >
       <div className="space-y-4 text-center py-2">
-        <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+        <div className="w-12 h-12 rounded-full bg-status-error/10 border border-status-error/20 text-status-error flex items-center justify-center mx-auto">
           <AlertTriangle className="w-6 h-6" />
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-white mb-1">
-            Xóa danh mục "{categoryName}"?
+          <h4 className="text-sm font-bold text-text-main mb-1">
+            Xóa danh mục "{catName}"?
           </h4>
-          <p className="text-xs text-gray-400 leading-relaxed">
-            Hệ thống sẽ thực hiện xóa mềm danh mục này. Các món ăn thuộc danh mục sẽ không bị mất dữ liệu.
+          <p className="text-xs text-text-muted leading-relaxed">
+            Các món ăn thuộc danh mục này sẽ không bị xóa mà được giữ nguyên trong cơ sở dữ liệu.
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-2 pt-2 border-t border-gray-800">
+        <div className="flex items-center justify-center gap-2 pt-2 border-t border-border-subtle">
           <Button variant="ghost" size="sm" onClick={onClose} disabled={isDeleting}>
             Hủy
           </Button>
@@ -54,4 +59,3 @@ export const DeleteCategoryModal = ({
 }
 
 export default DeleteCategoryModal
-

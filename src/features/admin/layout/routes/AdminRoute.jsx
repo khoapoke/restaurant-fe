@@ -8,6 +8,7 @@ import Button from '../../../../components/ui/Button'
  * - Chưa đăng nhập -> Chuyển hướng về /login
  * - Đã đăng nhập nhưng không có vai trò ADMIN -> Hiển thị màn hình từ chối truy cập
  * - Có vai trò ADMIN -> Cho phép truy cập
+ * - 100% Centralized Design Tokens, < 60 dòng
  */
 export const AdminRoute = ({ children }) => {
   const { user, isAuthenticated, loading } = useAuth()
@@ -15,9 +16,9 @@ export const AdminRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080b11] flex flex-col items-center justify-center text-center p-4">
-        <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-4" />
-        <p className="text-xs text-gray-400 font-medium">Đang xác thực quyền quản trị...</p>
+      <div className="min-h-screen bg-surface-bg flex flex-col items-center justify-center text-center p-4">
+        <div className="w-10 h-10 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin mb-4" />
+        <p className="text-xs text-text-muted font-medium">Đang xác thực quyền quản trị T-ResMK...</p>
       </div>
     )
   }
@@ -28,13 +29,13 @@ export const AdminRoute = ({ children }) => {
 
   if (user?.role !== 'ADMIN') {
     return (
-      <div className="min-h-screen bg-[#080b11] flex flex-col items-center justify-center text-center p-6 text-gray-100">
-        <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4 shadow-lg shadow-red-500/10">
+      <div className="min-h-screen bg-surface-bg flex flex-col items-center justify-center text-center p-6 text-text-main">
+        <div className="w-16 h-16 rounded-2xl bg-status-error/10 border border-status-error/30 flex items-center justify-center text-status-error mb-4 shadow-lg shadow-status-error/10">
           <ShieldAlert className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">Truy cập bị từ chối</h2>
-        <p className="text-xs text-gray-400 max-w-sm mb-6 leading-relaxed">
-          Tài khoản của bạn ({user?.username}) mang vai trò <span className="font-mono text-amber-400 font-semibold">{user?.role}</span>, không có đặc quyền truy cập khu vực Quản trị hệ thống (yêu cầu vai trò <span className="font-mono text-emerald-400 font-semibold">ADMIN</span>).
+        <h2 className="text-xl font-bold text-text-main mb-2">Truy cập bị từ chối</h2>
+        <p className="text-xs text-text-muted max-w-sm mb-6 leading-relaxed">
+          Tài khoản của bạn ({user?.username}) mang vai trò <span className="font-mono text-brand-primary font-semibold">{user?.role}</span>, không có đặc quyền truy cập khu vực Quản trị hệ thống (yêu cầu vai trò <span className="font-mono text-status-success font-semibold">ADMIN</span>).
         </p>
         <Button
           variant="secondary"
@@ -52,4 +53,3 @@ export const AdminRoute = ({ children }) => {
 }
 
 export default AdminRoute
-

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Users, RefreshCw } from 'lucide-react'
+import { Users } from 'lucide-react'
 import {
   getAdminAccountsApi,
   lockAccountApi,
@@ -53,8 +53,7 @@ export const AdminAccountsPage = () => {
 
         const res = await getAdminAccountsApi(params)
         const items = res.data?.items || res.data || []
-        
-        // Client-side fallback filter if BE doesn't support role param
+
         let filteredItems = Array.isArray(items) ? items : []
         if (roleFilter !== 'ALL') {
           filteredItems = filteredItems.filter((acc) => {
@@ -116,14 +115,14 @@ export const AdminAccountsPage = () => {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gray-900/60 border border-gray-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface-card border border-border-subtle shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Quản lý Tài khoản Người dùng</h2>
-            <p className="text-xs text-gray-400">
+            <h2 className="text-base font-bold text-text-main">Quản lý Tài khoản Người dùng</h2>
+            <p className="text-xs text-text-muted">
               Kiểm soát quyền truy cập và khóa các tài khoản vi phạm chính sách
             </p>
           </div>
@@ -160,17 +159,17 @@ export const AdminAccountsPage = () => {
 
       {/* 4 Trạng thái UI */}
       {loading ? (
-        <div className="space-y-3 p-6 rounded-2xl bg-gray-900/60 border border-gray-800">
-          <Skeleton className="h-8 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
+        <div className="space-y-3 p-6 rounded-2xl bg-surface-card border border-border-subtle">
+          <Skeleton className="h-8 w-full bg-surface-subtle" />
+          <Skeleton className="h-14 w-full bg-surface-subtle" />
+          <Skeleton className="h-14 w-full bg-surface-subtle" />
+          <Skeleton className="h-14 w-full bg-surface-subtle" />
         </div>
       ) : accounts.length === 0 ? (
-        <div className="py-16 text-center rounded-2xl bg-gray-900/40 border border-gray-800 space-y-3">
-          <Users className="w-10 h-10 text-gray-600 mx-auto" />
-          <p className="text-sm font-semibold text-gray-300">Không tìm thấy tài khoản nào</p>
-          <p className="text-xs text-gray-500 max-w-xs mx-auto">
+        <div className="py-16 text-center rounded-2xl bg-surface-card/60 border border-border-subtle space-y-3">
+          <Users className="w-10 h-10 text-text-muted/40 mx-auto" />
+          <p className="text-sm font-semibold text-text-main">Không tìm thấy tài khoản nào</p>
+          <p className="text-xs text-text-muted max-w-xs mx-auto">
             Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh lại bộ lọc vai trò / trạng thái.
           </p>
         </div>
@@ -204,4 +203,3 @@ export const AdminAccountsPage = () => {
 }
 
 export default AdminAccountsPage
-

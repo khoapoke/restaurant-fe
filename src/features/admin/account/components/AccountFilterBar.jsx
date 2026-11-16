@@ -1,4 +1,4 @@
-import { Search, RefreshCw, Filter, Shield, User } from 'lucide-react'
+import { Search, RefreshCw, Filter } from 'lucide-react'
 import Button from '../../../../components/ui/Button'
 import { AccountStatus, Role } from '../constants'
 
@@ -13,17 +13,17 @@ export const AccountFilterBar = ({
   loading,
 }) => {
   return (
-    <div className="p-4 rounded-2xl bg-gray-900/60 border border-gray-800 space-y-3">
+    <div className="p-4 rounded-2xl bg-surface-card border border-border-subtle space-y-3 shadow-xs">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Search input */}
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Tìm theo username, họ tên, email hoặc số điện thoại..."
             value={keyword}
             onChange={(e) => onKeywordChange(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs bg-gray-950 border border-gray-800 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
+            className="w-full pl-9 pr-4 py-2 text-xs bg-surface-input border border-border-subtle rounded-xl text-text-main placeholder-text-muted focus:outline-none focus:border-brand-primary transition-colors"
           />
         </div>
 
@@ -41,9 +41,9 @@ export const AccountFilterBar = ({
       </div>
 
       {/* Filter selectors row */}
-      <div className="flex items-center gap-3 flex-wrap pt-1 border-t border-gray-800/60 text-xs">
-        <span className="text-gray-500 flex items-center gap-1">
-          <Filter className="w-3.5 h-3.5 text-amber-500" />
+      <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-border-subtle text-xs">
+        <span className="text-text-muted flex items-center gap-1.5 font-medium">
+          <Filter className="w-3.5 h-3.5 text-brand-primary" />
           <span>Lọc:</span>
         </span>
 
@@ -51,7 +51,7 @@ export const AccountFilterBar = ({
         <select
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value)}
-          className="bg-gray-950 border border-gray-800 rounded-xl px-2.5 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-amber-500 cursor-pointer"
+          className="bg-surface-input border border-border-subtle rounded-xl px-2.5 py-1.5 text-xs text-text-body focus:outline-none focus:border-brand-primary cursor-pointer"
         >
           <option value="ALL">Tất cả trạng thái</option>
           <option value={AccountStatus.ACTIVE}>Đang hoạt động</option>
@@ -62,7 +62,7 @@ export const AccountFilterBar = ({
         <select
           value={roleFilter}
           onChange={(e) => onRoleChange(e.target.value)}
-          className="bg-gray-950 border border-gray-800 rounded-xl px-2.5 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-amber-500 cursor-pointer"
+          className="bg-surface-input border border-border-subtle rounded-xl px-2.5 py-1.5 text-xs text-text-body focus:outline-none focus:border-brand-primary cursor-pointer"
         >
           <option value="ALL">Tất cả vai trò</option>
           <option value={Role.ADMIN}>Quản trị viên (ADMIN)</option>
@@ -74,4 +74,3 @@ export const AccountFilterBar = ({
 }
 
 export default AccountFilterBar
-

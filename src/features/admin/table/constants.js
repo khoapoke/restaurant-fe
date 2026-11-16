@@ -1,6 +1,7 @@
 /**
  * Constants & Enums cho Quản lý Bàn ăn & Đặt bàn (Admin)
  * Tham chiếu docs/api/enums.md và docs/api/admin-table-report.md
+ * 100% Centralized Design Tokens
  */
 
 export const TableStatus = {
@@ -13,27 +14,27 @@ export const TableStatus = {
 export const TABLE_STATUS_CONFIG = {
   AVAILABLE: {
     label: 'Bàn trống',
-    color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
-    dotColor: 'bg-emerald-500',
-    cardBorder: 'border-emerald-500/30 hover:border-emerald-500/60',
+    color: 'text-status-success bg-status-success/10 border-status-success/30',
+    dotColor: 'bg-status-success',
+    cardBorder: 'border-status-success/30 hover:border-status-success/60',
   },
   RESERVED: {
     label: 'Đã đặt trước',
-    color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-    dotColor: 'bg-amber-500',
-    cardBorder: 'border-amber-500/30 hover:border-amber-500/60',
+    color: 'text-brand-primary bg-brand-primary/10 border-brand-primary/30',
+    dotColor: 'bg-brand-primary',
+    cardBorder: 'border-brand-primary/30 hover:border-brand-primary/60',
   },
   OCCUPIED: {
     label: 'Đang có khách',
-    color: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
-    dotColor: 'bg-purple-500',
-    cardBorder: 'border-purple-500/30 hover:border-purple-500/60',
+    color: 'text-status-info bg-status-info/10 border-status-info/30',
+    dotColor: 'bg-status-info',
+    cardBorder: 'border-status-info/30 hover:border-status-info/60',
   },
   MAINTENANCE: {
     label: 'Đang bảo trì',
-    color: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
-    dotColor: 'bg-rose-500',
-    cardBorder: 'border-rose-500/30 hover:border-rose-500/60',
+    color: 'text-status-error bg-status-error/10 border-status-error/30',
+    dotColor: 'bg-status-error',
+    cardBorder: 'border-status-error/30 hover:border-status-error/60',
   },
 }
 
@@ -48,23 +49,22 @@ export const ReservationStatus = {
 export const RESERVATION_STATUS_CONFIG = {
   PENDING: {
     label: 'Chờ duyệt',
-    color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+    color: 'text-status-warning bg-status-warning/10 border-status-warning/30',
   },
   CONFIRMED: {
     label: 'Đã xác nhận',
-    color: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+    color: 'text-status-info bg-status-info/10 border-status-info/30',
   },
   COMPLETED: {
     label: 'Hoàn thành',
-    color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    color: 'text-status-success bg-status-success/10 border-status-success/30',
   },
   CANCELLED: {
     label: 'Đã hủy',
-    color: 'text-gray-400 bg-gray-800 border-gray-700',
+    color: 'text-text-muted bg-surface-elevated border-border-strong',
   },
   REJECTED: {
     label: 'Đã từ chối',
-    color: 'text-red-400 bg-red-500/10 border-red-500/30',
+    color: 'text-status-error bg-status-error/10 border-status-error/30',
   },
 }
-

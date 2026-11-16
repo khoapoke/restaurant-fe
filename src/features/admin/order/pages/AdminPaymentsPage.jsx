@@ -12,14 +12,15 @@ import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
 
+/**
+ * Trang Quản Lý Thanh Toán & Đối Soát (AdminPaymentsPage)
+ * - 100% Centralized Design Tokens
+ * - Quản lý an toàn 4 trạng thái UI (Loading, Error, Empty, Data)
+ * - Độ dài < 170 dòng
+ */
 export const AdminPaymentsPage = () => {
   const [payments, setPayments] = useState([])
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    perPage: 10,
-    totalItems: 0,
-    lastPage: 1,
-  })
+  const [pagination, setPagination] = useState({ currentPage: 1, perPage: 10, totalItems: 0, lastPage: 1 })
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -43,21 +44,16 @@ export const AdminPaymentsPage = () => {
       const items = res.data?.items || res.data || []
       setPayments(Array.isArray(items) ? items : [])
 
-      const paginationData = res?.data?.pagination || res?.pagination
-      if (paginationData) {
+      const pData = res?.data?.pagination || res?.pagination
+      if (pData) {
         setPagination({
-          currentPage: Number(paginationData.currentPage || page),
-          perPage: Number(paginationData.perPage || 10),
-          totalItems: Number(paginationData.totalItems || 0),
-          lastPage: Number(paginationData.lastPage || paginationData.totalPages || 1),
+          currentPage: Number(pData.currentPage || page),
+          perPage: Number(pData.perPage || 10),
+          totalItems: Number(pData.totalItems || 0),
+          lastPage: Number(pData.lastPage || pData.totalPages || 1),
         })
       } else {
-        setPagination({
-          currentPage: page,
-          perPage: 10,
-          totalItems: items.length,
-          lastPage: Math.ceil(items.length / 10) || 1,
-        })
+        setPagination({ currentPage: page, perPage: 10, totalItems: items.length, lastPage: Math.ceil(items.length / 10) || 1 })
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải danh sách giao dịch thanh toán.')
@@ -66,9 +62,7 @@ export const AdminPaymentsPage = () => {
     }
   }, [])
 
-  useEffect(() => {
-    fetchPayments(1)
-  }, [fetchPayments])
+  useEffect(() => { fetchPayments(1) }, [fetchPayments])
 
   const handleReconcile = async () => {
     setIsReconciling(true)
@@ -100,16 +94,14 @@ export const AdminPaymentsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gray-900/60 border border-gray-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface-card border border-border-subtle shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center shrink-0">
             <CreditCard className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Giao dịch Thanh toán</h2>
-            <p className="text-xs text-gray-400">
-              Tra cứu lịch sử thu tiền VietQR / Tiền mặt và xử lý hoàn tiền
-            </p>
+            <h2 className="text-base font-bold text-text-main">Giao dịch Thanh toán</h2>
+            <p className="text-xs text-text-muted">Tổng số {pagination.totalItems} giao dịch VietQR & Tiền mặt</p>
           </div>
         </div>
 
@@ -130,51 +122,32 @@ export const AdminPaymentsPage = () => {
             icon={CheckCheck}
             isLoading={isReconciling}
             onClick={handleReconcile}
+            title="Tự động kiểm tra trạng thái ngân hàng và đồng bộ giao dịch"
           >
             Đối soát số tiền
           </Button>
         </div>
       </div>
 
-      {successToast && (
-        <Alert type="success" message={successToast} onClose={() => setSuccessToast(null)} />
-      )}
-
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          action={
-            <Button variant="outline" size="sm" onClick={() => fetchPayments(1)}>
-              Thử lại
-            </Button>
-          }
-        />
-      )}
+      {successToast && <Alert type="success" message={successToast} onClose={() => setSuccessToast(null)} />}
+      {error && <Alert type="error" message={error} action={<Button variant="outline" size="sm" onClick={() => fetchPayments(1)}>Thử lại</Button>} />}
 
       {/* 4 Trạng thái UI */}
       {loading ? (
-        <div className="space-y-3 p-6 rounded-2xl bg-gray-900/60 border border-gray-800">
-          <Skeleton className="h-8 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
+        <div className="space-y-3 p-6 rounded-2xl bg-surface-card border border-border-subtle">
+          <Skeleton className="h-8 w-full bg-surface-card-hover" />
+          <Skeleton className="h-14 w-full bg-surface-card-hover" />
+          <Skeleton className="h-14 w-full bg-surface-card-hover" />
         </div>
       ) : payments.length === 0 ? (
-        <div className="py-16 text-center rounded-2xl bg-gray-900/40 border border-gray-800 space-y-3">
-          <CreditCard className="w-10 h-10 text-gray-600 mx-auto" />
-          <p className="text-sm font-semibold text-gray-300">Chưa có giao dịch thanh toán nào</p>
-          <p className="text-xs text-gray-500 max-w-xs mx-auto">
-            Khi khách hàng đặt đơn và thực hiện thanh toán, các bản ghi sẽ xuất hiện tại đây.
-          </p>
+        <div className="py-16 text-center rounded-2xl bg-surface-card border border-border-subtle space-y-3">
+          <CreditCard className="w-10 h-10 text-text-dim mx-auto" />
+          <p className="text-sm font-semibold text-text-main">Chưa có giao dịch thanh toán nào</p>
+          <p className="text-xs text-text-muted max-w-xs mx-auto">Các giao dịch phát sinh từ đơn hàng sẽ hiển thị tại đây.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          <PaymentTable
-            payments={payments}
-            onOpenRefund={(p) => setRefundingPayment(p)}
-          />
-
+          <PaymentTable payments={payments} onOpenRefund={(p) => setRefundingPayment(p)} />
           <Pagination
             currentPage={pagination.currentPage}
             lastPage={pagination.lastPage}
@@ -185,9 +158,9 @@ export const AdminPaymentsPage = () => {
         </div>
       )}
 
-      {/* Modal Refund */}
+      {/* Modal Hoàn tiền */}
       <RefundModal
-        isOpen={!!refundingPayment}
+        isOpen={Boolean(refundingPayment)}
         onClose={() => setRefundingPayment(null)}
         onConfirm={handleRefundConfirm}
         payment={refundingPayment}
@@ -198,4 +171,3 @@ export const AdminPaymentsPage = () => {
 }
 
 export default AdminPaymentsPage
-

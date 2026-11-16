@@ -1,6 +1,7 @@
 /**
  * Constants & Enums cho Quản lý Danh mục & Món ăn (Admin)
  * Tham chiếu docs/api/enums.md và docs/api/admin-dish.md
+ * Đồng bộ 100% Centralized Design Tokens
  */
 
 export const ALLERGEN_OPTIONS = [
@@ -13,10 +14,9 @@ export const ALLERGEN_OPTIONS = [
 ]
 
 export const WEATHER_TAG_OPTIONS = [
-  { value: 'HOT_SUNNY', label: 'Nắng nóng', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  { value: 'RAINY_OR_COLD', label: 'Mưa / Lạnh', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  { value: 'PLEASANT_NORMAL', label: 'Dễ chịu', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  { value: 'HOT_SUNNY', label: 'Nắng nóng', color: 'text-brand-primary bg-brand-primary/10 border-brand-primary/20' },
+  { value: 'RAINY_OR_COLD', label: 'Mưa / Lạnh', color: 'text-status-info bg-status-info/10 border-status-info/20' },
+  { value: 'PLEASANT_NORMAL', label: 'Dễ chịu', color: 'text-status-success bg-status-success/10 border-status-success/20' },
 ]
 
 export const FALLBACK_DISH_IMG = '/img/food.jpg'
-

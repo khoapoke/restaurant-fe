@@ -1,16 +1,22 @@
-import { CheckCircle2, XCircle, Check, Users, Clock, Utensils } from 'lucide-react'
+import { CheckCircle2, XCircle, Check, Utensils } from 'lucide-react'
 import { RESERVATION_STATUS_CONFIG } from '../constants'
 import Button from '../../../../components/ui/Button'
 
+/**
+ * Bảng Danh Sách Đặt Bàn (ReservationTable)
+ * - 100% Centralized Design Tokens
+ * - Điều phối nhanh các hành động duyệt/hủy/vào bàn
+ * - Độ dài < 145 dòng
+ */
 export const ReservationTable = ({
   reservations = [],
   onOpenAction,
 }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/60">
+    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-gray-800 text-gray-400 text-[10px] uppercase tracking-wider bg-gray-950/40">
+          <tr className="border-b border-border-subtle text-text-muted text-[10px] uppercase tracking-wider bg-surface-bg/50">
             <th className="py-3 px-4 font-semibold w-16 text-center">Mã</th>
             <th className="py-3 px-4 font-semibold">Khách hàng</th>
             <th className="py-3 px-4 font-semibold w-36">Thời gian đến</th>
@@ -21,7 +27,7 @@ export const ReservationTable = ({
             <th className="py-3 px-4 font-semibold text-right w-52">Thao tác</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800/60">
+        <tbody className="divide-y divide-border-subtle/60">
           {reservations.map((r) => {
             const id = r.reservationId || r.ma_dat_ban
             const name = r.recipientName || r.customerName || r.account?.username || 'Khách'
@@ -36,17 +42,17 @@ export const ReservationTable = ({
             const isConfirmed = status === 'CONFIRMED'
 
             return (
-              <tr key={id} className="hover:bg-gray-800/30 transition-colors">
-                <td className="py-3.5 px-4 text-center font-mono font-bold text-gray-400">
+              <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
+                <td className="py-3.5 px-4 text-center font-mono font-bold text-text-dim">
                   #{id}
                 </td>
 
                 <td className="py-3.5 px-4">
-                  <p className="font-bold text-white truncate max-w-[130px]">{name}</p>
-                  <p className="text-[10px] text-gray-400 font-mono">{phone}</p>
+                  <p className="font-bold text-text-main truncate max-w-[130px]">{name}</p>
+                  <p className="text-[10px] text-text-muted font-mono">{phone}</p>
                 </td>
 
-                <td className="py-3.5 px-4 text-gray-300 font-mono text-[11px] whitespace-nowrap">
+                <td className="py-3.5 px-4 text-text-muted font-mono text-[11px] whitespace-nowrap">
                   {time
                     ? new Date(time).toLocaleString('vi-VN', {
                         hour: '2-digit',
@@ -58,17 +64,17 @@ export const ReservationTable = ({
                     : '—'}
                 </td>
 
-                <td className="py-3.5 px-4 text-center font-mono font-bold text-amber-400">
+                <td className="py-3.5 px-4 text-center font-mono font-bold text-brand-primary">
                   {guests}
                 </td>
 
-                <td className="py-3.5 px-4 font-medium text-gray-200">
-                  <span className="px-2 py-0.5 rounded bg-gray-800 border border-gray-700 text-[11px]">
+                <td className="py-3.5 px-4 font-medium text-text-body">
+                  <span className="px-2 py-0.5 rounded bg-surface-bg border border-border-subtle text-[11px]">
                     {tableName}
                   </span>
                 </td>
 
-                <td className="py-3.5 px-4 text-gray-400 max-w-xs truncate text-[11px]">
+                <td className="py-3.5 px-4 text-text-muted max-w-xs truncate text-[11px]">
                   {r.note || r.ghi_chu || r.adminNote || '—'}
                 </td>
 
@@ -109,7 +115,7 @@ export const ReservationTable = ({
                         <button
                           type="button"
                           onClick={() => onOpenAction(r, 'SEATED')}
-                          className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-purple-500/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/40 flex items-center gap-1 transition-colors cursor-pointer"
+                          className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-brand-primary/15 hover:bg-brand-primary/25 text-brand-hover border border-brand-primary/30 flex items-center gap-1 transition-colors cursor-pointer"
                           title="Khách đã đến nhận bàn"
                         >
                           <Utensils className="w-3 h-3" />
@@ -129,7 +135,7 @@ export const ReservationTable = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => onOpenAction(r, 'CANCELLED')}
-                          className="text-[11px] py-1 px-1.5 text-red-400 hover:bg-red-500/10"
+                          className="text-[11px] py-1 px-1.5 text-status-error hover:bg-status-error/10"
                           icon={XCircle}
                           title="Hủy lượt đặt bàn này"
                         />
@@ -147,4 +153,3 @@ export const ReservationTable = ({
 }
 
 export default ReservationTable
-

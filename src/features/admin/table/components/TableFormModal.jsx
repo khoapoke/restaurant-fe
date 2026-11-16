@@ -3,9 +3,14 @@ import Modal from '../../../../components/ui/Modal'
 import Input from '../../../../components/ui/Input'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
-import { Grid, Save } from 'lucide-react'
+import { Grid } from 'lucide-react'
 import { TableStatus, TABLE_STATUS_CONFIG } from '../constants'
 
+/**
+ * Modal Thêm / Chỉnh Sửa Bàn Ăn (TableFormModal)
+ * - 100% Centralized Design Tokens
+ * - Độ dài < 140 dòng
+ */
 export const TableFormModal = ({
   isOpen,
   onClose,
@@ -32,12 +37,7 @@ export const TableFormModal = ({
         status: initialData.status || initialData.trang_thai || TableStatus.AVAILABLE,
       })
     } else {
-      setFormData({
-        tableName: '',
-        capacity: 4,
-        location: '',
-        status: TableStatus.AVAILABLE,
-      })
+      setFormData({ tableName: '', capacity: 4, location: '', status: TableStatus.AVAILABLE })
     }
     setErrors({})
     setServerError(null)
@@ -55,14 +55,8 @@ export const TableFormModal = ({
 
     const newErrors = {}
     if (!formData.tableName.trim()) newErrors.tableName = 'Vui lòng nhập tên bàn'
-    if (!formData.capacity || Number(formData.capacity) <= 0) {
-      newErrors.capacity = 'Sức chứa phải lớn hơn 0'
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
+    if (!formData.capacity || Number(formData.capacity) <= 0) newErrors.capacity = 'Sức chứa phải lớn hơn 0'
+    if (Object.keys(newErrors).length > 0) return setErrors(newErrors)
 
     try {
       await onSubmit({
@@ -84,9 +78,7 @@ export const TableFormModal = ({
       maxWidth="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {serverError && (
-          <Alert type="error" message={serverError} onClose={() => setServerError(null)} />
-        )}
+        {serverError && <Alert type="error" message={serverError} onClose={() => setServerError(null)} />}
 
         <Input
           label="Tên bàn"
@@ -100,45 +92,42 @@ export const TableFormModal = ({
 
         <div className="grid grid-cols-2 gap-3">
           <Input
-            label="Sức chứa (số ghế)"
+            label="Sức chứa (Khách)"
             name="capacity"
             type="number"
-            min="1"
-            max="50"
+            min={1}
             value={formData.capacity}
             onChange={handleChange}
             error={errors.capacity}
             required
           />
 
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-gray-300">
-              Trạng thái bàn
-            </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full px-3 py-2 text-xs bg-gray-950 border border-gray-800 rounded-xl text-gray-100 focus:outline-none focus:border-amber-500 cursor-pointer"
-            >
-              {Object.keys(TABLE_STATUS_CONFIG).map((st) => (
-                <option key={st} value={st}>
-                  {TABLE_STATUS_CONFIG[st].label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Input
+            label="Vị trí (tùy chọn)"
+            name="location"
+            placeholder="Tầng 1, Ban công..."
+            value={formData.location}
+            onChange={handleChange}
+          />
         </div>
 
-        <Input
-          label="Vị trí / Khu vực"
-          name="location"
-          placeholder="Ví dụ: Cạnh cửa sổ, Tầng 1, Ngoài trời..."
-          value={formData.location}
-          onChange={handleChange}
-        />
+        <div className="space-y-1">
+          <label className="block text-xs font-semibold text-text-muted">Trạng thái khởi tạo</label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="w-full px-3 py-2 text-xs bg-surface-bg border border-border-strong rounded-xl text-text-main focus:outline-none focus:border-brand-primary cursor-pointer"
+          >
+            {Object.entries(TABLE_STATUS_CONFIG).map(([key, cfg]) => (
+              <option key={key} value={key}>
+                {cfg.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-800">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-border-subtle">
           <Button variant="ghost" size="sm" type="button" onClick={onClose}>
             Hủy bỏ
           </Button>
@@ -147,9 +136,9 @@ export const TableFormModal = ({
             size="sm"
             type="submit"
             isLoading={isSubmitting}
-            icon={Save}
+            icon={Grid}
           >
-            {initialData ? 'Lưu thay đổi' : 'Thêm bàn'}
+            {initialData ? 'Lưu thay đổi' : 'Tạo bàn ăn'}
           </Button>
         </div>
       </form>
@@ -158,4 +147,3 @@ export const TableFormModal = ({
 }
 
 export default TableFormModal
-

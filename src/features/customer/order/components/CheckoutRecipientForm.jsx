@@ -66,7 +66,7 @@ export default function CheckoutRecipientForm({
           <div className="sm:col-span-2 p-3 rounded-xl bg-surface-bg border border-border-subtle flex items-start gap-2.5 text-xs text-text-muted">
             <Info className="w-4 h-4 text-brand-primary shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              Bạn chọn <strong className="text-text-main font-semibold">Nhận tại nhà hàng</strong>. Món ăn sẽ được nhà hàng chuẩn bị sẵn sàng phục vụ tại cơ sở chính (Lumière Restaurant).
+              Bạn chọn <strong className="text-text-main font-semibold">Nhận tại nhà hàng</strong>. Món ăn sẽ được nhà hàng chuẩn bị sẵn sàng phục vụ tại cơ sở chính (T-ResMK Restaurant).
             </p>
           </div>
         )}

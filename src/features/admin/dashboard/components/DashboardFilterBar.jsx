@@ -2,6 +2,12 @@ import { useState } from 'react'
 import { Calendar, RefreshCw, Filter } from 'lucide-react'
 import Button from '../../../../components/ui/Button'
 
+/**
+ * Thanh Bộ Lọc Thời Gian Dashboard (DashboardFilterBar)
+ * - 100% Centralized Design Tokens
+ * - Hỗ trợ presets: Hôm nay, 7 ngày qua, Tháng này, Tùy chỉnh
+ * - Độ dài < 110 dòng
+ */
 export const DashboardFilterBar = ({
   fromDate,
   toDate,
@@ -11,9 +17,7 @@ export const DashboardFilterBar = ({
 }) => {
   const [activePreset, setActivePreset] = useState('7days')
 
-  const getTodayStr = () => {
-    return new Date().toISOString().split('T')[0]
-  }
+  const getTodayStr = () => new Date().toISOString().split('T')[0]
 
   const getDateNDaysAgoStr = (days) => {
     const d = new Date()
@@ -49,11 +53,11 @@ export const DashboardFilterBar = ({
   }
 
   return (
-    <div className="p-4 rounded-2xl bg-gray-900/60 border border-gray-800 flex flex-wrap items-center justify-between gap-4">
+    <div className="p-4 rounded-2xl bg-surface-card border border-border-subtle flex flex-wrap items-center justify-between gap-4">
       {/* Preset Buttons */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-xs text-gray-400 mr-1 flex items-center gap-1">
-          <Filter className="w-3.5 h-3.5 text-amber-500" />
+        <span className="text-xs text-text-muted mr-1 flex items-center gap-1">
+          <Filter className="w-3.5 h-3.5 text-brand-primary" />
           <span className="hidden sm:inline">Khoảng thời gian:</span>
         </span>
         {[
@@ -67,8 +71,8 @@ export const DashboardFilterBar = ({
             onClick={() => applyPreset(p.key)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activePreset === p.key
-                ? 'bg-amber-500 text-gray-950 shadow-md shadow-amber-500/20'
-                : 'bg-gray-950 text-gray-400 hover:text-white border border-gray-800 hover:border-gray-700'
+                ? 'bg-brand-primary text-surface-bg shadow-md shadow-brand-primary/20'
+                : 'bg-surface-bg text-text-muted hover:text-text-main border border-border-subtle hover:border-border-strong'
             }`}
           >
             {p.label}
@@ -78,20 +82,20 @@ export const DashboardFilterBar = ({
 
       {/* Custom Date Pickers & Refresh Button */}
       <div className="flex items-center gap-2.5 flex-wrap">
-        <div className="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800 text-xs">
-          <Calendar className="w-3.5 h-3.5 text-gray-400" />
+        <div className="flex items-center gap-1.5 bg-surface-bg px-3 py-1.5 rounded-xl border border-border-subtle text-xs">
+          <Calendar className="w-3.5 h-3.5 text-text-muted" />
           <input
             type="date"
             value={fromDate}
             onChange={(e) => handleCustomDateChange('from', e.target.value)}
-            className="bg-transparent text-gray-200 focus:outline-none cursor-pointer"
+            className="bg-transparent text-text-main focus:outline-none cursor-pointer"
           />
-          <span className="text-gray-500">→</span>
+          <span className="text-text-dim">→</span>
           <input
             type="date"
             value={toDate}
             onChange={(e) => handleCustomDateChange('to', e.target.value)}
-            className="bg-transparent text-gray-200 focus:outline-none cursor-pointer"
+            className="bg-transparent text-text-main focus:outline-none cursor-pointer"
           />
         </div>
 
@@ -111,4 +115,3 @@ export const DashboardFilterBar = ({
 }
 
 export default DashboardFilterBar
-

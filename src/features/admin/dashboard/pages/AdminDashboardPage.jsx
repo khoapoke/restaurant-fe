@@ -4,7 +4,6 @@ import {
   ShoppingBag,
   CalendarCheck,
   TrendingUp,
-  AlertTriangle,
   RefreshCw,
 } from 'lucide-react'
 import { getDashboardReportApi } from '../services/reportService'
@@ -16,6 +15,12 @@ import Skeleton from '../../../../components/ui/Skeleton'
 import Alert from '../../../../components/ui/Alert'
 import Button from '../../../../components/ui/Button'
 
+/**
+ * Trang Báo Cáo & Thống Kê Dashboard (AdminDashboardPage)
+ * - 100% Centralized Design Tokens (bg-surface-*, text-text-*, border-border-*)
+ * - 4 Trạng thái UI (Loading, Error, Empty, Data)
+ * - Độ dài < 180 dòng
+ */
 export const AdminDashboardPage = () => {
   const getTodayStr = () => new Date().toISOString().split('T')[0]
   const getNDaysAgoStr = (days) => {
@@ -55,10 +60,6 @@ export const AdminDashboardPage = () => {
     setToDate(newTo)
   }
 
-  const handleRefresh = () => {
-    fetchReport(fromDate, toDate)
-  }
-
   const revenue = reportData?.revenue || { totalPaidRevenue: 0, dailySeries: [] }
   const orders = reportData?.orders || {
     totalCount: 0,
@@ -80,7 +81,7 @@ export const AdminDashboardPage = () => {
         fromDate={fromDate}
         toDate={toDate}
         onDateChange={handleDateChange}
-        onRefresh={handleRefresh}
+        onRefresh={() => fetchReport(fromDate, toDate)}
         loading={loading}
       />
 
@@ -94,7 +95,7 @@ export const AdminDashboardPage = () => {
               variant="outline"
               size="sm"
               icon={RefreshCw}
-              onClick={handleRefresh}
+              onClick={() => fetchReport(fromDate, toDate)}
               className="text-xs"
             >
               Thử lại
@@ -107,10 +108,10 @@ export const AdminDashboardPage = () => {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="p-5 rounded-2xl bg-gray-900/60 border border-gray-800 space-y-3">
-              <Skeleton className="h-4 w-24 bg-gray-800" />
-              <Skeleton className="h-8 w-32 bg-gray-800" />
-              <Skeleton className="h-3 w-40 bg-gray-800" />
+            <div key={i} className="p-5 rounded-2xl bg-surface-card border border-border-subtle space-y-3">
+              <Skeleton className="h-4 w-24 bg-surface-card-hover" />
+              <Skeleton className="h-8 w-32 bg-surface-card-hover" />
+              <Skeleton className="h-3 w-40 bg-surface-card-hover" />
             </div>
           ))}
         </div>
@@ -121,7 +122,7 @@ export const AdminDashboardPage = () => {
             value={`${Number(revenue.totalPaidRevenue || 0).toLocaleString('vi-VN')} đ`}
             subValue="Từ các đơn thanh toán thành công"
             icon={DollarSign}
-            accentColor="amber"
+            accentColor="brand"
             badgeText="PAID"
             badgeVariant="warning"
           />
@@ -165,18 +166,17 @@ export const AdminDashboardPage = () => {
       {/* Main Charts & Rankings Grid */}
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7 p-6 rounded-2xl bg-gray-900/60 border border-gray-800 h-80 flex flex-col justify-between">
-            <Skeleton className="h-6 w-48 bg-gray-800" />
-            <Skeleton className="h-48 w-full bg-gray-800" />
+          <div className="lg:col-span-7 p-6 rounded-2xl bg-surface-card border border-border-subtle h-80 flex flex-col justify-between">
+            <Skeleton className="h-6 w-48 bg-surface-card-hover" />
+            <Skeleton className="h-48 w-full bg-surface-card-hover" />
           </div>
-          <div className="lg:col-span-5 p-6 rounded-2xl bg-gray-900/60 border border-gray-800 h-80 flex flex-col justify-between">
-            <Skeleton className="h-6 w-48 bg-gray-800" />
-            <Skeleton className="h-48 w-full bg-gray-800" />
+          <div className="lg:col-span-5 p-6 rounded-2xl bg-surface-card border border-border-subtle h-80 flex flex-col justify-between">
+            <Skeleton className="h-6 w-48 bg-surface-card-hover" />
+            <Skeleton className="h-48 w-full bg-surface-card-hover" />
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Cột trái: Biểu đồ doanh thu ngày (7/12) */}
           <div className="lg:col-span-7">
             <RevenueChart
               dailySeries={revenue.dailySeries}
@@ -184,7 +184,6 @@ export const AdminDashboardPage = () => {
             />
           </div>
 
-          {/* Cột phải: Bảng Top món ăn bán chạy (5/12) */}
           <div className="lg:col-span-5">
             <TopDishesTable dishes={topSellingDishes} />
           </div>
@@ -195,4 +194,3 @@ export const AdminDashboardPage = () => {
 }
 
 export default AdminDashboardPage
-

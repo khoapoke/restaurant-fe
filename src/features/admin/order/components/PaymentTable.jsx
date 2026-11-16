@@ -5,12 +5,18 @@ import {
 } from '../constants'
 import Button from '../../../../components/ui/Button'
 
+/**
+ * Bảng Lịch Sử Giao Dịch Thanh Toán (PaymentTable)
+ * - 100% Centralized Design Tokens
+ * - Hỗ trợ hành động Hoàn tiền cho đơn PAID
+ * - Độ dài < 95 dòng
+ */
 export const PaymentTable = ({ payments = [], onOpenRefund }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/60">
+    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-gray-800 text-gray-400 text-[10px] uppercase tracking-wider bg-gray-950/40">
+          <tr className="border-b border-border-subtle text-text-muted text-[10px] uppercase tracking-wider bg-surface-bg/50">
             <th className="py-3 px-4 font-semibold w-16 text-center">Mã GD</th>
             <th className="py-3 px-4 font-semibold w-20">Đơn hàng</th>
             <th className="py-3 px-4 font-semibold">Phương thức</th>
@@ -20,7 +26,7 @@ export const PaymentTable = ({ payments = [], onOpenRefund }) => {
             <th className="py-3 px-4 font-semibold text-right w-28">Thao tác</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800/60">
+        <tbody className="divide-y divide-border-subtle/60">
           {payments.map((p) => {
             const id = p.paymentId || p.ma_thanh_toan
             const orderId = p.orderId || p.ma_don_hang
@@ -33,27 +39,27 @@ export const PaymentTable = ({ payments = [], onOpenRefund }) => {
             const canRefund = status === 'PAID'
 
             return (
-              <tr key={id} className="hover:bg-gray-800/30 transition-colors">
-                <td className="py-3.5 px-4 text-center font-mono font-bold text-gray-400">
+              <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
+                <td className="py-3.5 px-4 text-center font-mono font-bold text-text-dim">
                   #{id}
                 </td>
 
-                <td className="py-3.5 px-4 font-mono font-bold text-amber-400">
+                <td className="py-3.5 px-4 font-mono font-bold text-brand-primary">
                   #{orderId}
                 </td>
 
                 <td className="py-3.5 px-4">
-                  <div className="flex items-center gap-1.5 text-gray-200">
+                  <div className="flex items-center gap-1.5 text-text-main">
                     {method === 'BANK_TRANSFER_QR' ? (
-                      <CreditCard className="w-3.5 h-3.5 text-amber-500" />
+                      <CreditCard className="w-3.5 h-3.5 text-brand-primary" />
                     ) : (
-                      <Banknote className="w-3.5 h-3.5 text-emerald-500" />
+                      <Banknote className="w-3.5 h-3.5 text-status-success" />
                     )}
                     <span>{methodLabel}</span>
                   </div>
                 </td>
 
-                <td className="py-3.5 px-4 text-right font-mono font-bold text-white">
+                <td className="py-3.5 px-4 text-right font-mono font-bold text-text-main">
                   {amount.toLocaleString('vi-VN')} đ
                 </td>
 
@@ -65,7 +71,7 @@ export const PaymentTable = ({ payments = [], onOpenRefund }) => {
                   </span>
                 </td>
 
-                <td className="py-3.5 px-4 text-gray-400 text-[11px] whitespace-nowrap">
+                <td className="py-3.5 px-4 text-text-muted text-[11px] whitespace-nowrap">
                   {p.createdAt || p.created_at
                     ? new Date(p.createdAt || p.created_at).toLocaleString('vi-VN')
                     : '—'}
@@ -94,4 +100,3 @@ export const PaymentTable = ({ payments = [], onOpenRefund }) => {
 }
 
 export default PaymentTable
-

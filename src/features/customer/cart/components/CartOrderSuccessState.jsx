@@ -34,7 +34,7 @@ export default function CartOrderSuccessState({
       </h2>
 
       <p className="text-sm text-text-muted max-w-md leading-relaxed mb-6">
-        Cảm ơn bạn đã lựa chọn Lumière Restaurant. Đội ngũ bếp đang chuẩn bị những món ăn tinh tế nhất cho bạn.
+        Cảm ơn bạn đã lựa chọn T-ResMK Restaurant. Đội ngũ bếp đang chuẩn bị những món ăn tinh tế nhất cho bạn.
       </p>
 
       {/* Khối thông tin chi tiết nhanh */}

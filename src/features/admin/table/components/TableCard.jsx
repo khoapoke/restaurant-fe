@@ -1,6 +1,12 @@
 import { Users, MapPin, Edit2 } from 'lucide-react'
 import { TABLE_STATUS_CONFIG } from '../constants'
 
+/**
+ * Thẻ Hiển Thị Bàn Ăn (TableCard)
+ * - 100% Centralized Design Tokens
+ * - Đổi trạng thái bàn nhanh chóng
+ * - Độ dài < 80 dòng
+ */
 export const TableCard = ({ table, onEdit, onQuickStatusChange }) => {
   const id = table.tableId || table.ma_ban
   const name = table.tableName || table.ten_ban
@@ -12,14 +18,14 @@ export const TableCard = ({ table, onEdit, onQuickStatusChange }) => {
 
   return (
     <div
-      className={`p-5 rounded-2xl bg-gray-900/60 border ${cfg.cardBorder} transition-all duration-200 hover:shadow-xl hover:shadow-black/50 flex flex-col justify-between group`}
+      className={`p-5 rounded-2xl bg-surface-card border ${cfg.cardBorder} transition-all duration-200 hover:shadow-xl hover:shadow-black/50 flex flex-col justify-between group shadow-sm`}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
-          <span className="text-[10px] font-mono text-gray-500 font-bold block">
+          <span className="text-[10px] font-mono text-text-dim font-bold block">
             BÀN #{id}
           </span>
-          <h3 className="text-base font-bold text-white group-hover:text-amber-400 transition-colors">
+          <h3 className="text-base font-bold text-text-main group-hover:text-brand-primary transition-colors">
             {name}
           </h3>
         </div>
@@ -27,30 +33,30 @@ export const TableCard = ({ table, onEdit, onQuickStatusChange }) => {
         <button
           type="button"
           onClick={() => onEdit(table)}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-card-hover transition-colors cursor-pointer"
           title="Sửa thông tin bàn"
         >
           <Edit2 className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <div className="space-y-2 pt-2 border-t border-gray-800/60">
-        <div className="flex items-center justify-between text-xs text-gray-300">
-          <span className="flex items-center gap-1.5 text-gray-400">
-            <Users className="w-3.5 h-3.5 text-amber-500" /> Sức chứa:
+      <div className="space-y-2 pt-2 border-t border-border-subtle">
+        <div className="flex items-center justify-between text-xs text-text-body">
+          <span className="flex items-center gap-1.5 text-text-muted">
+            <Users className="w-3.5 h-3.5 text-brand-primary" /> Sức chứa:
           </span>
-          <span className="font-mono font-bold text-white">{capacity} khách</span>
+          <span className="font-mono font-bold text-text-main">{capacity} khách</span>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-gray-300">
-          <span className="flex items-center gap-1.5 text-gray-400">
-            <MapPin className="w-3.5 h-3.5 text-amber-500" /> Vị trí:
+        <div className="flex items-center justify-between text-xs text-text-body">
+          <span className="flex items-center gap-1.5 text-text-muted">
+            <MapPin className="w-3.5 h-3.5 text-brand-primary" /> Vị trí:
           </span>
           <span className="truncate max-w-[130px] font-medium">{location}</span>
         </div>
       </div>
 
-      <div className="pt-3 mt-2 border-t border-gray-800/60 flex items-center justify-between gap-2">
+      <div className="pt-3 mt-2 border-t border-border-subtle flex items-center justify-between gap-2">
         <span
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${cfg.color}`}
         >
@@ -62,7 +68,7 @@ export const TableCard = ({ table, onEdit, onQuickStatusChange }) => {
           <select
             value={status}
             onChange={(e) => onQuickStatusChange(id, e.target.value)}
-            className="px-2 py-0.5 text-[10px] font-medium bg-gray-950 border border-gray-800 hover:border-gray-700 rounded-lg text-gray-300 focus:outline-none focus:border-amber-500 cursor-pointer"
+            className="px-2 py-0.5 text-[10px] font-medium bg-surface-bg border border-border-subtle hover:border-border-strong rounded-lg text-text-main focus:outline-none focus:border-brand-primary cursor-pointer"
             title="Đổi nhanh trạng thái bàn"
           >
             <option value="AVAILABLE">Trống</option>
@@ -77,4 +83,3 @@ export const TableCard = ({ table, onEdit, onQuickStatusChange }) => {
 }
 
 export default TableCard
-

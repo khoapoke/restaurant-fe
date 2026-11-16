@@ -1,5 +1,10 @@
 import { Edit2, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react'
 
+/**
+ * Bảng Quản Lý Danh Mục (CategoryTable)
+ * - 100% Centralized Design Tokens
+ * - Độ dài < 95 dòng
+ */
 export const CategoryTable = ({
   categories = [],
   onEdit,
@@ -8,10 +13,10 @@ export const CategoryTable = ({
   togglingId = null,
 }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/60">
+    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-gray-800 text-gray-400 text-[10px] uppercase tracking-wider bg-gray-950/40">
+          <tr className="border-b border-border-subtle text-text-muted text-[10px] uppercase tracking-wider bg-surface-bg/50">
             <th className="py-3 px-4 font-semibold w-16">ID</th>
             <th className="py-3 px-4 font-semibold">Tên danh mục</th>
             <th className="py-3 px-4 font-semibold">Mô tả</th>
@@ -19,7 +24,7 @@ export const CategoryTable = ({
             <th className="py-3 px-4 font-semibold text-right w-28">Thao tác</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800/60">
+        <tbody className="divide-y divide-border-subtle/60">
           {categories.map((cat) => {
             const id = cat.categoryId || cat.ma_danh_muc
             const name = cat.categoryName || cat.ten_danh_muc
@@ -28,14 +33,14 @@ export const CategoryTable = ({
             const isToggling = togglingId === id
 
             return (
-              <tr key={id} className="hover:bg-gray-800/30 transition-colors">
-                <td className="py-3.5 px-4 font-mono font-bold text-gray-400">
+              <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
+                <td className="py-3.5 px-4 font-mono font-bold text-text-dim">
                   #{id}
                 </td>
-                <td className="py-3.5 px-4 font-semibold text-white">
+                <td className="py-3.5 px-4 font-semibold text-text-main">
                   {name}
                 </td>
-                <td className="py-3.5 px-4 text-gray-400 max-w-xs truncate">
+                <td className="py-3.5 px-4 text-text-muted max-w-xs truncate">
                   {desc}
                 </td>
                 <td className="py-3.5 px-4 text-center">
@@ -45,8 +50,8 @@ export const CategoryTable = ({
                     disabled={isToggling}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
                       isVisible
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
-                        : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                        ? 'bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20'
+                        : 'bg-surface-elevated text-text-dim border border-border-subtle hover:text-text-muted'
                     }`}
                     title="Bấm để Bật/Tắt hiển thị"
                   >
@@ -65,7 +70,7 @@ export const CategoryTable = ({
                     <button
                       type="button"
                       onClick={() => onEdit(cat)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-gray-800 transition-colors"
+                      className="p-1.5 rounded-lg text-text-muted hover:text-brand-primary hover:bg-surface-card-hover transition-colors cursor-pointer"
                       title="Chỉnh sửa danh mục"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -73,7 +78,7 @@ export const CategoryTable = ({
                     <button
                       type="button"
                       onClick={() => onDelete(cat)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
+                      className="p-1.5 rounded-lg text-text-muted hover:text-status-error hover:bg-surface-card-hover transition-colors cursor-pointer"
                       title="Xóa danh mục"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -90,4 +95,3 @@ export const CategoryTable = ({
 }
 
 export default CategoryTable
-

@@ -11,6 +11,11 @@ const tabs = [
   { key: OrderStatus.CANCELLED, label: ORDER_STATUS_CONFIG.CANCELLED.label },
 ]
 
+/**
+ * Thanh Bộ Lọc Trạng Thái Đơn Hàng (AdminOrderStatusTabs)
+ * - 100% Centralized Design Tokens
+ * - Độ dài < 45 dòng
+ */
 export const AdminOrderStatusTabs = ({ activeStatus, onSelectStatus }) => {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -23,8 +28,8 @@ export const AdminOrderStatusTabs = ({ activeStatus, onSelectStatus }) => {
             onClick={() => onSelectStatus(tab.key)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               isActive
-                ? 'bg-amber-500 text-gray-950 shadow-md shadow-amber-500/20'
-                : 'bg-gray-900/60 text-gray-400 hover:text-white border border-gray-800 hover:border-gray-700'
+                ? 'bg-brand-primary text-surface-bg shadow-md shadow-brand-primary/20'
+                : 'bg-surface-card text-text-muted hover:text-text-main border border-border-subtle hover:border-border-strong'
             }`}
           >
             {tab.label}
@@ -36,4 +41,3 @@ export const AdminOrderStatusTabs = ({ activeStatus, onSelectStatus }) => {
 }
 
 export default AdminOrderStatusTabs
-

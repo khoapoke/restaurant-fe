@@ -1,4 +1,4 @@
-import { Eye, XCircle, ArrowRight, Loader2 } from 'lucide-react'
+import { Eye, XCircle, ArrowRight } from 'lucide-react'
 import {
   ORDER_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
@@ -6,6 +6,12 @@ import {
 } from '../constants'
 import Button from '../../../../components/ui/Button'
 
+/**
+ * Bảng Danh Sách Đơn Hàng (AdminOrderTable)
+ * - 100% Centralized Design Tokens
+ * - Chuyển trạng thái 1 chạm (Next Status Transition)
+ * - Độ dài < 140 dòng
+ */
 export const AdminOrderTable = ({
   orders = [],
   onViewDetail,
@@ -14,10 +20,10 @@ export const AdminOrderTable = ({
   actionLoadingId = null,
 }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/60">
+    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-gray-800 text-gray-400 text-[10px] uppercase tracking-wider bg-gray-950/40">
+          <tr className="border-b border-border-subtle text-text-muted text-[10px] uppercase tracking-wider bg-surface-bg/50">
             <th className="py-3 px-4 font-semibold w-16 text-center">Đơn</th>
             <th className="py-3 px-4 font-semibold">Khách hàng</th>
             <th className="py-3 px-4 font-semibold">Thời gian</th>
@@ -27,38 +33,37 @@ export const AdminOrderTable = ({
             <th className="py-3 px-4 font-semibold text-right w-44">Thao tác</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800/60">
+        <tbody className="divide-y divide-border-subtle/60">
           {orders.map((order) => {
             const id = order.orderId || order.ma_don_hang
             const status = order.status || order.trang_thai
             const statusCfg = ORDER_STATUS_CONFIG[status] || {
               label: status,
-              color: 'text-gray-300 bg-gray-800 border-gray-700',
+              color: 'text-text-muted bg-surface-elevated border-border-strong',
             }
 
             const paymentStatus = order.payment?.status || 'UNPAID'
             const payCfg = PAYMENT_STATUS_CONFIG[paymentStatus] || PAYMENT_STATUS_CONFIG.UNPAID
-
             const nextStep = NEXT_STATUS_MAP[status]
             const isActionLoading = actionLoadingId === id
             const canCancel = status !== 'COMPLETED' && status !== 'CANCELLED'
 
             return (
-              <tr key={id} className="hover:bg-gray-800/30 transition-colors">
-                <td className="py-3.5 px-4 text-center font-mono font-bold text-gray-400">
+              <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
+                <td className="py-3.5 px-4 text-center font-mono font-bold text-text-dim">
                   #{id}
                 </td>
 
                 <td className="py-3.5 px-4">
-                  <p className="font-bold text-white truncate max-w-[140px]">
+                  <p className="font-bold text-text-main truncate max-w-[140px]">
                     {order.recipientName || order.account?.username || 'Khách vãng lai'}
                   </p>
-                  <p className="text-[10px] text-gray-400 font-mono">
+                  <p className="text-[10px] text-text-muted font-mono">
                     {order.recipientPhone || '—'}
                   </p>
                 </td>
 
-                <td className="py-3.5 px-4 text-gray-400 whitespace-nowrap">
+                <td className="py-3.5 px-4 text-text-muted whitespace-nowrap">
                   {order.orderDate
                     ? new Date(order.orderDate).toLocaleTimeString('vi-VN', {
                         hour: '2-digit',
@@ -69,29 +74,24 @@ export const AdminOrderTable = ({
                     : '—'}
                 </td>
 
-                <td className="py-3.5 px-4 text-right font-mono font-bold text-amber-400">
+                <td className="py-3.5 px-4 text-right font-mono font-bold text-brand-primary">
                   {Number(order.totalAmount || 0).toLocaleString('vi-VN')} đ
                 </td>
 
                 <td className="py-3.5 px-4 text-center">
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${payCfg.color}`}
-                  >
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${payCfg.color}`}>
                     {payCfg.label}
                   </span>
                 </td>
 
                 <td className="py-3.5 px-4 text-center">
-                  <span
-                    className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusCfg.color}`}
-                  >
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusCfg.color}`}>
                     {statusCfg.label}
                   </span>
                 </td>
 
                 <td className="py-3.5 px-4 text-right">
                   <div className="flex items-center justify-end gap-1.5">
-                    {/* Next action button */}
                     {nextStep && (
                       <Button
                         variant={nextStep.btnVariant || 'primary'}
@@ -105,24 +105,22 @@ export const AdminOrderTable = ({
                       </Button>
                     )}
 
-                    {/* Cancel button */}
                     {canCancel && (
                       <button
                         type="button"
                         onClick={() => onCancel(order)}
                         disabled={isActionLoading}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
+                        className="p-1.5 rounded-lg text-text-muted hover:text-status-error hover:bg-surface-card-hover transition-colors cursor-pointer"
                         title="Hủy đơn hàng"
                       >
                         <XCircle className="w-4 h-4" />
                       </button>
                     )}
 
-                    {/* View detail button */}
                     <button
                       type="button"
                       onClick={() => onViewDetail(id)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-gray-800 transition-colors"
+                      className="p-1.5 rounded-lg text-text-muted hover:text-brand-primary hover:bg-surface-card-hover transition-colors cursor-pointer"
                       title="Xem chi tiết đơn"
                     >
                       <Eye className="w-4 h-4" />
@@ -139,4 +137,3 @@ export const AdminOrderTable = ({
 }
 
 export default AdminOrderTable
-

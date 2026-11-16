@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { CartProvider, useCart } from './contexts/CartContext'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy } from 'react'
+import { AuthProvider } from './contexts/AuthContext'
+import { CartProvider } from './contexts/CartContext'
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
 import CustomerProfilePage from './features/customer/profile/pages/CustomerProfilePage'
@@ -12,20 +13,18 @@ import CustomerOrdersPage from './features/customer/order/pages/CustomerOrdersPa
 import CustomerReservationPage from './features/customer/reservation/pages/CustomerReservationPage'
 import HomePage from './features/customer/Home/pages/HomePage'
 
-// Admin Module Components & Layout
+// Admin Module Components & Layout (Code-split with React.lazy để tối ưu bundle)
 import AdminRoute from './features/admin/layout/routes/AdminRoute'
 import AdminLayout from './features/admin/layout/layouts/AdminLayout'
-import AdminDashboardPage from './features/admin/dashboard/pages/AdminDashboardPage'
-import AdminDishPage from './features/admin/dish/pages/AdminDishPage'
-import AdminCategoryPage from './features/admin/dish/pages/AdminCategoryPage'
-import AdminOrdersPage from './features/admin/order/pages/AdminOrdersPage'
-import AdminPaymentsPage from './features/admin/order/pages/AdminPaymentsPage'
-import AdminTablesPage from './features/admin/table/pages/AdminTablesPage'
-import AdminReservationsPage from './features/admin/table/pages/AdminReservationsPage'
-import AdminAccountsPage from './features/admin/account/pages/AdminAccountsPage'
 
-
-
+const AdminDashboardPage = lazy(() => import('./features/admin/dashboard/pages/AdminDashboardPage'))
+const AdminDishPage = lazy(() => import('./features/admin/dish/pages/AdminDishPage'))
+const AdminCategoryPage = lazy(() => import('./features/admin/dish/pages/AdminCategoryPage'))
+const AdminOrdersPage = lazy(() => import('./features/admin/order/pages/AdminOrdersPage'))
+const AdminPaymentsPage = lazy(() => import('./features/admin/order/pages/AdminPaymentsPage'))
+const AdminTablesPage = lazy(() => import('./features/admin/table/pages/AdminTablesPage'))
+const AdminReservationsPage = lazy(() => import('./features/admin/table/pages/AdminReservationsPage'))
+const AdminAccountsPage = lazy(() => import('./features/admin/account/pages/AdminAccountsPage'))
 
 function App() {
   return (

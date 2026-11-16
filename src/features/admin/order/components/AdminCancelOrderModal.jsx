@@ -3,6 +3,11 @@ import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
 import { AlertTriangle, XCircle } from 'lucide-react'
 
+/**
+ * Modal Hủy Đơn Hàng (AdminCancelOrderModal)
+ * - 100% Centralized Design Tokens
+ * - Độ dài < 80 dòng
+ */
 export const AdminCancelOrderModal = ({
   isOpen,
   onClose,
@@ -35,16 +40,16 @@ export const AdminCancelOrderModal = ({
       maxWidth="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-status-error/10 border border-status-error/20 text-status-error text-xs">
           <AlertTriangle className="w-5 h-5 shrink-0" />
           <span>
-            Bạn đang chuẩn bị hủy đơn hàng <strong>#{orderId}</strong>. Thao tác này sẽ cập nhật trạng thái đơn thành CANCELLED.
+            Bạn đang chuẩn bị hủy đơn hàng <strong>#{orderId}</strong>. Thao tác này sẽ chuyển trạng thái đơn sang CANCELLED.
           </span>
         </div>
 
         <div className="space-y-1">
-          <label className="block text-xs font-semibold text-gray-300">
-            Lý do hủy đơn <span className="text-red-400">*</span>
+          <label className="block text-xs font-semibold text-text-muted">
+            Lý do hủy đơn <span className="text-status-error">*</span>
           </label>
           <textarea
             rows={3}
@@ -54,12 +59,12 @@ export const AdminCancelOrderModal = ({
               setReason(e.target.value)
               if (error) setError(null)
             }}
-            className="w-full px-3 py-2 text-xs bg-gray-950 border border-gray-800 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500"
+            className="w-full px-3 py-2 text-xs bg-surface-bg border border-border-strong rounded-xl text-text-main placeholder-text-dim focus:outline-none focus:border-status-error"
           />
-          {error && <p className="text-[11px] text-red-400">{error}</p>}
+          {error && <p className="text-[11px] text-status-error">{error}</p>}
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
           <Button variant="ghost" size="sm" type="button" onClick={onClose} disabled={isCancelling}>
             Đóng
           </Button>
@@ -79,4 +84,3 @@ export const AdminCancelOrderModal = ({
 }
 
 export default AdminCancelOrderModal
-

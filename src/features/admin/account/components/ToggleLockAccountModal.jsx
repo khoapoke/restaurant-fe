@@ -1,6 +1,6 @@
 import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
-import { Lock, Unlock, AlertTriangle } from 'lucide-react'
+import { Lock, Unlock } from 'lucide-react'
 
 export const ToggleLockAccountModal = ({
   isOpen,
@@ -26,27 +26,27 @@ export const ToggleLockAccountModal = ({
         <div
           className={`w-12 h-12 rounded-full border flex items-center justify-center mx-auto ${
             isCurrentlyLocked
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-red-500/10 border-red-500/20 text-red-400'
+              ? 'bg-status-success/10 border-status-success/20 text-status-success'
+              : 'bg-status-error/10 border-status-error/20 text-status-error'
           }`}
         >
           {isCurrentlyLocked ? <Unlock className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-white mb-1">
+          <h4 className="text-sm font-bold text-text-main mb-1">
             {isCurrentlyLocked
               ? `Mở khóa tài khoản "${username}"?`
               : `Khóa tài khoản "${username}"?`}
           </h4>
-          <p className="text-xs text-gray-400 leading-relaxed">
+          <p className="text-xs text-text-muted leading-relaxed">
             {isCurrentlyLocked
               ? 'Người dùng này sẽ có thể đăng nhập và tiếp tục sử dụng các dịch vụ của nhà hàng.'
               : 'Toàn bộ phiên đăng nhập hiện tại của người dùng này sẽ bị hủy ngay lập tức và tài khoản sẽ không thể đăng nhập.'}
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-2 pt-2 border-t border-gray-800">
+        <div className="flex items-center justify-center gap-2 pt-3 border-t border-border-subtle">
           <Button variant="ghost" size="sm" onClick={onClose} disabled={isLocking}>
             Hủy
           </Button>
@@ -66,4 +66,3 @@ export const ToggleLockAccountModal = ({
 }
 
 export default ToggleLockAccountModal
-

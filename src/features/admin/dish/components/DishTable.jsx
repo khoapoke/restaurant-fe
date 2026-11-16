@@ -1,6 +1,12 @@
 import { Edit2, Trash2, CheckCircle2, XCircle, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
 
+/**
+ * Bảng Danh Sách Món Ăn (DishTable)
+ * - 100% Centralized Design Tokens
+ * - Tương tác bật/tắt Còn bán & Hiển thị real-time
+ * - Độ dài < 140 dòng
+ */
 export const DishTable = ({
   dishes = [],
   onEdit,
@@ -10,10 +16,10 @@ export const DishTable = ({
   togglingId = null,
 }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/60">
+    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-gray-800 text-gray-400 text-[10px] uppercase tracking-wider bg-gray-950/40">
+          <tr className="border-b border-border-subtle text-text-muted text-[10px] uppercase tracking-wider bg-surface-bg/50">
             <th className="py-3 px-4 font-semibold w-12 text-center">ID</th>
             <th className="py-3 px-4 font-semibold">Món ăn</th>
             <th className="py-3 px-4 font-semibold w-28">Danh mục</th>
@@ -23,7 +29,7 @@ export const DishTable = ({
             <th className="py-3 px-4 font-semibold text-right w-24">Thao tác</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800/60">
+        <tbody className="divide-y divide-border-subtle/60">
           {dishes.map((dish) => {
             const id = dish.dishId || dish.ma_mon_an
             const name = dish.dishName || dish.ten_mon_an
@@ -34,8 +40,8 @@ export const DishTable = ({
             const isToggling = togglingId === id
 
             return (
-              <tr key={id} className="hover:bg-gray-800/30 transition-colors">
-                <td className="py-3 px-4 text-center font-mono font-bold text-gray-500">
+              <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
+                <td className="py-3 px-4 text-center font-mono font-bold text-text-dim">
                   #{id}
                 </td>
 
@@ -45,24 +51,24 @@ export const DishTable = ({
                       src={resolveDishImage(dish.imageUrl, dish)}
                       alt={name}
                       onError={(e) => handleImageError(e, resolveDishImage(null, dish))}
-                      className="w-10 h-10 rounded-xl object-cover bg-gray-800 border border-gray-700 shrink-0"
+                      className="w-10 h-10 rounded-xl object-cover bg-surface-bg border border-border-subtle shrink-0"
                     />
                     <div className="min-w-0 max-w-xs">
-                      <p className="font-bold text-gray-100 truncate">{name}</p>
-                      <p className="text-[11px] text-gray-400 truncate">
+                      <p className="font-bold text-text-main truncate">{name}</p>
+                      <p className="text-[11px] text-text-muted truncate">
                         {dish.description || 'Chưa có mô tả'}
                       </p>
                     </div>
                   </div>
                 </td>
 
-                <td className="py-3 px-4 text-gray-300">
-                  <span className="px-2 py-0.5 rounded-md bg-gray-800 border border-gray-700 text-[10px] font-medium">
+                <td className="py-3 px-4 text-text-muted">
+                  <span className="px-2 py-0.5 rounded-md bg-surface-bg border border-border-subtle text-[10px] font-medium text-text-body">
                     {catName}
                   </span>
                 </td>
 
-                <td className="py-3 px-4 text-right font-mono font-bold text-amber-400">
+                <td className="py-3 px-4 text-right font-mono font-bold text-brand-primary">
                   {price.toLocaleString('vi-VN')} đ
                 </td>
 
@@ -74,10 +80,10 @@ export const DishTable = ({
                     disabled={isToggling}
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
                       isAvail
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
-                        : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
+                        ? 'bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20'
+                        : 'bg-status-error/10 text-status-error border border-status-error/20 hover:bg-status-error/20'
                     }`}
-                    title="Bấm để chuyển trạng thái Còn bán / Hết hàng"
+                    title="Bấm để chuyển trạng thái Còn bán / Hết món"
                   >
                     {isToggling ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -98,8 +104,8 @@ export const DishTable = ({
                     disabled={isToggling}
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
                       isVis
-                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20'
-                        : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                        ? 'bg-status-info/10 text-status-info border border-status-info/20 hover:bg-status-info/20'
+                        : 'bg-surface-elevated text-text-dim border border-border-subtle hover:text-text-muted'
                     }`}
                     title="Bấm để Bật/Tắt hiển thị với khách"
                   >
@@ -114,7 +120,7 @@ export const DishTable = ({
                     <button
                       type="button"
                       onClick={() => onEdit(dish)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-gray-800 transition-colors"
+                      className="p-1.5 rounded-lg text-text-muted hover:text-brand-primary hover:bg-surface-card-hover transition-colors cursor-pointer"
                       title="Sửa món ăn"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -122,7 +128,7 @@ export const DishTable = ({
                     <button
                       type="button"
                       onClick={() => onDelete(dish)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
+                      className="p-1.5 rounded-lg text-text-muted hover:text-status-error hover:bg-surface-card-hover transition-colors cursor-pointer"
                       title="Xóa mềm món ăn"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -139,4 +145,3 @@ export const DishTable = ({
 }
 
 export default DishTable
-

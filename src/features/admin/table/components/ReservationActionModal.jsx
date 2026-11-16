@@ -2,15 +2,13 @@ import { useState, useEffect } from 'react'
 import Modal from '../../../../components/ui/Modal'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
-import { CheckCircle2, XCircle, Users, Check, AlertTriangle, Utensils } from 'lucide-react'
+import { CheckCircle2, XCircle, Check, Utensils } from 'lucide-react'
 
 /**
- * Modal xử lý các thao tác điều phối đặt bàn:
- * - CONFIRMED: Duyệt gán bàn
- * - SEATED: Khách vào bàn (bàn chuyển sang OCCUPIED)
- * - CANCELLED: Hủy lượt đặt đã duyệt
- * - REJECTED: Từ chối lượt đặt
- * - COMPLETED: Hoàn tất & giải phóng bàn về AVAILABLE
+ * Modal Điều Phối Đặt Bàn (ReservationActionModal)
+ * - 100% Centralized Design Tokens
+ * - Duyệt gán bàn, Vào bàn, Hoàn tất & Hủy/Từ chối
+ * - Độ dài < 165 dòng
  */
 export const ReservationActionModal = ({
   isOpen,
@@ -27,12 +25,7 @@ export const ReservationActionModal = ({
 
   useEffect(() => {
     if (reservation) {
-      const defaultTableId =
-        reservation.tableId ||
-        reservation.ma_ban ||
-        reservation.table?.tableId ||
-        ''
-      setSelectedTableId(defaultTableId)
+      setSelectedTableId(reservation.tableId || reservation.ma_ban || reservation.table?.tableId || '')
       setAdminNote(reservation.adminNote || '')
     } else {
       setSelectedTableId('')
@@ -45,11 +38,7 @@ export const ReservationActionModal = ({
 
   const id = reservation.reservationId || reservation.ma_dat_ban
   const guestCount = reservation.guestCount || reservation.so_luong_khach || 1
-  const customerName =
-    reservation.recipientName ||
-    reservation.customerName ||
-    reservation.account?.username ||
-    'Khách hàng'
+  const customerName = reservation.recipientName || reservation.customerName || reservation.account?.username || 'Khách hàng'
 
   const isConfirmAction = actionType === 'CONFIRMED'
   const isRejectAction = actionType === 'REJECTED'
@@ -96,25 +85,23 @@ export const ReservationActionModal = ({
         {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
         {/* Thông tin vắn tắt */}
-        <div className="p-3.5 rounded-xl bg-gray-950 border border-gray-800 text-xs space-y-1.5 text-gray-300">
+        <div className="p-3.5 rounded-xl bg-surface-bg border border-border-subtle text-xs space-y-1.5 text-text-body">
           <p className="flex justify-between">
-            <span className="text-gray-400">Khách hàng:</span>
-            <strong className="text-white">{customerName}</strong>
+            <span className="text-text-muted">Khách hàng:</span>
+            <strong className="text-text-main">{customerName}</strong>
           </p>
           <p className="flex justify-between">
-            <span className="text-gray-400">Số lượng khách:</span>
-            <span className="font-mono font-bold text-amber-400">{guestCount} khách</span>
+            <span className="text-text-muted">Số lượng khách:</span>
+            <span className="font-mono font-bold text-brand-primary">{guestCount} khách</span>
           </p>
           <p className="flex justify-between">
-            <span className="text-gray-400">Thời gian đến:</span>
-            <span className="font-mono text-gray-200">
-              {reservation.reservationTime
-                ? new Date(reservation.reservationTime).toLocaleString('vi-VN')
-                : '—'}
+            <span className="text-text-muted">Thời gian đến:</span>
+            <span className="font-mono text-text-main">
+              {reservation.reservationTime ? new Date(reservation.reservationTime).toLocaleString('vi-VN') : '—'}
             </span>
           </p>
           {reservation.note && (
-            <p className="text-[11px] text-amber-300/80 italic pt-1 border-t border-gray-900">
+            <p className="text-[11px] text-brand-hover italic pt-1 border-t border-border-subtle">
               Ghi chú của khách: {reservation.note}
             </p>
           )}
@@ -123,16 +110,13 @@ export const ReservationActionModal = ({
         {/* Khi duyệt: Chọn bàn ăn */}
         {isConfirmAction && (
           <div className="space-y-1">
-            <label className="block text-xs font-semibold text-gray-300">
-              Bàn ăn gán cho khách <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold text-text-muted">
+              Bàn ăn gán cho khách <span className="text-status-error">*</span>
             </label>
             <select
               value={selectedTableId}
-              onChange={(e) => {
-                setSelectedTableId(e.target.value)
-                setError(null)
-              }}
-              className="w-full px-3 py-2 text-xs bg-gray-950 border border-gray-800 rounded-xl text-gray-100 focus:outline-none focus:border-amber-500 cursor-pointer"
+              onChange={(e) => { setSelectedTableId(e.target.value); setError(null) }}
+              className="w-full px-3 py-2 text-xs bg-surface-bg border border-border-strong rounded-xl text-text-main focus:outline-none focus:border-brand-primary cursor-pointer"
             >
               <option value="">-- Chọn bàn ăn phù hợp --</option>
               {tables.map((t) => {
@@ -142,7 +126,6 @@ export const ReservationActionModal = ({
                 const tLoc = t.location || t.vi_tri || ''
                 const tStatus = t.status || t.trang_thai
                 const isSuit = tCap >= guestCount
-
                 return (
                   <option key={tId} value={tId}>
                     {tName} ({tCap} ghế - {tLoc}) {tStatus === 'AVAILABLE' ? '🟢 Trống' : `(${tStatus})`}
@@ -154,47 +137,36 @@ export const ReservationActionModal = ({
           </div>
         )}
 
-        {/* Mô tả giải phóng bàn */}
+        {/* Thông báo trạng thái bàn */}
         {(isCompleteAction || isCancelAction || isRejectAction) && (
-          <div className="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-[11px] text-gray-400">
+          <div className="p-3 rounded-xl bg-surface-bg border border-border-subtle text-[11px] text-text-muted">
             ℹ️ Bàn ăn liên kết sẽ được tự động giải phóng và chuyển về trạng thái{' '}
-            <strong className="text-emerald-400">Bàn trống (AVAILABLE)</strong> trên sơ đồ bàn.
+            <strong className="text-status-success">Bàn trống (AVAILABLE)</strong> trên sơ đồ bàn.
           </div>
         )}
 
-        {/* Khách vào bàn */}
         {isSeatedAction && (
-          <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-[11px] text-purple-300">
+          <div className="p-3 rounded-xl bg-brand-primary/10 border border-brand-primary/30 text-[11px] text-brand-hover">
             🍽️ Xác nhận khách đã có mặt tại nhà hàng. Bàn ăn sẽ được chuyển sang trạng thái{' '}
-            <strong className="text-white font-bold">Đang có khách (OCCUPIED)</strong> trên sơ đồ bàn.
+            <strong className="text-text-main font-bold">Đang có khách (OCCUPIED)</strong> trên sơ đồ bàn.
           </div>
         )}
 
         {/* Ô ghi chú Admin */}
         <div className="space-y-1">
-          <label className="block text-xs font-semibold text-gray-300">
-            {isRejectAction || isCancelAction
-              ? 'Lý do (bắt buộc) *'
-              : 'Ghi chú của Admin (tùy chọn)'}
+          <label className="block text-xs font-semibold text-text-muted">
+            {isRejectAction || isCancelAction ? 'Lý do (bắt buộc) *' : 'Ghi chú của Admin (tùy chọn)'}
           </label>
           <textarea
             rows={2}
-            placeholder={
-              isRejectAction || isCancelAction
-                ? 'Nhập lý do...'
-                : 'Ví dụ: Đã chuẩn bị ghế trẻ em, Bàn cạnh cửa sổ...'
-            }
+            placeholder={isRejectAction || isCancelAction ? 'Nhập lý do...' : 'Ví dụ: Đã chuẩn bị ghế trẻ em...'}
             value={adminNote}
-            onChange={(e) => {
-              setAdminNote(e.target.value)
-              if (error) setError(null)
-            }}
-            className="w-full px-3 py-2 text-xs bg-gray-950 border border-gray-800 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500"
+            onChange={(e) => { setAdminNote(e.target.value); if (error) setError(null) }}
+            className="w-full px-3 py-2 text-xs bg-surface-bg border border-border-strong rounded-xl text-text-main placeholder-text-dim focus:outline-none focus:border-brand-primary"
           />
         </div>
 
-        {/* Footer actions */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
           <Button variant="ghost" size="sm" type="button" onClick={onClose} disabled={isSubmitting}>
             Đóng
           </Button>
@@ -203,25 +175,9 @@ export const ReservationActionModal = ({
             size="sm"
             type="submit"
             isLoading={isSubmitting}
-            icon={
-              isRejectAction || isCancelAction
-                ? XCircle
-                : isSeatedAction
-                ? Utensils
-                : isCompleteAction
-                ? Check
-                : CheckCircle2
-            }
+            icon={isRejectAction || isCancelAction ? XCircle : isSeatedAction ? Utensils : isCompleteAction ? Check : CheckCircle2}
           >
-            {isRejectAction
-              ? 'Xác nhận Từ chối'
-              : isCancelAction
-              ? 'Xác nhận Hủy đặt bàn'
-              : isSeatedAction
-              ? 'Vào bàn (Bắt đầu phục vụ)'
-              : isCompleteAction
-              ? 'Hoàn tất & Trả bàn'
-              : 'Xác nhận Duyệt bàn'}
+            {isRejectAction ? 'Từ chối' : isCancelAction ? 'Hủy đặt bàn' : isSeatedAction ? 'Vào bàn' : isCompleteAction ? 'Hoàn tất & Trả bàn' : 'Duyệt bàn'}
           </Button>
         </div>
       </form>

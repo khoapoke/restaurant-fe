@@ -1,4 +1,4 @@
-import { Lock, Unlock, Shield, User, AlertCircle } from 'lucide-react'
+import { Lock, Unlock, Shield, User } from 'lucide-react'
 import { ACCOUNT_STATUS_CONFIG, ROLE_CONFIG } from '../constants'
 import Button from '../../../../components/ui/Button'
 import { useAuth } from '../../../../contexts/AuthContext'
@@ -7,10 +7,10 @@ export const AccountTable = ({ accounts = [], onToggleLock }) => {
   const { user: currentUser } = useAuth()
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/60">
+    <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-xs">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-gray-800 text-gray-400 text-[10px] uppercase tracking-wider bg-gray-950/40">
+          <tr className="border-b border-border-subtle text-text-muted text-[10px] uppercase tracking-wider bg-surface-elevated/80">
             <th className="py-3 px-4 font-semibold w-16 text-center">ID</th>
             <th className="py-3 px-4 font-semibold">Tên đăng nhập</th>
             <th className="py-3 px-4 font-semibold">Họ tên & Email</th>
@@ -20,7 +20,7 @@ export const AccountTable = ({ accounts = [], onToggleLock }) => {
             <th className="py-3 px-4 font-semibold text-right w-28">Thao tác</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800/60">
+        <tbody className="divide-y divide-border-subtle">
           {accounts.map((acc) => {
             const id = acc.accountId || acc.ma_tai_khoan
             const username = acc.username || acc.ten_dang_nhap
@@ -39,16 +39,16 @@ export const AccountTable = ({ accounts = [], onToggleLock }) => {
             const roleCfg = ROLE_CONFIG[role] || ROLE_CONFIG.CUSTOMER
 
             return (
-              <tr key={id} className="hover:bg-gray-800/30 transition-colors">
-                <td className="py-3.5 px-4 text-center font-mono font-bold text-gray-400">
+              <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
+                <td className="py-3.5 px-4 text-center font-mono font-bold text-text-muted">
                   #{id}
                 </td>
 
                 <td className="py-3.5 px-4">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white font-mono">{username}</span>
+                    <span className="font-bold text-text-main font-mono">{username}</span>
                     {isSelf && (
-                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+                      <span className="px-1.5 py-0.5 rounded text-[9px] bg-brand-primary/10 text-brand-primary font-bold border border-brand-primary/20">
                         Bạn
                       </span>
                     )}
@@ -56,11 +56,11 @@ export const AccountTable = ({ accounts = [], onToggleLock }) => {
                 </td>
 
                 <td className="py-3.5 px-4">
-                  <p className="font-semibold text-gray-200">{fullName}</p>
-                  <p className="text-[11px] text-gray-400 truncate max-w-[180px]">{email}</p>
+                  <p className="font-semibold text-text-main">{fullName}</p>
+                  <p className="text-[11px] text-text-muted truncate max-w-[180px]">{email}</p>
                 </td>
 
-                <td className="py-3.5 px-4 font-mono text-gray-300">
+                <td className="py-3.5 px-4 font-mono text-text-body">
                   {phone}
                 </td>
 
@@ -89,7 +89,7 @@ export const AccountTable = ({ accounts = [], onToggleLock }) => {
                 <td className="py-3.5 px-4 text-right">
                   {isSelf ? (
                     <span
-                      className="text-[11px] text-gray-600 italic cursor-not-allowed"
+                      className="text-[11px] text-text-muted/60 italic cursor-not-allowed"
                       title="Không thể tự khóa tài khoản của chính mình"
                     >
                       Bảo vệ
@@ -116,4 +116,3 @@ export const AccountTable = ({ accounts = [], onToggleLock }) => {
 }
 
 export default AccountTable
-

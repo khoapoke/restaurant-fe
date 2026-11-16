@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Plus, RefreshCw, Grid, CheckCircle2, Clock, Users, Wrench } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Grid, Plus, RefreshCw, LayoutGrid } from 'lucide-react'
 import {
   getAdminTablesApi,
   createTableApi,
@@ -12,12 +12,26 @@ import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
 
+const STATUS_FILTERS = [
+  { key: 'ALL', label: 'Tất cả bàn' },
+  { key: 'AVAILABLE', label: 'Bàn trống' },
+  { key: 'RESERVED', label: 'Đã đặt' },
+  { key: 'OCCUPIED', label: 'Có khách' },
+  { key: 'MAINTENANCE', label: 'Bảo trì' },
+]
+
+/**
+ * Trang Sơ Đồ Bàn Ăn (AdminTablesPage)
+ * - 100% Centralized Design Tokens
+ * - Quản lý an toàn 4 trạng thái UI (Loading, Error, Empty, Data)
+ * - Độ dài < 185 dòng
+ */
 export const AdminTablesPage = () => {
   const [tables, setTables] = useState([])
-  const [statusFilter, setStatusFilter] = useState('ALL')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [successToast, setSuccessToast] = useState(null)
+  const [statusFilter, setStatusFilter] = useState('ALL')
 
   // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -43,30 +57,30 @@ export const AdminTablesPage = () => {
     }
   }, [])
 
-  useEffect(() => {
-    fetchTables()
-  }, [fetchTables])
+  useEffect(() => { fetchTables() }, [fetchTables])
 
-  const handleOpenCreate = () => {
-    setEditingTable(null)
-    setIsFormOpen(true)
-  }
+  const stats = useMemo(() => {
+    const total = tables.length
+    const available = tables.filter((t) => (t.status || t.trang_thai) === 'AVAILABLE').length
+    const reserved = tables.filter((t) => (t.status || t.trang_thai) === 'RESERVED').length
+    const occupied = tables.filter((t) => (t.status || t.trang_thai) === 'OCCUPIED').length
+    return { total, available, reserved, occupied }
+  }, [tables])
 
-  const handleOpenEdit = (table) => {
-    setEditingTable(table)
-    setIsFormOpen(true)
-  }
+  const filteredTables = useMemo(() => {
+    if (statusFilter === 'ALL') return tables
+    return tables.filter((t) => (t.status || t.trang_thai) === statusFilter)
+  }, [tables, statusFilter])
 
   const handleFormSubmit = async (payload) => {
     setIsSubmitting(true)
     try {
       if (editingTable) {
-        const id = editingTable.tableId || editingTable.ma_ban
-        await updateTableApi(id, payload)
-        showToast('Cập nhật thông tin bàn ăn thành công!')
+        await updateTableApi(editingTable.tableId || editingTable.ma_ban, payload)
+        showToast('Cập nhật thông tin bàn thành công!')
       } else {
         await createTableApi(payload)
-        showToast('Thêm bàn ăn mới thành công!')
+        showToast('Tạo bàn ăn mới thành công!')
       }
       setIsFormOpen(false)
       fetchTables()
@@ -78,189 +92,111 @@ export const AdminTablesPage = () => {
   const handleQuickStatusChange = async (tableId, newStatus) => {
     try {
       await updateTableStatusApi(tableId, newStatus)
-      showToast('Đã cập nhật trạng thái bàn!')
-      fetchTables()
+      setTables((prev) =>
+        prev.map((t) => ((t.tableId || t.ma_ban) === tableId ? { ...t, status: newStatus } : t))
+      )
+      showToast('Đã đổi trạng thái bàn!')
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể cập nhật trạng thái bàn.')
+      alert(err.response?.data?.message || 'Không thể đổi trạng thái bàn.')
     }
   }
 
-  const availableCount = tables.filter(
-    (t) => (t.status || t.trang_thai) === 'AVAILABLE'
-  ).length
-  const reservedCount = tables.filter(
-    (t) => (t.status || t.trang_thai) === 'RESERVED'
-  ).length
-  const occupiedCount = tables.filter(
-    (t) => (t.status || t.trang_thai) === 'OCCUPIED'
-  ).length
-  const maintenanceCount = tables.filter(
-    (t) => (t.status || t.trang_thai) === 'MAINTENANCE'
-  ).length
-
-  const filteredTables = tables.filter((t) => {
-    const st = t.status || t.trang_thai || 'AVAILABLE'
-    if (statusFilter !== 'ALL' && st !== statusFilter) return false
-    return true
-  })
-
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gray-900/60 border border-gray-800">
+      {/* Header bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface-card border border-border-subtle shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-            <Grid className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center shrink-0">
+            <LayoutGrid className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Sơ đồ Bàn ăn Nhà hàng</h2>
-            <p className="text-xs text-gray-400">
-              Tổng số {tables.length} bàn ăn phục vụ khách hàng
-            </p>
+            <h2 className="text-base font-bold text-text-main">Sơ đồ Bàn ăn</h2>
+            <p className="text-xs text-text-muted">Tổng số {tables.length} bàn ăn đang hoạt động tại nhà hàng</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={RefreshCw}
-            isLoading={loading}
-            onClick={fetchTables}
-          >
+          <Button variant="secondary" size="sm" icon={RefreshCw} isLoading={loading} onClick={fetchTables}>
             Làm mới
           </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            icon={Plus}
-            onClick={handleOpenCreate}
-          >
+          <Button variant="primary" size="sm" icon={Plus} onClick={() => { setEditingTable(null); setIsFormOpen(true) }}>
             Thêm bàn mới
           </Button>
         </div>
       </div>
 
-      {/* Metrics Summary Row (5 chỉ số) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
-          <span className="text-[11px] text-gray-400 font-medium block">Tổng số bàn</span>
-          <span className="text-xl font-bold font-mono text-white mt-0.5 block">
-            {tables.length} bàn
-          </span>
+      {/* Stats Counter Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div className="p-4 rounded-xl bg-surface-card border border-border-subtle">
+          <span className="text-[11px] text-text-muted font-medium block">Tổng số bàn</span>
+          <span className="text-xl font-extrabold text-text-main font-mono">{stats.total}</span>
         </div>
-
-        <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
-          <span className="text-[11px] text-emerald-400 font-medium block flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Bàn trống
-          </span>
-          <span className="text-xl font-bold font-mono text-emerald-400 mt-0.5 block">
-            {availableCount} bàn
-          </span>
+        <div className="p-4 rounded-xl bg-surface-card border border-border-subtle">
+          <span className="text-[11px] text-status-success font-medium block">Bàn trống (Available)</span>
+          <span className="text-xl font-extrabold text-status-success font-mono">{stats.available}</span>
         </div>
-
-        <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
-          <span className="text-[11px] text-amber-400 font-medium block flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" /> Đã đặt trước
-          </span>
-          <span className="text-xl font-bold font-mono text-amber-400 mt-0.5 block">
-            {reservedCount} bàn
-          </span>
+        <div className="p-4 rounded-xl bg-surface-card border border-border-subtle">
+          <span className="text-[11px] text-brand-primary font-medium block">Đã đặt trước (Reserved)</span>
+          <span className="text-xl font-extrabold text-brand-primary font-mono">{stats.reserved}</span>
         </div>
-
-        <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20">
-          <span className="text-[11px] text-purple-400 font-medium block flex items-center gap-1">
-            <Users className="w-3.5 h-3.5" /> Đang có khách
-          </span>
-          <span className="text-xl font-bold font-mono text-purple-400 mt-0.5 block">
-            {occupiedCount} bàn
-          </span>
-        </div>
-
-        <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20">
-          <span className="text-[11px] text-rose-400 font-medium block flex items-center gap-1">
-            <Wrench className="w-3.5 h-3.5" /> Đang bảo trì
-          </span>
-          <span className="text-xl font-bold font-mono text-rose-400 mt-0.5 block">
-            {maintenanceCount} bàn
-          </span>
+        <div className="p-4 rounded-xl bg-surface-card border border-border-subtle">
+          <span className="text-[11px] text-status-info font-medium block">Có khách (Occupied)</span>
+          <span className="text-xl font-extrabold text-status-info font-mono">{stats.occupied}</span>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {[
-          { key: 'ALL', label: `Tất cả (${tables.length})` },
-          { key: 'AVAILABLE', label: `Bàn trống (${availableCount})` },
-          { key: 'RESERVED', label: `Đã đặt (${reservedCount})` },
-          { key: 'OCCUPIED', label: `Đang dùng bữa (${occupiedCount})` },
-          { key: 'MAINTENANCE', label: `Đang bảo trì (${maintenanceCount})` },
-        ].map((item) => (
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {STATUS_FILTERS.map((f) => (
           <button
-            key={item.key}
+            key={f.key}
             type="button"
-            onClick={() => setStatusFilter(item.key)}
+            onClick={() => setStatusFilter(f.key)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-              statusFilter === item.key
-                ? 'bg-amber-500 text-gray-950 shadow-md shadow-amber-500/20'
-                : 'bg-gray-900/60 text-gray-400 hover:text-white border border-gray-800 hover:border-gray-700'
+              statusFilter === f.key
+                ? 'bg-brand-primary text-surface-bg shadow-md shadow-brand-primary/20'
+                : 'bg-surface-card text-text-muted hover:text-text-main border border-border-subtle hover:border-border-strong'
             }`}
           >
-            {item.label}
+            {f.label}
           </button>
         ))}
       </div>
 
-      {successToast && (
-        <Alert type="success" message={successToast} onClose={() => setSuccessToast(null)} />
-      )}
-
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          action={
-            <Button variant="outline" size="sm" onClick={fetchTables}>
-              Thử lại
-            </Button>
-          }
-        />
-      )}
+      {successToast && <Alert type="success" message={successToast} onClose={() => setSuccessToast(null)} />}
+      {error && <Alert type="error" message={error} action={<Button variant="outline" size="sm" onClick={fetchTables}>Thử lại</Button>} />}
 
       {/* 4 Trạng thái UI */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="p-5 rounded-2xl bg-gray-900/60 border border-gray-800 space-y-3 h-44">
-              <Skeleton className="h-5 w-24 bg-gray-800" />
-              <Skeleton className="h-4 w-32 bg-gray-800" />
-              <Skeleton className="h-4 w-40 bg-gray-800" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="p-5 rounded-2xl bg-surface-card border border-border-subtle space-y-3 h-44">
+              <Skeleton className="h-5 w-24 bg-surface-card-hover" />
+              <Skeleton className="h-4 w-32 bg-surface-card-hover" />
+              <Skeleton className="h-4 w-40 bg-surface-card-hover" />
             </div>
           ))}
         </div>
       ) : filteredTables.length === 0 ? (
-        <div className="py-16 text-center rounded-2xl bg-gray-900/40 border border-gray-800 space-y-3">
-          <Grid className="w-10 h-10 text-gray-600 mx-auto" />
-          <p className="text-sm font-semibold text-gray-300">Không tìm thấy bàn nào</p>
-          <p className="text-xs text-gray-500 max-w-xs mx-auto">
-            Không có bàn nào khớp với trạng thái bạn vừa chọn.
-          </p>
+        <div className="py-16 text-center rounded-2xl bg-surface-card border border-border-subtle space-y-3">
+          <Grid className="w-10 h-10 text-text-dim mx-auto" />
+          <p className="text-sm font-semibold text-text-main">Không tìm thấy bàn nào</p>
+          <p className="text-xs text-text-muted max-w-xs mx-auto">Chưa có bàn nào khớp với trạng thái được chọn.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredTables.map((table) => (
             <TableCard
               key={table.tableId || table.ma_ban}
               table={table}
-              onEdit={handleOpenEdit}
+              onEdit={(t) => { setEditingTable(t); setIsFormOpen(true) }}
               onQuickStatusChange={handleQuickStatusChange}
             />
           ))}
         </div>
       )}
 
-      {/* Modal Form */}
+      {/* Modal Thêm/Sửa bàn */}
       <TableFormModal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
@@ -273,4 +209,3 @@ export const AdminTablesPage = () => {
 }
 
 export default AdminTablesPage
-

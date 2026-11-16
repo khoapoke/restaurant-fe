@@ -8,7 +8,8 @@ import {
 
 /**
  * Component chọn hình ảnh món ăn trực quan (2 Tab: Local/Mẫu & URL Online)
- * Tuân thủ quy chuẩn UI & < 200 dòng.
+ * - 100% Centralized Design Tokens
+ * - Độ dài < 170 dòng
  */
 export const DishImagePicker = ({ value = '', onChange, dishName = '' }) => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -19,15 +20,11 @@ export const DishImagePicker = ({ value = '', onChange, dishName = '' }) => {
   })
   const fileInputRef = useRef(null)
 
-  // Xử lý khi user chọn file từ máy tính
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    // Cắt lấy tên file và chuẩn hóa đường dẫn cục bộ /img/<file.name>
     const fileName = file.name.trim()
-    const relativePath = `/img/${fileName}`
-    onChange(relativePath)
+    onChange(`/img/${fileName}`)
   }
 
   const isSelected = (imgFile) => {
@@ -36,21 +33,21 @@ export const DishImagePicker = ({ value = '', onChange, dishName = '' }) => {
   }
 
   return (
-    <div className="space-y-2.5 p-3.5 bg-gray-950 border border-gray-800 rounded-xl">
+    <div className="space-y-2.5 p-3.5 bg-surface-bg border border-border-subtle rounded-xl">
       {/* Tab Switcher Header */}
-      <div className="flex items-center justify-between border-b border-gray-800/80 pb-2">
-        <label className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
-          <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+      <div className="flex items-center justify-between border-b border-border-subtle pb-2">
+        <label className="text-xs font-semibold text-text-muted flex items-center gap-1.5">
+          <ImageIcon className="w-3.5 h-3.5 text-brand-primary" />
           Hình ảnh món ăn
         </label>
-        <div className="flex bg-gray-900 p-0.5 rounded-lg border border-gray-800">
+        <div className="flex bg-surface-card p-0.5 rounded-lg border border-border-subtle">
           <button
             type="button"
             onClick={() => setActiveTab('local')}
             className={`px-2.5 py-1 text-[11px] font-medium rounded-md flex items-center gap-1.5 transition-colors cursor-pointer ${
               activeTab === 'local'
-                ? 'bg-amber-500 text-gray-950 font-semibold shadow'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'bg-brand-primary text-surface-bg font-semibold shadow'
+                : 'text-text-muted hover:text-text-main'
             }`}
           >
             <FolderOpen className="w-3 h-3" />
@@ -61,8 +58,8 @@ export const DishImagePicker = ({ value = '', onChange, dishName = '' }) => {
             onClick={() => setActiveTab('url')}
             className={`px-2.5 py-1 text-[11px] font-medium rounded-md flex items-center gap-1.5 transition-colors cursor-pointer ${
               activeTab === 'url'
-                ? 'bg-amber-500 text-gray-950 font-semibold shadow'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'bg-brand-primary text-surface-bg font-semibold shadow'
+                : 'text-text-muted hover:text-text-main'
             }`}
           >
             <LinkIcon className="w-3 h-3" />
@@ -85,44 +82,43 @@ export const DishImagePicker = ({ value = '', onChange, dishName = '' }) => {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-1.5 bg-gray-900 hover:bg-gray-850 border border-dashed border-amber-500/50 hover:border-amber-400 text-amber-300 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+              className="px-3 py-1.5 bg-surface-card hover:bg-surface-card-hover border border-dashed border-brand-primary/50 hover:border-brand-primary text-brand-hover text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
             >
               <Upload className="w-3.5 h-3.5" />
               Chọn file từ máy tính...
             </button>
-            <span className="text-[11px] text-gray-400 truncate flex-1 font-mono">
+            <span className="text-[11px] text-text-muted truncate flex-1 font-mono">
               {value ? value : 'Chưa chọn file nào'}
             </span>
           </div>
 
           <div>
-            <div className="text-[11px] text-gray-400 mb-1.5 font-medium">
-              Hoặc bấm chọn nhanh 1 trong 9 ảnh mẫu sắc nét:
+            <div className="text-[11px] text-text-muted mb-1.5 font-medium">
+              Hoặc chọn nhanh 1 trong các ảnh mẫu sẵn có:
             </div>
-            <div className="grid grid-cols-5 sm:grid-cols-9 gap-1.5">
+            <div className="grid grid-cols-5 gap-2">
               {LOCAL_DISH_IMAGES.map((img) => {
-                const active = isSelected(img.file)
+                const selected = isSelected(img)
                 return (
                   <button
-                    key={img.file}
+                    key={img}
                     type="button"
-                    title={img.keywords.join(', ')}
-                    onClick={() => onChange(img.file)}
-                    className={`relative aspect-square rounded-lg overflow-hidden border transition-all cursor-pointer group ${
-                      active
-                        ? 'border-amber-500 ring-2 ring-amber-500/80 scale-105 z-10'
-                        : 'border-gray-800 hover:border-gray-600 opacity-70 hover:opacity-100'
+                    onClick={() => onChange(img)}
+                    className={`relative rounded-lg overflow-hidden border aspect-video group cursor-pointer transition-all ${
+                      selected
+                        ? 'border-brand-primary ring-2 ring-brand-primary/50'
+                        : 'border-border-subtle hover:border-border-strong opacity-80 hover:opacity-100'
                     }`}
                   >
                     <img
-                      src={img.file}
-                      alt={img.keywords[0]}
-                      onError={(e) => handleImageError(e)}
+                      src={img}
+                      alt={img}
+                      onError={handleImageError}
                       className="w-full h-full object-cover"
                     />
-                    {active && (
-                      <div className="absolute inset-0 bg-amber-500/30 backdrop-blur-[0.5px] flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white drop-shadow-md stroke-[2.5]" />
+                    {selected && (
+                      <div className="absolute inset-0 bg-brand-primary/30 flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white drop-shadow" />
                       </div>
                     )}
                   </button>
@@ -133,44 +129,47 @@ export const DishImagePicker = ({ value = '', onChange, dishName = '' }) => {
         </div>
       )}
 
-      {/* Tab 2: Dán URL ngoài (Cloudinary, Unsplash, CDN...) */}
+      {/* Tab 2: Dán URL hình ảnh */}
       {activeTab === 'url' && (
-        <div className="space-y-1.5 pt-0.5">
-          <input
-            type="text"
-            placeholder="Dán link ảnh online (vd: https://images.unsplash.com/...)"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 text-xs bg-gray-900 border border-gray-800 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
-          />
-          <p className="text-[10px] text-gray-500">
-            Hỗ trợ URL ảnh từ Unsplash, Cloudinary, Imgur hoặc máy chủ CDN bất kỳ.
+        <div className="space-y-2 pt-0.5">
+          <div className="flex gap-2">
+            <input
+              type="url"
+              placeholder="https://example.com/hinh-anh-mon-an.jpg"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="flex-1 px-3 py-1.5 text-xs bg-surface-card border border-border-strong rounded-lg text-text-main placeholder-text-dim focus:outline-none focus:border-brand-primary font-mono"
+            />
+            {value && (
+              <button
+                type="button"
+                onClick={() => onChange('')}
+                className="px-2 py-1 text-xs text-text-muted hover:text-status-error cursor-pointer"
+              >
+                Xóa URL
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-text-dim">
+            Hỗ trợ link ảnh trực tiếp từ Unsplash, Imgur, Cloudinary...
           </p>
         </div>
       )}
 
       {/* Preview ảnh hiện tại */}
-      <div className="flex items-center gap-3 pt-2.5 border-t border-gray-900">
-        <div className="w-12 h-12 rounded-lg border border-gray-800 overflow-hidden bg-gray-900 shrink-0">
+      {value && (
+        <div className="flex items-center gap-3 pt-2 border-t border-border-subtle">
+          <span className="text-[11px] text-text-muted">Ảnh đang chọn:</span>
           <img
-            src={resolveDishImage(value, null, dishName)}
+            src={resolveDishImage(value, { dishName })}
             alt="Preview"
-            onError={(e) => handleImageError(e)}
-            className="w-full h-full object-cover"
+            onError={handleImageError}
+            className="w-12 h-12 rounded-lg object-cover border border-border-strong shadow"
           />
         </div>
-        <div className="flex-1 min-w-0 text-[11px]">
-          <div className="text-gray-300 font-medium truncate">
-            {value ? `Đã chọn: ${value}` : 'Sử dụng ảnh mẫu tự động theo tên món'}
-          </div>
-          <div className="text-gray-500 text-[10px]">
-            Đường dẫn này sẽ được lưu vào CSDL và áp dụng đồng bộ trên toàn hệ thống.
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
 
 export default DishImagePicker
-

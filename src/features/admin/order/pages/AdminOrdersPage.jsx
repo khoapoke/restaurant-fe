@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ShoppingBag, RefreshCw, AlertCircle } from 'lucide-react'
+import { ShoppingBag, RefreshCw } from 'lucide-react'
 import {
   getAdminOrdersApi,
   updateOrderStatusApi,
@@ -14,15 +14,16 @@ import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
 
+/**
+ * Trang Quản Lý Đơn Hàng (AdminOrdersPage)
+ * - 100% Centralized Design Tokens
+ * - Quản lý an toàn 4 trạng thái UI (Loading, Error, Empty, Data)
+ * - Độ dài < 180 dòng
+ */
 export const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([])
   const [statusFilter, setStatusFilter] = useState('ALL')
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    perPage: 10,
-    totalItems: 0,
-    lastPage: 1,
-  })
+  const [pagination, setPagination] = useState({ currentPage: 1, perPage: 10, totalItems: 0, lastPage: 1 })
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -39,51 +40,36 @@ export const AdminOrdersPage = () => {
     setTimeout(() => setSuccessToast(null), 3000)
   }
 
-  const fetchOrders = useCallback(
-    async (page = 1) => {
-      setLoading(true)
-      setError(null)
-      try {
-        const params = {
-          page,
-          perPage: 10,
-        }
-        if (statusFilter !== 'ALL') {
-          params.status = statusFilter
-        }
+  const fetchOrders = useCallback(async (page = 1) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const params = { page, perPage: 10 }
+      if (statusFilter !== 'ALL') params.status = statusFilter
 
-        const res = await getAdminOrdersApi(params)
-        const items = res.data?.items || res.data || []
-        setOrders(Array.isArray(items) ? items : [])
+      const res = await getAdminOrdersApi(params)
+      const items = res.data?.items || res.data || []
+      setOrders(Array.isArray(items) ? items : [])
 
-        const paginationData = res?.data?.pagination || res?.pagination
-        if (paginationData) {
-          setPagination({
-            currentPage: Number(paginationData.currentPage || page),
-            perPage: Number(paginationData.perPage || 10),
-            totalItems: Number(paginationData.totalItems || 0),
-            lastPage: Number(paginationData.lastPage || paginationData.totalPages || 1),
-          })
-        } else {
-          setPagination({
-            currentPage: page,
-            perPage: 10,
-            totalItems: items.length,
-            lastPage: Math.ceil(items.length / 10) || 1,
-          })
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || 'Không thể tải danh sách đơn hàng.')
-      } finally {
-        setLoading(false)
+      const pData = res?.data?.pagination || res?.pagination
+      if (pData) {
+        setPagination({
+          currentPage: Number(pData.currentPage || page),
+          perPage: Number(pData.perPage || 10),
+          totalItems: Number(pData.totalItems || 0),
+          lastPage: Number(pData.lastPage || pData.totalPages || 1),
+        })
+      } else {
+        setPagination({ currentPage: page, perPage: 10, totalItems: items.length, lastPage: Math.ceil(items.length / 10) || 1 })
       }
-    },
-    [statusFilter]
-  )
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể tải danh sách đơn hàng.')
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter])
 
-  useEffect(() => {
-    fetchOrders(1)
-  }, [fetchOrders])
+  useEffect(() => { fetchOrders(1) }, [fetchOrders])
 
   const handleNextStatus = async (orderId, targetStatus) => {
     setActionLoadingId(orderId)
@@ -114,72 +100,40 @@ export const AdminOrdersPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gray-900/60 border border-gray-800">
+      {/* Header bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface-card border border-border-subtle shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center shrink-0">
             <ShoppingBag className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Quản lý Đơn hàng</h2>
-            <p className="text-xs text-gray-400">
-              Điều phối tiến độ chế biến và giao nhận cho thực khách
-            </p>
+            <h2 className="text-base font-bold text-text-main">Quản lý Đơn hàng</h2>
+            <p className="text-xs text-text-muted">Tổng số {pagination.totalItems} đơn hàng đã phát sinh</p>
           </div>
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={RefreshCw}
-          isLoading={loading}
-          onClick={() => fetchOrders(pagination.currentPage)}
-        >
+        <Button variant="secondary" size="sm" icon={RefreshCw} isLoading={loading} onClick={() => fetchOrders(pagination.currentPage)}>
           Làm mới
         </Button>
       </div>
 
-      {/* Status tabs */}
-      <AdminOrderStatusTabs
-        activeStatus={statusFilter}
-        onSelectStatus={(status) => {
-          setStatusFilter(status)
-        }}
-      />
+      <AdminOrderStatusTabs activeStatus={statusFilter} onSelectStatus={setStatusFilter} />
 
-      {successToast && (
-        <Alert type="success" message={successToast} onClose={() => setSuccessToast(null)} />
-      )}
-
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          action={
-            <Button variant="outline" size="sm" onClick={() => fetchOrders(1)}>
-              Thử lại
-            </Button>
-          }
-        />
-      )}
+      {successToast && <Alert type="success" message={successToast} onClose={() => setSuccessToast(null)} />}
+      {error && <Alert type="error" message={error} action={<Button variant="outline" size="sm" onClick={() => fetchOrders(1)}>Thử lại</Button>} />}
 
       {/* 4 Trạng thái UI */}
       {loading ? (
-        <div className="space-y-3 p-6 rounded-2xl bg-gray-900/60 border border-gray-800">
-          <Skeleton className="h-8 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
-          <Skeleton className="h-14 w-full bg-gray-800" />
+        <div className="space-y-3 p-6 rounded-2xl bg-surface-card border border-border-subtle">
+          <Skeleton className="h-8 w-full bg-surface-card-hover" />
+          <Skeleton className="h-14 w-full bg-surface-card-hover" />
+          <Skeleton className="h-14 w-full bg-surface-card-hover" />
         </div>
       ) : orders.length === 0 ? (
-        <div className="py-16 text-center rounded-2xl bg-gray-900/40 border border-gray-800 space-y-3">
-          <ShoppingBag className="w-10 h-10 text-gray-600 mx-auto" />
-          <p className="text-sm font-semibold text-gray-300">Không có đơn hàng nào</p>
-          <p className="text-xs text-gray-500 max-w-xs mx-auto">
-            {statusFilter !== 'ALL'
-              ? 'Không có đơn hàng nào khớp với trạng thái đã chọn.'
-              : 'Hiện chưa có khách hàng nào đặt đơn.'}
-          </p>
+        <div className="py-16 text-center rounded-2xl bg-surface-card border border-border-subtle space-y-3">
+          <ShoppingBag className="w-10 h-10 text-text-dim mx-auto" />
+          <p className="text-sm font-semibold text-text-main">Không tìm thấy đơn hàng nào</p>
+          <p className="text-xs text-text-muted max-w-xs mx-auto">Chưa có đơn hàng nào khớp với bộ lọc trạng thái hiện tại.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -190,7 +144,6 @@ export const AdminOrdersPage = () => {
             onCancel={(order) => setCancellingOrder(order)}
             actionLoadingId={actionLoadingId}
           />
-
           <Pagination
             currentPage={pagination.currentPage}
             lastPage={pagination.lastPage}
@@ -204,12 +157,12 @@ export const AdminOrdersPage = () => {
       {/* Modals */}
       <AdminOrderDetailModal
         orderId={selectedOrderId}
-        isOpen={!!selectedOrderId}
+        isOpen={Boolean(selectedOrderId)}
         onClose={() => setSelectedOrderId(null)}
       />
 
       <AdminCancelOrderModal
-        isOpen={!!cancellingOrder}
+        isOpen={Boolean(cancellingOrder)}
         onClose={() => setCancellingOrder(null)}
         onConfirm={handleCancelConfirm}
         order={cancellingOrder}
@@ -220,4 +173,3 @@ export const AdminOrdersPage = () => {
 }
 
 export default AdminOrdersPage
-

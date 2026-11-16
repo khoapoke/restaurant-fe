@@ -5,6 +5,11 @@ import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import { FolderTree } from 'lucide-react'
 
+/**
+ * Modal Tạo & Chỉnh Sửa Danh Mục (CategoryFormModal)
+ * - 100% Centralized Design Tokens
+ * - Độ dài < 110 dòng
+ */
 export const CategoryFormModal = ({
   isOpen,
   onClose,
@@ -12,10 +17,7 @@ export const CategoryFormModal = ({
   initialData = null,
   isSubmitting = false,
 }) => {
-  const [formData, setFormData] = useState({
-    categoryName: '',
-    description: '',
-  })
+  const [formData, setFormData] = useState({ categoryName: '', description: '' })
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState(null)
 
@@ -43,14 +45,8 @@ export const CategoryFormModal = ({
     setServerError(null)
 
     const newErrors = {}
-    if (!formData.categoryName.trim()) {
-      newErrors.categoryName = 'Vui lòng nhập tên danh mục'
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
+    if (!formData.categoryName.trim()) newErrors.categoryName = 'Vui lòng nhập tên danh mục'
+    if (Object.keys(newErrors).length > 0) return setErrors(newErrors)
 
     try {
       await onSubmit({
@@ -70,9 +66,7 @@ export const CategoryFormModal = ({
       maxWidth="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {serverError && (
-          <Alert type="error" message={serverError} onClose={() => setServerError(null)} />
-        )}
+        {serverError && <Alert type="error" message={serverError} onClose={() => setServerError(null)} />}
 
         <Input
           label="Tên danh mục"
@@ -85,18 +79,18 @@ export const CategoryFormModal = ({
         />
 
         <div className="space-y-1">
-          <label className="block text-xs font-semibold text-gray-300">Mô tả (tùy chọn)</label>
+          <label className="block text-xs font-semibold text-text-muted">Mô tả (tùy chọn)</label>
           <textarea
             name="description"
             rows={3}
             placeholder="Mô tả ngắn gọn về nhóm món ăn này..."
             value={formData.description}
             onChange={handleChange}
-            className="w-full px-3 py-2 text-xs bg-gray-950 border border-gray-800 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
+            className="w-full px-3 py-2 text-xs bg-surface-bg border border-border-strong rounded-xl text-text-main placeholder-text-dim focus:outline-none focus:border-brand-primary transition-colors"
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
           <Button variant="ghost" size="sm" type="button" onClick={onClose}>
             Hủy bỏ
           </Button>
@@ -116,4 +110,3 @@ export const CategoryFormModal = ({
 }
 
 export default CategoryFormModal
-
