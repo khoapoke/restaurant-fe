@@ -8,6 +8,7 @@ import {
   Grid,
   CalendarCheck,
   Users,
+  Headphones,
   ChevronLeft,
   ChevronRight,
   Shield,
@@ -46,6 +47,7 @@ const navGroups = [
     title: 'Hệ thống',
     items: [
       { to: '/admin/accounts', icon: Users, label: 'Quản lý Người dùng' },
+      { to: '/admin/chats', icon: Headphones, label: 'Trực Chat & Hỗ trợ' },
     ],
   },
 ]

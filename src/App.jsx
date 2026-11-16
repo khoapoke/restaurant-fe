@@ -13,6 +13,7 @@ import CustomerCheckoutPage from './features/customer/order/pages/CustomerChecko
 import CustomerOrdersPage from './features/customer/order/pages/CustomerOrdersPage'
 import CustomerReservationPage from './features/customer/reservation/pages/CustomerReservationPage'
 import HomePage from './features/customer/Home/pages/HomePage'
+import CustomerChatWidget from './features/customer/chat/components/CustomerChatWidget'
 
 // Admin Module Components & Layout (Code-split with React.lazy để tối ưu bundle)
 import AdminRoute from './features/admin/layout/routes/AdminRoute'
@@ -26,6 +27,7 @@ const AdminPaymentsPage = lazy(() => import('./features/admin/order/pages/AdminP
 const AdminTablesPage = lazy(() => import('./features/admin/table/pages/AdminTablesPage'))
 const AdminReservationsPage = lazy(() => import('./features/admin/table/pages/AdminReservationsPage'))
 const AdminAccountsPage = lazy(() => import('./features/admin/account/pages/AdminAccountsPage'))
+const AdminChatPage = lazy(() => import('./features/admin/chat/pages/AdminChatPage'))
 
 function App() {
   return (
@@ -66,11 +68,15 @@ function App() {
               <Route path="tables" element={<AdminTablesPage />} />
               <Route path="reservations" element={<AdminReservationsPage />} />
               <Route path="accounts" element={<AdminAccountsPage />} />
+              <Route path="chats" element={<AdminChatPage />} />
             </Route>
 
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+
+          {/* Trợ lý ảo AI & Chatbot CSKH Khách hàng */}
+          <CustomerChatWidget />
         </BrowserRouter>
       </CartProvider>
     </AuthProvider>
