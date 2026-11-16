@@ -1,4 +1,4 @@
-import { UtensilsCrossed, Sparkles, Award, HeartHandshake } from 'lucide-react'
+import { UtensilsCrossed, Award, HeartHandshake } from 'lucide-react'
 import RegisterForm from '../components/RegisterForm'
 
 export const RegisterPage = () => {
@@ -22,7 +22,7 @@ export const RegisterPage = () => {
         {/* Hero Content */}
         <div className="relative z-10 max-w-md space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium">
-            <Sparkles className="w-3.5 h-3.5" />
+            <Award className="w-3.5 h-3.5" />
             <span>Thành viên ưu đãi đặc quyền</span>
           </div>
 

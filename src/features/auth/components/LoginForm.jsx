@@ -129,7 +129,7 @@ export const LoginForm = () => {
         }
       />
 
-      <div className="flex items-center justify-between text-xs text-gray-400">
+      <div className="flex items-center justify-between text-xs text-text-muted">
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <input
             type="checkbox"
@@ -137,11 +137,16 @@ export const LoginForm = () => {
             checked={formData.rememberMe}
             onChange={handleChange}
             disabled={loading}
-            className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-amber-500 focus:ring-amber-500/30 accent-amber-500 cursor-pointer"
+            className="w-4 h-4 rounded border-border-subtle bg-surface-input text-brand-primary focus:ring-brand-primary/30 accent-brand-primary cursor-pointer"
           />
-          <span>Ghi nhớ đăng nhập</span>
+          <span className="text-text-body">Ghi nhớ đăng nhập</span>
         </label>
-        <span className="text-gray-500">Mặc định 30 ngày</span>
+        <Link
+          to="/forgot-password"
+          className="text-brand-primary hover:text-brand-hover font-medium transition-colors hover:underline"
+        >
+          Quên mật khẩu?
+        </Link>
       </div>
 
       <Button
@@ -154,11 +159,11 @@ export const LoginForm = () => {
         Đăng nhập
       </Button>
 
-      <p className="text-center text-xs text-gray-400 mt-2">
+      <p className="text-center text-xs text-text-muted mt-2">
         Chưa có tài khoản?{' '}
         <Link
           to="/register"
-          className="text-amber-400 hover:text-amber-300 font-semibold underline underline-offset-4"
+          className="text-brand-primary hover:text-brand-hover font-semibold underline underline-offset-4"
         >
           Đăng ký tài khoản mới
         </Link>

@@ -1,4 +1,4 @@
-import { UtensilsCrossed, Sparkles, ShieldCheck, Clock } from 'lucide-react'
+import { UtensilsCrossed, Award, ShieldCheck, Clock } from 'lucide-react'
 import LoginForm from '../components/LoginForm'
 
 export const LoginPage = () => {
@@ -24,7 +24,7 @@ export const LoginPage = () => {
         {/* Hero Content */}
         <div className="relative z-10 max-w-lg space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium">
-            <Sparkles className="w-3.5 h-3.5" />
+            <Award className="w-3.5 h-3.5" />
             <span>Trải nghiệm ẩm thực chuẩn sao</span>
           </div>
 

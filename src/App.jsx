@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
+import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage'
 import CustomerProfilePage from './features/customer/profile/pages/CustomerProfilePage'
 import CustomerMenuPage from './features/customer/menu/pages/CustomerMenuPage'
 import DishDetailPage from './features/customer/menu/pages/DishDetailPage'
@@ -36,6 +37,8 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<Navigate to="/forgot-password" replace />} />
             <Route path="/profile" element={<CustomerProfilePage />} />
             <Route path="/menu" element={<CustomerMenuPage />} />
             <Route path="/menu/:dishId" element={<DishDetailPage />} />
