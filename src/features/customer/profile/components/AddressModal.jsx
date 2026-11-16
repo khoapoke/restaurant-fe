@@ -4,19 +4,23 @@ import Input from '../../../../components/ui/Input'
 import Button from '../../../../components/ui/Button'
 import { User, Phone, MapPin } from 'lucide-react'
 
-export const AddressModal = ({
+/**
+ * Modal Thêm / Chỉnh Sửa Địa Chỉ (AddressModal)
+ * - Đồng bộ Centralized Design Tokens
+ * - Độ dài < 135 dòng
+ */
+export default function AddressModal({
   isOpen,
   onClose,
   onSave,
   initialData = null,
-}) => {
+}) {
   const [formData, setFormData] = useState({
     recipientName: '',
     recipientPhone: '',
     fullAddress: '',
     isDefault: false,
   })
-
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
@@ -25,7 +29,7 @@ export const AddressModal = ({
         recipientName: initialData.recipientName || '',
         recipientPhone: initialData.recipientPhone || '',
         fullAddress: initialData.fullAddress || '',
-        isDefault: !!initialData.isDefault,
+        isDefault: Boolean(initialData.isDefault),
       })
     } else {
       setFormData({
@@ -44,30 +48,21 @@ export const AddressModal = ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }))
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }))
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }))
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
     const errs = {}
-    if (!formData.recipientName.trim()) {
-      errs.recipientName = 'Vui lòng nhập tên người nhận'
-    }
+    if (!formData.recipientName.trim()) errs.recipientName = 'Vui lòng nhập tên người nhận'
     if (!formData.recipientPhone.trim()) {
       errs.recipientPhone = 'Vui lòng nhập số điện thoại người nhận'
-    } else if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(formData.recipientPhone.trim())) {
+    } else if (!/^(0|\+84)[0-9]{9,10}$/.test(formData.recipientPhone.trim())) {
       errs.recipientPhone = 'Số điện thoại không đúng định dạng (10 số)'
     }
-    if (!formData.fullAddress.trim()) {
-      errs.fullAddress = 'Vui lòng nhập địa chỉ chi tiết'
-    }
+    if (!formData.fullAddress.trim()) errs.fullAddress = 'Vui lòng nhập địa chỉ chi tiết'
 
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
-    }
+    if (Object.keys(errs).length > 0) return setErrors(errs)
 
     onSave({
       addressId: initialData?.addressId || `addr_${Date.now()}`,
@@ -121,19 +116,19 @@ export const AddressModal = ({
         />
 
         <div className="pt-2">
-          <label className="flex items-center gap-2.5 text-xs text-gray-300 cursor-pointer select-none">
+          <label className="flex items-center gap-2.5 text-xs text-text-muted hover:text-text-main cursor-pointer select-none">
             <input
               type="checkbox"
               name="isDefault"
               checked={formData.isDefault}
               onChange={handleChange}
-              className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-amber-500 focus:ring-amber-500/30 accent-amber-500 cursor-pointer"
+              className="w-4 h-4 rounded border-border-strong bg-surface-bg text-brand-primary focus:ring-brand-primary/30 accent-brand-primary cursor-pointer"
             />
             <span>Đặt làm địa chỉ giao hàng mặc định</span>
           </label>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
           <Button variant="ghost" size="md" onClick={onClose}>
             Hủy
           </Button>
@@ -145,5 +140,3 @@ export const AddressModal = ({
     </Modal>
   )
 }
-
-export default AddressModal

@@ -1,26 +1,29 @@
-import { ShieldAlert, Heart, Check } from 'lucide-react'
+import { ShieldAlert, Heart, Check, AlertCircle } from 'lucide-react'
 import { ALLERGENS, DIETARY_PREFERENCES } from '../constants'
 
 /**
- * Tab 2: Quản lý Dị ứng & Sở thích dinh dưỡng
+ * Tab 2: Quản lý Dị ứng & Sở thích dinh dưỡng (AllergiesPreferencesTab)
+ * - Tinh tế Fine-Dining & Đồng bộ Centralized Design Tokens
+ * - 0 icon Sparkles
+ * - Độ dài < 120 dòng
  */
-export const AllergiesPreferencesTab = ({
+export default function AllergiesPreferencesTab({
   allergies = [],
   dietaryPreferences = [],
   onToggleAllergy,
   onTogglePreference,
   disabled = false,
-}) => {
+}) {
   return (
     <div className="space-y-8">
-      {/* Phần 1: Cảnh báo Dị ứng thực phẩm */}
+      {/* Cảnh báo Dị ứng thực phẩm */}
       <div className="space-y-4">
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
-          <ShieldAlert className="w-5 h-5 shrink-0 text-amber-400 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-status-warning/10 border border-status-warning/20 text-brand-primary">
+          <AlertCircle className="w-5 h-5 shrink-0 text-brand-primary mt-0.5" />
           <div className="text-xs space-y-1">
-            <h4 className="font-semibold text-amber-300 text-sm">Cảnh báo an toàn thực phẩm</h4>
-            <p className="text-gray-300 leading-relaxed">
-              Hãy chọn các thành phần bạn bị dị ứng. Hệ thống sẽ hiển thị cảnh báo đỏ khi bạn xem món ăn trong thực đơn và bếp trưởng sẽ chủ động kiểm tra kỹ trước khi chế biến.
+            <h4 className="font-bold text-text-main text-sm">Cảnh báo an toàn ẩm thực</h4>
+            <p className="text-text-muted leading-relaxed">
+              Hãy đánh dấu các nguyên liệu bạn bị dị ứng. Khi duyệt thực đơn, các món chứa nguyên liệu này sẽ tự động gắn nhãn cảnh báo đỏ và bếp trưởng sẽ kiểm tra nghiêm ngặt khi chế biến.
             </p>
           </div>
         </div>
@@ -34,44 +37,40 @@ export const AllergiesPreferencesTab = ({
                 type="button"
                 disabled={disabled}
                 onClick={() => onToggleAllergy(item.value)}
-                className={`flex flex-col text-left p-3.5 rounded-xl border transition-all duration-150 cursor-pointer select-none relative
-                  ${
-                    isSelected
-                      ? 'bg-amber-950/40 border-amber-500 text-white shadow-md shadow-amber-500/10 ring-1 ring-amber-500/50'
-                      : 'bg-gray-900/60 border-gray-800 text-gray-300 hover:border-gray-700 hover:bg-gray-800/40'
-                  }
-                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
+                className={`flex flex-col text-left p-3.5 rounded-xl border transition-all duration-150 cursor-pointer select-none relative ${
+                  isSelected
+                    ? 'bg-brand-primary/10 border-brand-primary text-text-main shadow-sm ring-1 ring-brand-primary/30'
+                    : 'bg-surface-bg border-border-subtle text-text-muted hover:border-border-strong hover:text-text-main'
+                } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-sm font-semibold text-gray-100">{item.label}</span>
+                  <span className="text-xs font-bold text-text-main">{item.label}</span>
                   <div
-                    className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors shrink-0
-                      ${
-                        isSelected
-                          ? 'bg-amber-500 border-amber-400 text-gray-950 font-bold'
-                          : 'border-gray-700 bg-gray-800/80'
-                      }`}
+                    className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                      isSelected
+                        ? 'bg-brand-primary border-brand-primary text-surface-bg font-bold'
+                        : 'border-border-strong bg-surface-card'
+                    }`}
                   >
-                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
                 </div>
-                <p className="text-[11px] text-gray-400 leading-normal">{item.desc}</p>
+                <p className="text-[10px] text-text-muted leading-normal">{item.desc}</p>
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* Phần 2: Sở thích dinh dưỡng */}
-      <div className="space-y-4 pt-4 border-t border-gray-800/80">
+      {/* Sở thích dinh dưỡng & Chế độ ăn */}
+      <div className="space-y-4 pt-4 border-t border-border-subtle">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Heart className="w-4 h-4 text-emerald-400" />
-            Sở thích ăn uống & Dinh dưỡng
+          <h3 className="text-base font-serif font-bold text-text-main flex items-center gap-2">
+            <Heart className="w-4 h-4 text-status-success" />
+            <span>Sở thích ăn uống & Dinh dưỡng</span>
           </h3>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Nhà hàng sẽ ưu tiên gắn nhãn và gợi ý các món ăn phù hợp với chế độ ăn kiêng của bạn.
+          <p className="text-xs text-text-muted mt-1 leading-relaxed">
+            Nhà hàng sẽ ưu tiên gắn nhãn và AI đề xuất các món ăn phù hợp với chế độ ăn uống của bạn.
           </p>
         </div>
 
@@ -84,29 +83,25 @@ export const AllergiesPreferencesTab = ({
                 type="button"
                 disabled={disabled}
                 onClick={() => onTogglePreference(item.value)}
-                className={`flex flex-col text-left p-3.5 rounded-xl border transition-all duration-150 cursor-pointer select-none
-                  ${
-                    isSelected
-                      ? 'bg-emerald-950/40 border-emerald-500 text-white shadow-md shadow-emerald-500/10 ring-1 ring-emerald-500/50'
-                      : 'bg-gray-900/60 border-gray-800 text-gray-300 hover:border-gray-700 hover:bg-gray-800/40'
-                  }
-                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
+                className={`flex flex-col text-left p-3.5 rounded-xl border transition-all duration-150 cursor-pointer select-none ${
+                  isSelected
+                    ? 'bg-status-success/10 border-status-success text-text-main shadow-sm ring-1 ring-status-success/30'
+                    : 'bg-surface-bg border-border-subtle text-text-muted hover:border-border-strong hover:text-text-main'
+                } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-xs font-semibold text-gray-100">{item.label}</span>
+                  <span className="text-xs font-semibold text-text-main">{item.label}</span>
                   <div
-                    className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0
-                      ${
-                        isSelected
-                          ? 'bg-emerald-500 border-emerald-400 text-gray-950 font-bold'
-                          : 'border-gray-700 bg-gray-800/80'
-                      }`}
+                    className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                      isSelected
+                        ? 'bg-status-success border-status-success text-surface-bg font-bold'
+                        : 'border-border-strong bg-surface-card'
+                    }`}
                   >
                     {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
                 </div>
-                <p className="text-[10px] text-gray-400 leading-normal">{item.desc}</p>
+                <p className="text-[10px] text-text-muted leading-normal">{item.desc}</p>
               </button>
             )
           })}
@@ -115,5 +110,3 @@ export const AllergiesPreferencesTab = ({
     </div>
   )
 }
-
-export default AllergiesPreferencesTab

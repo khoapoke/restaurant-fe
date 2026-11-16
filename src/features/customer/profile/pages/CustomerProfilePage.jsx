@@ -1,16 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import {
-  User,
-  ShieldAlert,
-  MapPin,
-  Save,
-  ArrowLeft,
-  RefreshCw,
-  AlertTriangle,
-} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Save, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { getProfileApi, updateProfileApi } from '../services/profileService'
+import HomeHeader from '../../Home/components/HomeHeader'
+import HomeFooter from '../../Home/components/HomeFooter'
+import ProfileOverviewCard from '../components/ProfileOverviewCard'
 import ProfileInfoTab from '../components/ProfileInfoTab'
 import AllergiesPreferencesTab from '../components/AllergiesPreferencesTab'
 import SavedAddressesTab from '../components/SavedAddressesTab'
@@ -18,70 +13,59 @@ import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
 
-export const CustomerProfilePage = () => {
+/**
+ * Trang Hồ Sơ Cá Nhân & Dị Ứng (CustomerProfilePage)
+ * - Tinh tế Fine-Dining & Bố cục 2 cột bất đối xứng (4/12 & 8/12)
+ * - Đồng bộ Navbar HomeHeader / HomeFooter
+ * - Nút Lưu thay đổi thông minh & cảnh báo an toàn ẩm thực
+ * - Độ dài < 175 dòng
+ */
+export default function CustomerProfilePage() {
   const navigate = useNavigate()
   const { isAuthenticated, role, updateUserProfile } = useAuth()
 
-  // Điều hướng nếu chưa đăng nhập hoặc không phải CUSTOMER
   useEffect(() => {
     if (!isAuthenticated) navigate('/login')
     else if (role === 'ADMIN') navigate('/admin')
   }, [isAuthenticated, role, navigate])
 
-  const [activeTab, setActiveTab] = useState('info') // 'info' | 'allergies' | 'addresses'
+  const [activeTab, setActiveTab] = useState('info')
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [alertInfo, setAlertInfo] = useState(null) // { type: 'success' | 'error', message }
+  const [alertInfo, setAlertInfo] = useState(null)
   const [fieldErrors, setFieldErrors] = useState({})
+  const [isDirty, setIsDirty] = useState(false)
 
-  // Form State
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    fullName: '',
-    phoneNumber: '',
-    birthDate: '',
-    defaultAddress: '',
+    username: '', email: '', fullName: '', phoneNumber: '', birthDate: '', defaultAddress: '',
   })
   const [savedAddresses, setSavedAddresses] = useState([])
   const [allergies, setAllergies] = useState([])
   const [dietaryPreferences, setDietaryPreferences] = useState([])
-  const [isDirty, setIsDirty] = useState(false)
 
-  // Fetch dữ liệu hồ sơ
   const fetchProfile = useCallback(async () => {
-    setLoading(true)
-    setFetchError(null)
+    setLoading(true); setFetchError(null)
     try {
-      const response = await getProfileApi()
-      const data = response.data || {}
+      const res = await getProfileApi()
+      const d = res.data?.data || res.data || {}
       setFormData({
-        username: data.username || '',
-        email: data.email || '',
-        fullName: data.fullName || '',
-        phoneNumber: data.phoneNumber || '',
-        birthDate: data.birthDate || '',
-        defaultAddress: data.defaultAddress || '',
+        username: d.username || '', email: d.email || '', fullName: d.fullName || '',
+        phoneNumber: d.phoneNumber || '', birthDate: d.birthDate || '', defaultAddress: d.defaultAddress || '',
       })
-      setSavedAddresses(data.savedAddresses || [])
-      setAllergies(data.allergies || [])
-      setDietaryPreferences(data.dietaryPreferences || [])
+      setSavedAddresses(d.savedAddresses || [])
+      setAllergies(d.allergies || [])
+      setDietaryPreferences(d.dietaryPreferences || [])
       setIsDirty(false)
     } catch (err) {
-      setFetchError(
-        err.response?.data?.message || 'Không thể tải thông tin hồ sơ. Vui lòng thử lại sau.'
-      )
-    } finally {
-      setLoading(false)
-    }
+      setFetchError(err.response?.data?.message || 'Không thể tải thông tin hồ sơ.')
+    } finally { setLoading(false) }
   }, [])
 
   useEffect(() => {
     if (isAuthenticated) fetchProfile()
   }, [isAuthenticated, fetchProfile])
 
-  // Handlers cho Tab 1
   const handleInfoChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -89,307 +73,129 @@ export const CustomerProfilePage = () => {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: null }))
   }
 
-  // Handlers cho Tab 2
   const handleToggleAllergy = (val) => {
-    setAllergies((prev) =>
-      prev.includes(val) ? prev.filter((item) => item !== val) : [...prev, val]
-    )
+    setAllergies((prev) => prev.includes(val) ? prev.filter((i) => i !== val) : [...prev, val])
     setIsDirty(true)
   }
 
   const handleTogglePreference = (val) => {
-    setDietaryPreferences((prev) =>
-      prev.includes(val) ? prev.filter((item) => item !== val) : [...prev, val]
-    )
+    setDietaryPreferences((prev) => prev.includes(val) ? prev.filter((i) => i !== val) : [...prev, val])
     setIsDirty(true)
   }
 
-  // Handlers cho Tab 3
   const handleAddAddress = (newAddr) => {
     setSavedAddresses((prev) => {
-      let list = [...prev]
-      if (newAddr.isDefault) {
-        list = list.map((a) => ({ ...a, isDefault: false }))
-        setFormData((f) => ({ ...f, defaultAddress: newAddr.fullAddress }))
-      }
+      const list = newAddr.isDefault ? prev.map((a) => ({ ...a, isDefault: false })) : [...prev]
+      if (newAddr.isDefault) setFormData((f) => ({ ...f, defaultAddress: newAddr.fullAddress }))
       return [...list, newAddr]
     })
     setIsDirty(true)
   }
 
-  const handleUpdateAddress = (updatedAddr) => {
-    setSavedAddresses((prev) => {
-      let list = prev.map((a) => (a.addressId === updatedAddr.addressId ? updatedAddr : a))
-      if (updatedAddr.isDefault) {
-        list = list.map((a) =>
-          a.addressId === updatedAddr.addressId ? a : { ...a, isDefault: false }
-        )
-        setFormData((f) => ({ ...f, defaultAddress: updatedAddr.fullAddress }))
-      }
-      return list
-    })
+  const handleUpdateAddress = (addr) => {
+    setSavedAddresses((prev) => prev.map((a) => a.addressId === addr.addressId ? addr : (addr.isDefault ? { ...a, isDefault: false } : a)))
+    if (addr.isDefault) setFormData((f) => ({ ...f, defaultAddress: addr.fullAddress }))
     setIsDirty(true)
   }
 
-  const handleDeleteAddress = (addressId) => {
-    setSavedAddresses((prev) => prev.filter((a) => a.addressId !== addressId))
+  const handleDeleteAddress = (id) => {
+    setSavedAddresses((prev) => prev.filter((a) => a.addressId !== id))
     setIsDirty(true)
   }
 
-  const handleSetDefaultAddress = (addressId) => {
-    const target = savedAddresses.find((a) => a.addressId === addressId)
+  const handleSetDefaultAddress = (id) => {
+    const target = savedAddresses.find((a) => a.addressId === id)
     if (!target) return
-    setSavedAddresses((prev) =>
-      prev.map((a) => ({ ...a, isDefault: a.addressId === addressId }))
-    )
+    setSavedAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.addressId === id })))
     setFormData((f) => ({ ...f, defaultAddress: target.fullAddress }))
     setIsDirty(true)
   }
 
-  // Lưu toàn bộ hồ sơ
   const handleSaveProfile = async () => {
-    setAlertInfo(null)
-    setFieldErrors({})
-
-    // Client validation nhanh
+    setAlertInfo(null); setFieldErrors({})
     const errs = {}
     if (!formData.fullName.trim()) errs.fullName = 'Họ và tên không được để trống'
     if (!formData.email.trim()) errs.email = 'Email không được để trống'
     if (!formData.phoneNumber.trim()) errs.phoneNumber = 'Số điện thoại không được để trống'
-
     if (Object.keys(errs).length > 0) {
-      setFieldErrors(errs)
-      setActiveTab('info')
-      setAlertInfo({
-        type: 'error',
-        message: 'Vui lòng kiểm tra lại các trường thông tin cá nhân bắt buộc.',
-      })
+      setFieldErrors(errs); setActiveTab('info')
+      setAlertInfo({ type: 'error', message: 'Vui lòng kiểm tra lại các trường thông tin bắt buộc.' })
       return
     }
 
     setIsSaving(true)
     try {
       const payload = {
-        fullName: formData.fullName.trim(),
-        birthDate: formData.birthDate || null,
-        phoneNumber: formData.phoneNumber.trim(),
-        email: formData.email.trim(),
-        defaultAddress: formData.defaultAddress.trim() || null,
-        savedAddresses,
-        allergies,
-        dietaryPreferences,
+        fullName: formData.fullName.trim(), birthDate: formData.birthDate || null,
+        phoneNumber: formData.phoneNumber.trim(), email: formData.email.trim(),
+        defaultAddress: formData.defaultAddress.trim() || null, savedAddresses, allergies, dietaryPreferences,
       }
-
       const response = await updateProfileApi(payload)
-      updateUserProfile(response.data)
+      updateUserProfile(response.data?.data || response.data)
       setIsDirty(false)
-      setAlertInfo({
-        type: 'success',
-        message: 'Hồ sơ cá nhân và sở thích đã được cập nhật thành công!',
-      })
+      setAlertInfo({ type: 'success', message: 'Hồ sơ cá nhân và sở thích ẩm thực đã được lưu thành công!' })
     } catch (err) {
       const data = err.response?.data
       if (err.response?.status === 422 && data?.errors) {
-        setFieldErrors(data.errors)
-        setActiveTab('info')
-        setAlertInfo({
-          type: 'error',
-          message: data.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.',
-        })
+        setFieldErrors(data.errors); setActiveTab('info')
+        setAlertInfo({ type: 'error', message: data.message || 'Dữ liệu không hợp lệ.' })
       } else {
-        setAlertInfo({
-          type: 'error',
-          message: data?.message || 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.',
-        })
+        setAlertInfo({ type: 'error', message: data?.message || 'Có lỗi xảy ra khi lưu hồ sơ.' })
       }
-    } finally {
-      setIsSaving(false)
-    }
+    } finally { setIsSaving(false) }
   }
 
-  // UI STATE 1: LOADING
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0d1117] text-gray-100 p-6 sm:p-10 max-w-4xl mx-auto space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-12 w-full rounded-2xl" />
-        <div className="space-y-4 p-8 bg-gray-900/40 rounded-2xl border border-gray-800">
-          <Skeleton className="h-6 w-1/3" />
-          <div className="grid grid-cols-2 gap-4">
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // UI STATE 2: ERROR
-  if (fetchError) {
-    return (
-      <div className="min-h-screen bg-[#0d1117] text-gray-100 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mb-4">
-          <AlertTriangle className="w-7 h-7" />
-        </div>
-        <h2 className="text-xl font-bold text-white mb-1">Không thể tải hồ sơ</h2>
-        <p className="text-xs text-gray-400 max-w-md mb-6">{fetchError}</p>
-        <Button variant="primary" size="md" icon={RefreshCw} onClick={fetchProfile}>
-          Thử lại
-        </Button>
-      </div>
-    )
-  }
-
-  // UI STATE 4: SUCCESS / DATA VIEW
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-gray-100 flex flex-col">
-      {/* Top Header */}
-      <header className="border-b border-gray-800/80 bg-gray-950/70 backdrop-blur-md sticky top-0 z-20 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              title="Quay lại Trang chủ"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide">
-                Hồ sơ cá nhân
-              </h1>
-              <p className="text-xs text-amber-400 font-mono">@{formData.username}</p>
+    <div className="min-h-screen bg-surface-bg text-text-main flex flex-col">
+      <HomeHeader />
+
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="pb-4 border-b border-border-subtle">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-text-main tracking-tight">Thông tin cá nhân</h1>
+          <p className="text-xs text-text-muted mt-1">Quản lý tài khoản, các nguyên liệu dị ứng và sổ địa chỉ nhận hàng của bạn</p>
+        </div>
+
+        {alertInfo && <Alert type={alertInfo.type} message={alertInfo.message} onClose={() => setAlertInfo(null)} />}
+
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
+            <div className="lg:col-span-4"><Skeleton className="h-96 w-full rounded-2xl" /></div>
+            <div className="lg:col-span-8"><Skeleton className="h-96 w-full rounded-2xl" /></div>
+          </div>
+        ) : fetchError ? (
+          <div className="p-12 text-center rounded-2xl border border-status-error/20 bg-status-error/5 space-y-3">
+            <AlertTriangle className="w-8 h-8 text-status-error mx-auto" />
+            <p className="text-xs text-status-error">{fetchError}</p>
+            <Button variant="primary" size="sm" icon={RefreshCw} onClick={fetchProfile}>Thử lại</Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-4 sticky top-24">
+              <ProfileOverviewCard
+                formData={formData} activeTab={activeTab} onSelectTab={setActiveTab}
+                allergiesCount={allergies.length} addressesCount={savedAddresses.length}
+              />
+            </div>
+
+            <div className="lg:col-span-8 bg-surface-card p-6 sm:p-8 rounded-2xl border border-border-subtle shadow-sm space-y-6">
+              {activeTab === 'info' && <ProfileInfoTab formData={formData} onChange={handleInfoChange} errors={fieldErrors} disabled={isSaving} />}
+              {activeTab === 'allergies' && <AllergiesPreferencesTab allergies={allergies} dietaryPreferences={dietaryPreferences} onToggleAllergy={handleToggleAllergy} onTogglePreference={handleTogglePreference} disabled={isSaving} />}
+              {activeTab === 'addresses' && <SavedAddressesTab addresses={savedAddresses} onAddAddress={handleAddAddress} onUpdateAddress={handleUpdateAddress} onDeleteAddress={handleDeleteAddress} onSetDefault={handleSetDefaultAddress} disabled={isSaving} />}
+
+              <div className="pt-5 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs text-text-muted">
+                  {isDirty ? <span className="text-brand-primary font-medium animate-pulse">● Có thay đổi chưa lưu</span> : 'Tất cả thông tin đã được đồng bộ'}
+                </span>
+                <Button variant="primary" size="md" icon={Save} onClick={handleSaveProfile} loading={isSaving} disabled={!isDirty || isSaving} className={!isDirty ? 'opacity-50' : 'shadow-lg shadow-brand-primary/10'}>
+                  Lưu thay đổi hồ sơ
+                </Button>
+              </div>
             </div>
           </div>
-
-          <Button
-            variant="primary"
-            size="md"
-            icon={Save}
-            onClick={handleSaveProfile}
-            isLoading={isSaving}
-            disabled={!isDirty || isSaving}
-            className={!isDirty ? 'opacity-50' : 'animate-pulse'}
-          >
-            Lưu toàn bộ hồ sơ
-          </Button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-4xl mx-auto w-full p-6 sm:p-8 space-y-6">
-        {alertInfo && (
-          <Alert
-            type={alertInfo.type}
-            message={alertInfo.message}
-            onClose={() => setAlertInfo(null)}
-          />
         )}
-
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-2 p-1.5 bg-gray-900/80 border border-gray-800 rounded-2xl overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('info')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0
-              ${
-                activeTab === 'info'
-                  ? 'bg-amber-500 text-gray-950 shadow-md font-bold'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
-              }`}
-          >
-            <User className="w-4 h-4" />
-            <span>Thông tin cá nhân</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('allergies')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0
-              ${
-                activeTab === 'allergies'
-                  ? 'bg-amber-500 text-gray-950 shadow-md font-bold'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
-              }`}
-          >
-            <ShieldAlert className="w-4 h-4" />
-            <span>Dị ứng & Dinh dưỡng</span>
-            {allergies.length > 0 && (
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                  activeTab === 'allergies'
-                    ? 'bg-gray-950 text-amber-400 font-bold'
-                    : 'bg-amber-500/20 text-amber-400'
-                }`}
-              >
-                {allergies.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('addresses')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0
-              ${
-                activeTab === 'addresses'
-                  ? 'bg-amber-500 text-gray-950 shadow-md font-bold'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
-              }`}
-          >
-            <MapPin className="w-4 h-4" />
-            <span>Sổ địa chỉ</span>
-            {savedAddresses.length > 0 && (
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                  activeTab === 'addresses'
-                    ? 'bg-gray-950 text-amber-400 font-bold'
-                    : 'bg-gray-800 text-gray-300'
-                }`}
-              >
-                {savedAddresses.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Tab Content Card */}
-        <div className="bg-gray-900/60 p-6 sm:p-8 rounded-2xl border border-gray-800/80 shadow-xl backdrop-blur-xl">
-          {activeTab === 'info' && (
-            <ProfileInfoTab
-              formData={formData}
-              onChange={handleInfoChange}
-              errors={fieldErrors}
-              disabled={isSaving}
-            />
-          )}
-
-          {activeTab === 'allergies' && (
-            <AllergiesPreferencesTab
-              allergies={allergies}
-              dietaryPreferences={dietaryPreferences}
-              onToggleAllergy={handleToggleAllergy}
-              onTogglePreference={handleTogglePreference}
-              disabled={isSaving}
-            />
-          )}
-
-          {activeTab === 'addresses' && (
-            <SavedAddressesTab
-              addresses={savedAddresses}
-              onAddAddress={handleAddAddress}
-              onUpdateAddress={handleUpdateAddress}
-              onDeleteAddress={handleDeleteAddress}
-              onSetDefault={handleSetDefaultAddress}
-              disabled={isSaving}
-            />
-          )}
-        </div>
       </main>
+
+      <HomeFooter />
     </div>
   )
 }
-
-export default CustomerProfilePage
