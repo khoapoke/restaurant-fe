@@ -54,7 +54,7 @@ $isBusy = Reservation::where('ma_ban', $tableId)
 | :--- | :--- | :--- |
 | Khách đặt cọc thành công / Admin xác nhận cọc | `CONFIRMED` (`Đã xác nhận`) | `RESERVED` (`Đã đặt`) |
 | Admin duyệt đơn đặt trong ca hiện tại | `CONFIRMED` (`Đã xác nhận`) | `RESERVED` (`Đã đặt`) |
-| Khách đến nhà hàng nhận bàn | `SEATED` (`Đang dùng bữa`) | `OCCUPIED` (`Đang sử dụng`) |
+| Khách đến nhà hàng nhận bàn | `OCCUPIED` (`Đang có khách`) | `OCCUPIED` (`Đang phục vụ`) |
 | Khách thanh toán ra về | `COMPLETED` (`Hoàn thành`) | `AVAILABLE` (`Trống`) |
 | Đơn hết hạn cọc / Hủy phiếu | `CANCELLED` / `REJECTED` | `AVAILABLE` (`Trống`) |
 
@@ -165,7 +165,7 @@ $isBusy = Reservation::where('ma_ban', $tableId)
 ### UC BKG-11: Admin Phê Duyệt / Cập Nhật Trạng Thái Đặt Bàn
 - **Actor:** Quản trị viên (`ADMIN,STAFF`).
 - **Endpoint:** `PATCH /api/v1/admin/reservations/{id}/status`
-- **Validation:** `targetStatus`: `required|in:CONFIRMED,SEATED,COMPLETED,CANCELLED,REJECTED`.
+- **Validation:** `targetStatus`: `required|in:CONFIRMED,OCCUPIED,COMPLETED,CANCELLED,REJECTED`.
 - **Luồng thực thi:**
   1. Cập nhật `DAT_BAN.trang_thai = $targetStatus`.
   2. Tự động đồng bộ trạng thái của `BAN_AN` tương ứng theo Bảng ma trận tại Mục 3.4.

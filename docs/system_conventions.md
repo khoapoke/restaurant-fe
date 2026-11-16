@@ -44,15 +44,13 @@ Mọi Controller API kế thừa `BaseController` và sử dụng Trait `ApiResp
 
 ## 🏷️ 2. Danh Mục 9 Backed Enums Hệ Thống (`App\Modules\Core\Enums`)
 
-> **TypeScript Definitions dành cho FE:** Tệp khai báo hoàn chỉnh TypeScript Enums & nhãn tiếng Việt hiển thị sẵn sàng cho Frontend tại [`be_docs/frontend_enums.ts`](frontend_enums.ts).
-
 | Enum Class | Giá trị Enum trên API (FE nhận & gửi) | Chuỗi lưu trữ trong MySQL (Database Value) | Nhãn hiển thị tiếng Việt trên UI |
 | :--- | :--- | :--- | :--- |
 | **`RoleType`** | `ADMIN`, `STAFF`, `CUSTOMER` | `'ADMIN'`, `'STAFF'`, `'CUSTOMER'` | Quản trị viên, Nhân viên, Khách hàng |
 | **`AccountStatus`**| `ACTIVE`, `LOCKED` | `'ACTIVE'`, `'LOCKED'` | Đang hoạt động, Đã bị khóa |
 | **`OrderStatus`**  | `PENDING_CONFIRMATION`<br>`CONFIRMED`<br>`PREPARING`<br>`READY`<br>`DELIVERING`<br>`COMPLETED`<br>`CANCELLED` | `'Chờ xác nhận'`<br>`'Đã xác nhận'`<br>`'Đang chuẩn bị'`<br>`'Sẵn sàng'`<br>`'Đang giao'`<br>`'Đã giao'`<br>`'Đã hủy'` | Chờ xác nhận, Đã xác nhận, Đang chuẩn bị, Sẵn sàng, Đang giao, Đã hoàn tất, Đã hủy |
 | **`TableStatus`**  | `AVAILABLE`, `RESERVED`, `OCCUPIED`, `MAINTENANCE` | `'Trống'`, `'Đã đặt'`, `'Đang phục vụ'`, `'Bảo trì'` | Bàn trống, Đã đặt, Đang phục vụ, Bảo trì |
-| **`ReservationStatus`**| `PENDING_DEPOSIT`<br>`PENDING`<br>`CONFIRMED`<br>`REJECTED`<br>`CANCELLED`<br>`COMPLETED` | `'Chờ đặt cọc'`<br>`'Chờ xử lý'`<br>`'Đã xác nhận'`<br>`'Từ chối'`<br>`'Đã hủy'`<br>`'Hoàn thành'` | Chờ đặt cọc (15 phút), Chờ xử lý, Đã xác nhận, Bị từ chối, Đã hủy, Hoàn thành |
+| **`ReservationStatus`**| `PENDING_DEPOSIT`<br>`PENDING`<br>`CONFIRMED`<br>`OCCUPIED`<br>`REJECTED`<br>`CANCELLED`<br>`COMPLETED` | `'Chờ đặt cọc'`<br>`'Chờ xử lý'`<br>`'Đã xác nhận'`<br>`'Đang có khách'`<br>`'Từ chối'`<br>`'Đã hủy'`<br>`'Hoàn thành'` | Chờ đặt cọc (15 phút), Chờ xử lý, Đã xác nhận, Đang có khách, Bị từ chối, Đã hủy, Hoàn thành |
 | **`PaymentMethod`**| `CASH`, `BANK_TRANSFER_QR` | `'Tiền mặt'`, `'Chuyển khoản'` | Tiền mặt, Chuyển khoản VietQR |
 | **`PaymentStatus`**| `UNPAID`, `PAID`, `FAILED`, `REFUNDED` | `'Chưa thanh toán'`, `'Đã thanh toán'`, `'Thất bại'`, `'Đã hoàn tiền'` | Chưa thanh toán, Đã thanh toán, Thanh toán thất bại, Đã hoàn tiền |
 | **`ChatSessionStatus`**| `BOT`, `WAITING_STAFF`, `STAFF_CONNECTED`, `CLOSED` | `'BOT'`, `'WAITING_STAFF'`, `'STAFF_CONNECTED'`, `'CLOSED'` | Chat với AI, Chờ nhân viên, Nhân viên đang hỗ trợ, Đã kết thúc |

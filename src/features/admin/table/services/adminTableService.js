@@ -37,3 +37,8 @@ export const updateTimeSlotsApi = async (payload) => {
   return await apiClient.put('/admin/reservations/time-slots', payload)
 }
 
+// BKG-14: Nhân viên / Admin xác nhận nhận cọc thủ công
+export const confirmDepositApi = async (reservationId) => {
+  return await apiClient.post(`/admin/reservations/${reservationId}/confirm-deposit`)
+}
+

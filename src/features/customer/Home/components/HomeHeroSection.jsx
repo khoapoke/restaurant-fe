@@ -55,46 +55,12 @@ export default function HomeHeroSection() {
             <span>Khám phá Thực đơn</span>
           </Link>
 
-          <Link
-            to="/reservation"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-text-body hover:text-text-main bg-surface-card hover:bg-surface-card-hover border border-border-subtle hover:border-border-strong transition-colors cursor-pointer"
-          >
-            <CalendarDays className="w-4 h-4 text-text-muted" />
-            <span>Đặt bàn giữ chỗ</span>
-          </Link>
         </div>
 
         {/* 3 Cam kết chất lượng cốt lõi */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 max-w-3xl mx-auto pt-8 border-t border-border-subtle">
-          <div className="flex items-center justify-center sm:justify-start gap-3 p-3.5 rounded-xl bg-surface-card border border-border-subtle hover:border-border-strong transition-colors">
-            <div className="w-9 h-9 rounded-lg bg-surface-bg border border-border-subtle flex items-center justify-center text-brand-primary shrink-0">
-              <Award className="w-4 h-4" />
-            </div>
-            <div className="text-left">
-              <h4 className="text-xs font-semibold text-text-main">Chuẩn Fine Dining</h4>
-              <p className="text-[11px] text-text-muted">Nguyên liệu chọn lọc cao cấp</p>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5  mx-auto border-t border-border-subtle">
+      
 
-          <div className="flex items-center justify-center sm:justify-start gap-3 p-3.5 rounded-xl bg-surface-card border border-border-subtle hover:border-border-strong transition-colors">
-            <div className="w-9 h-9 rounded-lg bg-surface-bg border border-border-subtle flex items-center justify-center text-brand-primary shrink-0">
-              <Network className="w-4 h-4" />
-            </div>
-            <div className="text-left">
-              <h4 className="text-xs font-semibold text-text-main">Gợi ý AI Neo4j</h4>
-              <p className="text-[11px] text-text-muted">Đề xuất theo sở thích & thời tiết</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center sm:justify-start gap-3 p-3.5 rounded-xl bg-surface-card border border-border-subtle hover:border-border-strong transition-colors">
-            <div className="w-9 h-9 rounded-lg bg-surface-bg border border-border-subtle flex items-center justify-center text-brand-primary shrink-0">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div className="text-left">
-              <h4 className="text-xs font-semibold text-text-main">VietQR Napas 247</h4>
-              <p className="text-[11px] text-text-muted">Xác nhận thanh toán tức thì</p>
-            </div>
-          </div>
         </div>
 
       </div>

@@ -1,12 +1,16 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarDays, RefreshCw, AlertCircle, Lock } from 'lucide-react'
 import ReservationCard from './ReservationCard'
+import DepositPaymentModal from './DepositPaymentModal'
+import { normalizeReservationStatus } from '../constants'
 
 /**
  * Sub-component Quản Lý Tab Lịch Sử Đặt Bàn (ReservationHistoryTab)
  * - Bộ lọc trạng thái dạng pill kèm badge số lượng
+ * - Tích hợp modal thanh toán cọc VietQR cho phiếu PENDING_DEPOSIT
  * - Đầy đủ 4 trạng thái UI: Loading, Error, Empty, Data List
- * - Độ dài < 165 dòng
+ * - Độ dài < 205 dòng
  */
 export default function ReservationHistoryTab({
   isAuthenticated,
@@ -21,6 +25,8 @@ export default function ReservationHistoryTab({
   onCancel,
   onGoToBooking,
 }) {
+  const [depositModalItem, setDepositModalItem] = useState(null)
+
   if (!isAuthenticated) {
     return (
       <div className="py-16 text-center bg-surface-card rounded-2xl border border-border-subtle p-8 space-y-4">
@@ -41,8 +47,10 @@ export default function ReservationHistoryTab({
 
   const tabs = [
     { key: 'ALL', label: 'Tất cả' },
+    { key: 'PENDING_DEPOSIT', label: 'Chờ đặt cọc' },
     { key: 'PENDING', label: 'Chờ duyệt' },
     { key: 'CONFIRMED', label: 'Đã xác nhận' },
+    { key: 'OCCUPIED', label: 'Đang dùng bữa' },
     { key: 'COMPLETED', label: 'Hoàn tất' },
     { key: 'CANCELLED', label: 'Đã hủy' },
     { key: 'REJECTED', label: 'Từ chối' },
@@ -50,7 +58,8 @@ export default function ReservationHistoryTab({
 
   const filtered = reservations.filter((r) => {
     if (filterStatus === 'ALL') return true
-    return (r.status || 'PENDING') === filterStatus
+    const norm = normalizeReservationStatus(r.status || r.trang_thai)
+    return norm === filterStatus
   })
 
   return (
@@ -168,11 +177,22 @@ export default function ReservationHistoryTab({
               reservation={item}
               onEdit={onEdit}
               onCancel={onCancel}
+              onPayDeposit={(res) => setDepositModalItem(res)}
             />
           ))}
         </div>
       )}
+
+      {/* Modal Thanh Toán Đặt Cọc VietQR */}
+      <DepositPaymentModal
+        isOpen={Boolean(depositModalItem)}
+        reservation={depositModalItem}
+        onClose={() => setDepositModalItem(null)}
+        onSuccess={() => {
+          onRefresh?.()
+          setDepositModalItem(null)
+        }}
+      />
     </div>
   )
 }
-

@@ -39,14 +39,20 @@ export const TABLE_STATUS_CONFIG = {
 }
 
 export const ReservationStatus = {
+  PENDING_DEPOSIT: 'PENDING_DEPOSIT',
   PENDING: 'PENDING',
   CONFIRMED: 'CONFIRMED',
+  OCCUPIED: 'OCCUPIED',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
   REJECTED: 'REJECTED',
 }
 
 export const RESERVATION_STATUS_CONFIG = {
+  PENDING_DEPOSIT: {
+    label: 'Chờ đặt cọc',
+    color: 'text-status-warning bg-status-warning/10 border-status-warning/30 font-semibold animate-pulse',
+  },
   PENDING: {
     label: 'Chờ duyệt',
     color: 'text-status-warning bg-status-warning/10 border-status-warning/30',
@@ -54,6 +60,10 @@ export const RESERVATION_STATUS_CONFIG = {
   CONFIRMED: {
     label: 'Đã xác nhận',
     color: 'text-status-info bg-status-info/10 border-status-info/30',
+  },
+  OCCUPIED: {
+    label: 'Đang có khách',
+    color: 'text-brand-hover bg-brand-primary/10 border-brand-primary/30 font-bold',
   },
   COMPLETED: {
     label: 'Hoàn thành',

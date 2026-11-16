@@ -59,7 +59,16 @@ export default function CustomerReservationPage() {
   }
 
   const counts = useMemo(() => {
-    const map = { ALL: reservations.length, PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0, REJECTED: 0 }
+    const map = {
+      ALL: reservations.length,
+      PENDING_DEPOSIT: 0,
+      PENDING: 0,
+      CONFIRMED: 0,
+      OCCUPIED: 0,
+      COMPLETED: 0,
+      CANCELLED: 0,
+      REJECTED: 0,
+    }
     reservations.forEach((r) => {
       const st = normalizeReservationStatus(r.status || r.trang_thai)
       if (map[st] !== undefined) map[st]++

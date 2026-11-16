@@ -43,7 +43,7 @@ export const ReservationActionModal = ({
   const isConfirmAction = actionType === 'CONFIRMED'
   const isRejectAction = actionType === 'REJECTED'
   const isCancelAction = actionType === 'CANCELLED'
-  const isSeatedAction = actionType === 'SEATED'
+  const isOccupiedAction = actionType === 'OCCUPIED' || actionType === 'SEATED'
   const isCompleteAction = actionType === 'COMPLETED'
 
   const handleSubmit = (e) => {
@@ -59,15 +59,16 @@ export const ReservationActionModal = ({
 
     onConfirm({
       reservationId: id,
-      targetStatus: isSeatedAction ? 'CONFIRMED' : actionType,
+      targetStatus: isOccupiedAction ? 'OCCUPIED' : actionType,
       tableId: selectedTableId ? Number(selectedTableId) : undefined,
-      tableStatus: isSeatedAction ? 'OCCUPIED' : undefined,
+      tableStatus: isOccupiedAction ? 'OCCUPIED' : undefined,
       adminNote: adminNote.trim() || undefined,
     })
   }
 
   const titleMap = {
     CONFIRMED: `Xác nhận duyệt đặt bàn #${id}`,
+    OCCUPIED: `Khách nhận bàn #${id} (Bắt đầu dùng bữa)`,
     SEATED: `Khách nhận bàn #${id} (Bắt đầu dùng bữa)`,
     CANCELLED: `Hủy lượt đặt bàn #${id}`,
     REJECTED: `Từ chối đặt bàn #${id}`,
@@ -145,10 +146,10 @@ export const ReservationActionModal = ({
           </div>
         )}
 
-        {isSeatedAction && (
+        {isOccupiedAction && (
           <div className="p-3 rounded-xl bg-brand-primary/10 border border-brand-primary/30 text-[11px] text-brand-hover">
-            🍽️ Xác nhận khách đã có mặt tại nhà hàng. Bàn ăn sẽ được chuyển sang trạng thái{' '}
-            <strong className="text-text-main font-bold">Đang có khách (OCCUPIED)</strong> trên sơ đồ bàn.
+            🍽️ Xác nhận khách đã có mặt tại nhà hàng. Phiếu đặt và Bàn ăn sẽ được chuyển sang trạng thái{' '}
+            <strong className="text-text-main font-bold">Đang có khách (OCCUPIED)</strong>.
           </div>
         )}
 
@@ -175,9 +176,9 @@ export const ReservationActionModal = ({
             size="sm"
             type="submit"
             isLoading={isSubmitting}
-            icon={isRejectAction || isCancelAction ? XCircle : isSeatedAction ? Utensils : isCompleteAction ? Check : CheckCircle2}
+            icon={isRejectAction || isCancelAction ? XCircle : isOccupiedAction ? Utensils : isCompleteAction ? Check : CheckCircle2}
           >
-            {isRejectAction ? 'Từ chối' : isCancelAction ? 'Hủy đặt bàn' : isSeatedAction ? 'Vào bàn' : isCompleteAction ? 'Hoàn tất & Trả bàn' : 'Duyệt bàn'}
+            {isRejectAction ? 'Từ chối' : isCancelAction ? 'Hủy đặt bàn' : isOccupiedAction ? 'Vào bàn' : isCompleteAction ? 'Hoàn tất & Trả bàn' : 'Duyệt bàn'}
           </Button>
         </div>
       </form>

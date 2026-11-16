@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
-import { CalendarCheck, RefreshCw } from 'lucide-react'
+import { CalendarCheck } from 'lucide-react'
 import {
   getAdminReservationsApi,
   getAdminTablesApi,
   updateReservationStatusApi,
+  confirmDepositApi,
 } from '../services/adminTableService'
+import AdminReservationHeader from '../components/AdminReservationHeader'
 import ReservationTable from '../components/ReservationTable'
 import ReservationActionModal from '../components/ReservationActionModal'
+import ConfirmDepositModal from '../components/ConfirmDepositModal'
 import Pagination from '../../../../components/ui/Pagination'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
@@ -15,8 +18,10 @@ import { ReservationStatus, RESERVATION_STATUS_CONFIG } from '../constants'
 
 const statusTabs = [
   { key: 'ALL', label: 'Tất cả' },
+  { key: ReservationStatus.PENDING_DEPOSIT, label: RESERVATION_STATUS_CONFIG.PENDING_DEPOSIT.label },
   { key: ReservationStatus.PENDING, label: RESERVATION_STATUS_CONFIG.PENDING.label },
   { key: ReservationStatus.CONFIRMED, label: RESERVATION_STATUS_CONFIG.CONFIRMED.label },
+  { key: ReservationStatus.OCCUPIED, label: RESERVATION_STATUS_CONFIG.OCCUPIED.label },
   { key: ReservationStatus.COMPLETED, label: RESERVATION_STATUS_CONFIG.COMPLETED.label },
   { key: ReservationStatus.CANCELLED, label: RESERVATION_STATUS_CONFIG.CANCELLED.label },
   { key: ReservationStatus.REJECTED, label: RESERVATION_STATUS_CONFIG.REJECTED.label },
@@ -37,10 +42,12 @@ export const AdminReservationsPage = () => {
   const [error, setError] = useState(null)
   const [successToast, setSuccessToast] = useState(null)
 
-  // Action modal
+  // Action modal & Deposit modal
   const [selectedReservation, setSelectedReservation] = useState(null)
   const [actionType, setActionType] = useState('CONFIRMED')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [depositModalItem, setDepositModalItem] = useState(null)
+  const [isConfirmingDeposit, setIsConfirmingDeposit] = useState(false)
 
   const showToast = (msg) => {
     setSuccessToast(msg)
@@ -116,13 +123,14 @@ export const AdminReservationsPage = () => {
 
       const msgMap = {
         CONFIRMED: 'Đã duyệt đặt bàn thành công!',
+        OCCUPIED: 'Khách đã vào bàn! Đơn đặt và Bàn ăn đã chuyển sang Đang có khách.',
         CANCELLED: 'Đã hủy lượt đặt bàn và giải phóng bàn!',
         REJECTED: 'Đã từ chối lượt đặt bàn!',
         COMPLETED: 'Đã hoàn tất lượt dùng bữa và giải phóng bàn ăn!',
       }
-      const toastMsg = payload.tableStatus === 'OCCUPIED'
+      const toastMsg = msgMap[payload.targetStatus] || (payload.tableStatus === 'OCCUPIED'
         ? 'Khách đã vào bàn! Bàn chuyển sang Đang có khách.'
-        : msgMap[payload.targetStatus] || 'Cập nhật đặt bàn thành công!'
+        : 'Cập nhật đặt bàn thành công!')
 
       showToast(toastMsg)
       setSelectedReservation(null)
@@ -134,50 +142,29 @@ export const AdminReservationsPage = () => {
     }
   }
 
+  const handleConfirmDeposit = async (reservationId) => {
+    setIsConfirmingDeposit(true)
+    try {
+      await confirmDepositApi(reservationId)
+      showToast(`Đã nhận cọc đặt bàn #${reservationId}! Bàn đã tự động chuyển sang ĐÃ ĐẶT (RESERVED).`)
+      setDepositModalItem(null)
+      fetchReservations(pagination.currentPage)
+    } catch (err) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra khi xác nhận tiền cọc.')
+    } finally {
+      setIsConfirmingDeposit(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface-card border border-border-subtle shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center shrink-0">
-            <CalendarCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-text-main">Điều phối Đặt bàn</h2>
-            <p className="text-xs text-text-muted">
-              Tiếp nhận, gán bàn và quản lý các lượt khách đặt trước
-            </p>
-          </div>
-        </div>
-
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={RefreshCw}
-          isLoading={loading}
-          onClick={() => fetchReservations(pagination.currentPage)}
-        >
-          Làm mới
-        </Button>
-      </div>
-
-      {/* Status tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {statusTabs.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setActiveTab(t.key)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === t.key
-                ? 'bg-brand-primary text-text-inverse font-bold shadow-sm shadow-brand-primary/20'
-                : 'bg-surface-card text-text-muted hover:text-text-main border border-border-subtle hover:border-border-default'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <AdminReservationHeader
+        statusTabs={statusTabs}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        loading={loading}
+        onRefresh={() => fetchReservations(pagination.currentPage)}
+      />
 
       {successToast && (
         <Alert type="success" message={successToast} onClose={() => setSuccessToast(null)} />
@@ -201,7 +188,6 @@ export const AdminReservationsPage = () => {
           <Skeleton className="h-8 w-full bg-surface-subtle" />
           <Skeleton className="h-14 w-full bg-surface-subtle" />
           <Skeleton className="h-14 w-full bg-surface-subtle" />
-          <Skeleton className="h-14 w-full bg-surface-subtle" />
         </div>
       ) : reservations.length === 0 ? (
         <div className="py-16 text-center rounded-2xl bg-surface-card/60 border border-border-subtle space-y-3">
@@ -218,6 +204,7 @@ export const AdminReservationsPage = () => {
           <ReservationTable
             reservations={reservations}
             onOpenAction={handleOpenAction}
+            onOpenConfirmDeposit={(r) => setDepositModalItem(r)}
           />
 
           <Pagination
@@ -230,7 +217,7 @@ export const AdminReservationsPage = () => {
         </div>
       )}
 
-      {/* Action Modal */}
+      {/* Action Modal (Duyệt/Vào bàn/Hoàn tất/Hủy) */}
       <ReservationActionModal
         isOpen={!!selectedReservation}
         onClose={() => setSelectedReservation(null)}
@@ -239,6 +226,15 @@ export const AdminReservationsPage = () => {
         tables={tables}
         actionType={actionType}
         isSubmitting={isSubmitting}
+      />
+
+      {/* Confirm Deposit Modal (Xác nhận cọc BKG-14) */}
+      <ConfirmDepositModal
+        isOpen={!!depositModalItem}
+        onClose={() => setDepositModalItem(null)}
+        onConfirm={handleConfirmDeposit}
+        reservation={depositModalItem}
+        isSubmitting={isConfirmingDeposit}
       />
     </div>
   )

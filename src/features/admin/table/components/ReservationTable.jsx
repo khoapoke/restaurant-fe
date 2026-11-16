@@ -1,16 +1,17 @@
-import { CheckCircle2, XCircle, Check, Utensils } from 'lucide-react'
+import { CheckCircle2, XCircle, Check, Utensils, DollarSign } from 'lucide-react'
 import { RESERVATION_STATUS_CONFIG } from '../constants'
 import Button from '../../../../components/ui/Button'
 
 /**
  * Bảng Danh Sách Đặt Bàn (ReservationTable)
  * - 100% Centralized Design Tokens
- * - Điều phối nhanh các hành động duyệt/hủy/vào bàn
- * - Độ dài < 145 dòng
+ * - Hiển thị tiền cọc và điều phối nhanh các hành động xác nhận cọc/duyệt/hủy/vào bàn
+ * - Độ dài < 175 dòng
  */
 export const ReservationTable = ({
   reservations = [],
   onOpenAction,
+  onOpenConfirmDeposit,
 }) => {
   return (
     <div className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-card shadow-sm">
@@ -21,8 +22,8 @@ export const ReservationTable = ({
             <th className="py-3 px-4 font-semibold">Khách hàng</th>
             <th className="py-3 px-4 font-semibold w-36">Thời gian đến</th>
             <th className="py-3 px-4 font-semibold text-center w-20">Số khách</th>
-            <th className="py-3 px-4 font-semibold w-32">Bàn ăn</th>
-            <th className="py-3 px-4 font-semibold">Ghi chú</th>
+            <th className="py-3 px-4 font-semibold w-28">Bàn ăn</th>
+            <th className="py-3 px-4 font-semibold text-right w-28">Tiền cọc</th>
             <th className="py-3 px-4 font-semibold text-center w-28">Trạng thái</th>
             <th className="py-3 px-4 font-semibold text-right w-52">Thao tác</th>
           </tr>
@@ -35,11 +36,16 @@ export const ReservationTable = ({
             const time = r.reservationTime || r.thoi_gian
             const guests = r.guestCount || r.so_luong_khach || 1
             const tableName = r.tableName || r.table?.tableName || (r.tableId ? `Bàn #${r.tableId}` : 'Chưa gán')
-            const status = r.status || r.trang_thai || 'PENDING'
+            const rawStatus = r.status || r.trang_thai || 'PENDING'
+            const isTableOccupied = r.table?.status === 'OCCUPIED' || r.table?.trang_thai === 'Đang phục vụ'
+            const status = (rawStatus === 'CONFIRMED' && isTableOccupied) ? 'OCCUPIED' : rawStatus
+            const deposit = Number(r.depositAmount || r.tien_coc || (status === 'PENDING_DEPOSIT' ? guests * 50000 : 0))
 
             const statusCfg = RESERVATION_STATUS_CONFIG[status] || RESERVATION_STATUS_CONFIG.PENDING
+            const isPendingDeposit = status === 'PENDING_DEPOSIT'
             const isPending = status === 'PENDING'
             const isConfirmed = status === 'CONFIRMED'
+            const isOccupied = status === 'OCCUPIED'
 
             return (
               <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
@@ -74,8 +80,14 @@ export const ReservationTable = ({
                   </span>
                 </td>
 
-                <td className="py-3.5 px-4 text-text-muted max-w-xs truncate text-[11px]">
-                  {r.note || r.ghi_chu || r.adminNote || '—'}
+                <td className="py-3.5 px-4 text-right font-mono text-[11px]">
+                  {deposit > 0 ? (
+                    <span className={isPendingDeposit ? 'text-status-warning font-bold' : 'text-status-success font-semibold'}>
+                      {deposit.toLocaleString('vi-VN')}đ
+                    </span>
+                  ) : (
+                    <span className="text-text-dim">—</span>
+                  )}
                 </td>
 
                 <td className="py-3.5 px-4 text-center">
@@ -88,6 +100,30 @@ export const ReservationTable = ({
 
                 <td className="py-3.5 px-4 text-right">
                   <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                    {/* Chờ cọc: Nút Xác nhận cọc */}
+                    {isPendingDeposit && (
+                      <>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => onOpenConfirmDeposit?.(r)}
+                          className="text-[11px] py-1 px-2.5 font-bold"
+                          icon={DollarSign}
+                        >
+                          Xác nhận cọc
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => onOpenAction(r, 'CANCELLED')}
+                          className="text-[11px] py-1 px-2"
+                          icon={XCircle}
+                          title="Hủy lượt đặt cọc"
+                        />
+                      </>
+                    )}
+
+                    {/* Chờ duyệt (miễn cọc) */}
                     {isPending && (
                       <>
                         <Button
@@ -110,11 +146,12 @@ export const ReservationTable = ({
                       </>
                     )}
 
+                    {/* Đã xác nhận: Vào bàn, Hoàn tất hoặc Hủy */}
                     {isConfirmed && (
                       <>
                         <button
                           type="button"
-                          onClick={() => onOpenAction(r, 'SEATED')}
+                          onClick={() => onOpenAction(r, 'OCCUPIED')}
                           className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-brand-primary/15 hover:bg-brand-primary/25 text-brand-hover border border-brand-primary/30 flex items-center gap-1 transition-colors cursor-pointer"
                           title="Khách đã đến nhận bàn"
                         >
@@ -138,6 +175,30 @@ export const ReservationTable = ({
                           className="text-[11px] py-1 px-1.5 text-status-error hover:bg-status-error/10"
                           icon={XCircle}
                           title="Hủy lượt đặt bàn này"
+                        />
+                      </>
+                    )}
+
+                    {/* Đang có khách: Chỉ hiển thị Hoàn tất & Hủy */}
+                    {isOccupied && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => onOpenAction(r, 'COMPLETED')}
+                          className="text-[11px] py-1 px-2.5 font-bold"
+                          icon={Check}
+                          title="Hoàn tất lượt dùng bữa và giải phóng bàn"
+                        >
+                          Hoàn tất
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onOpenAction(r, 'CANCELLED')}
+                          className="text-[11px] py-1 px-1.5 text-status-error hover:bg-status-error/10"
+                          icon={XCircle}
+                          title="Hủy lượt dùng bữa này"
                         />
                       </>
                     )}
