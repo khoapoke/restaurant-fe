@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'motion/react'
-import React, { useMemo } from 'react'
+import { motion, AnimatePresence, useInView } from 'motion/react'
+import React, { useMemo, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
@@ -65,6 +65,7 @@ const presetVariants = {
 /**
  * TextEffect Component (Motion-Primitives)
  * Tạo hiệu ứng chữ xuất hiện từng ký tự (char), từng từ (word) hoặc từng dòng (line)
+ * Hỗ trợ nhận diện Viewport để chỉ chạy hiệu ứng khi cuộn tới
  * Chuẩn JavaScript cho React 19 + Motion v14
  *
  * @param {Object} props
@@ -78,6 +79,8 @@ const presetVariants = {
  * @param {boolean} [props.trigger=true] - Kích hoạt animation
  * @param {function} [props.onAnimationComplete] - Callback khi hoàn tất
  * @param {string} [props.segmentWrapperClassName] - Class CSS cho từng từ/chữ
+ * @param {boolean} [props.inView=false] - Kích hoạt hiệu ứng khi cuộn vào tầm mắt
+ * @param {Object} [props.viewOptions] - Cấu hình useInView ({ once: true, margin: '0px 0px -60px 0px' })
  */
 export function TextEffect({
   children,
@@ -90,7 +93,14 @@ export function TextEffect({
   trigger = true,
   onAnimationComplete,
   segmentWrapperClassName,
+  inView = false,
+  viewOptions = { once: true, margin: '0px 0px -60px 0px' },
 }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, viewOptions)
+  const shouldRender = trigger
+  const isVisible = inView ? isInView : true
+
   const Component = motion[as] || motion.p
 
   const selectedVariants = useMemo(() => {
@@ -139,10 +149,11 @@ export function TextEffect({
 
   return (
     <AnimatePresence mode="popLayout">
-      {trigger && (
+      {shouldRender && (
         <Component
+          ref={ref}
           initial="hidden"
-          animate="visible"
+          animate={isVisible ? 'visible' : 'hidden'}
           exit="exit"
           variants={containerVariants}
           className={cn('inline-block whitespace-normal', className)}

@@ -64,6 +64,7 @@ const presetVariants = {
  * @param {Object} [props.variants] - Tùy chỉnh variants container và item
  * @param {'fade'|'slide'|'scale'|'blur'} [props.preset='slide'] - Preset hiệu ứng
  * @param {string} [props.as='div'] - Thẻ HTML bao bọc
+ * @param {Object} [props.viewport] - Cấu hình viewport kích hoạt ({ once: true, amount: 0.2, margin: '0px 0px -60px 0px' })
  */
 export function AnimatedGroup({
   children,
@@ -71,6 +72,7 @@ export function AnimatedGroup({
   variants,
   preset = 'slide',
   as = 'div',
+  viewport = { once: true, amount: 0.2, margin: '0px 0px -60px 0px' },
 }) {
   const Component = motion[as] || motion.div
 
@@ -82,7 +84,7 @@ export function AnimatedGroup({
     <Component
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, amount: 0.15 }}
+      viewport={viewport}
       variants={containerVariants}
       className={cn(className)}
     >

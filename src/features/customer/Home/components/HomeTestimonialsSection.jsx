@@ -1,6 +1,7 @@
 import { Award, Star, Quote } from 'lucide-react'
 import InView from '@/components/core/in-view'
 import AnimatedGroup from '@/components/core/animated-group'
+import SlidingNumber from '@/components/core/sliding-number'
 
 /**
  * Component Đánh giá & Vinh danh (HomeTestimonialsSection)
@@ -73,8 +74,8 @@ export default function HomeTestimonialsSection() {
               key={idx}
               className="p-5 rounded-xl bg-surface-card border border-border-subtle text-center"
             >
-              <div className="text-2xl sm:text-3xl font-bold text-brand-primary mb-1">
-                {st.value}
+              <div className="text-2xl sm:text-3xl font-bold text-brand-primary mb-1 flex items-center justify-center">
+                <SlidingNumber value={st.value} />
               </div>
               <div className="text-xs font-semibold text-text-main mb-0.5">
                 {st.label}

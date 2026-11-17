@@ -48,7 +48,7 @@ export default function HomeStorySection() {
             </div>
 
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-text-main leading-snug">
-              <TextEffect per="word" as="span" preset="blur">
+              <TextEffect inView per="word" as="span" preset="blur">
                 Tuyệt tác mỹ vị từ sự tỉ mỉ trong từng nguyên liệu
               </TextEffect>
             </h2>
@@ -61,7 +61,7 @@ export default function HomeStorySection() {
 
             {/* Trích dẫn Bếp trưởng với TextEffect fade có độ trễ */}
             <div className="p-4 rounded-xl bg-surface-card border-l-2 border-brand-primary border-border-subtle text-text-body text-xs sm:text-sm italic">
-              <TextEffect per="word" as="span" preset="fade" delay={0.35}>
+              <TextEffect inView per="word" as="span" preset="fade" delay={0.35}>
                 &ldquo;Mỗi món ăn gửi đến bàn tiệc không đơn thuần là một khẩu phần, mà là sự hòa quyện của thời gian, hương vị và cảm xúc.&rdquo;
               </TextEffect>
             </div>

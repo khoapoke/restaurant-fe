@@ -22,12 +22,18 @@ export function InView({
     visible: { opacity: 1, y: 0 },
   },
   transition = { duration: 0.5, ease: 'easeOut' },
-  viewOptions = { once: true, amount: 0.2 },
+  viewOptions = { once: true, amount: 0.25, margin: '0px 0px -80px 0px' },
   as = 'div',
   className,
 }) {
   const ref = useRef(null)
-  const isInView = useInView(ref, viewOptions)
+  const mergedOptions = {
+    once: true,
+    amount: 0.25,
+    margin: '0px 0px -80px 0px',
+    ...viewOptions,
+  }
+  const isInView = useInView(ref, mergedOptions)
   const Component = motion[as] || motion.div
 
   return (
