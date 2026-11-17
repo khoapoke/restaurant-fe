@@ -42,7 +42,9 @@ export default function HomeHeroSection() {
 
         {/* Mô tả súc tích theo chuẩn Content-Minimalist */}
         <p className="text-text-muted max-w-xl mx-auto text-sm sm:text-base mb-8 leading-relaxed">
-          Khám phá nghệ thuật ẩm thực thượng hạng, giữ chỗ trực tuyến tức thì và thực đơn thông minh theo khẩu vị riêng của bạn.
+          <TextEffect per="char" as="span" preset="fade">
+            Khám phá nghệ thuật ẩm thực thượng hạng, giữ chỗ trực tuyến tức thì và thực đơn thông minh theo khẩu vị riêng của bạn.
+          </TextEffect> 
         </p>
 
         {/* Cụm 2 nút hành động (CTA) */}

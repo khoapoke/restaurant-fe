@@ -5,6 +5,9 @@ import Button from '@/components/ui/Button'
 import Skeleton from '@/components/ui/Skeleton'
 import Alert from '@/components/ui/Alert'
 import { UtensilsCrossed, ArrowRight, Flame, RefreshCw } from 'lucide-react'
+import InView from '@/components/core/in-view'
+import AnimatedGroup from '@/components/core/animated-group'
+import Spotlight from '@/components/core/spotlight'
 
 /**
  * Component Món Ăn Nổi Bật (HomeFeaturedDishes)
@@ -12,6 +15,7 @@ import { UtensilsCrossed, ArrowRight, Flame, RefreshCw } from 'lucide-react'
  * - Giữ nguyên 100% logic API getDishesApi
  * - Đảm bảo đủ 4 trạng thái UI: Loading, Error, Empty, Data
  * - Dish Card chuẩn Component Specs 6.2 (aspect-[4/3], lazy loading, async decoding)
+ * - Tối ưu chuyển động 60 FPS với InView, AnimatedGroup & Spotlight tương tác
  */
 export default function HomeFeaturedDishes() {
   const [dishes, setDishes] = useState([])
@@ -38,29 +42,37 @@ export default function HomeFeaturedDishes() {
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Tiêu đề mục chuẩn Content-Minimalist */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 text-center sm:text-left">
-        <div>
-          <div className="inline-flex items-center gap-2 text-brand-primary text-xs font-semibold uppercase tracking-wider mb-1">
-            <Flame className="w-3.5 h-3.5" />
-            <span>Tuyệt tác ẩm thực</span>
+      {/* Tiêu đề mục chuẩn Content-Minimalist với InView */}
+      <InView
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 text-center sm:text-left">
+          <div>
+            <div className="inline-flex items-center gap-2 text-brand-primary text-xs font-semibold uppercase tracking-wider mb-1">
+              <Flame className="w-3.5 h-3.5" />
+              <span>Tuyệt tác ẩm thực</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-text-main tracking-tight">
+              Món Ăn Signature Bếp Trưởng
+            </h2>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-text-main tracking-tight">
-            Món Ăn Signature Bếp Trưởng
-          </h2>
-        </div>
 
-        <Link to="/menu">
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={ArrowRight}
-            className="text-brand-primary hover:text-brand-hover hover:bg-surface-card"
-          >
-            Xem toàn bộ thực đơn
-          </Button>
-        </Link>
-      </div>
+          <Link to="/menu">
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={ArrowRight}
+              className="text-brand-primary hover:text-brand-hover hover:bg-surface-card cursor-pointer"
+            >
+              Xem toàn bộ thực đơn
+            </Button>
+          </Link>
+        </div>
+      </InView>
 
       {/* 4 Trạng thái UI chuẩn quy ước FE */}
       {/* 1. Trạng thái Loading */}
@@ -94,9 +106,12 @@ export default function HomeFeaturedDishes() {
         </div>
       )}
 
-      {/* 4. Trạng thái Dữ liệu (Data) */}
+      {/* 4. Trạng thái Dữ liệu (Data) với AnimatedGroup và Spotlight */}
       {!loading && !error && dishes.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <AnimatedGroup
+          preset="slide"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
           {dishes.map((dish) => {
             const price = Number(dish.price || dish.don_gia || 0)
             const name = dish.dishName || dish.name || dish.ten_mon_an || 'Món ăn đặc sắc'
@@ -106,8 +121,14 @@ export default function HomeFeaturedDishes() {
             return (
               <div
                 key={dish.dishId || dish.id}
-                className="group bg-surface-card border border-border-subtle hover:border-border-strong rounded-xl overflow-hidden transition-colors flex flex-col justify-between"
+                className="group relative bg-surface-card border border-border-subtle hover:border-border-strong rounded-xl overflow-hidden transition-all duration-300 flex flex-col justify-between shadow-xs hover:shadow-md"
               >
+                {/* Vệt sáng Spotlight tinh tế khi hover */}
+                <Spotlight
+                  className="from-brand-primary/15 via-brand-primary/5 to-transparent blur-xl pointer-events-none"
+                  size={260}
+                />
+
                 {/* Khung ảnh tỉ lệ chuẩn 4:3 */}
                 <div className="relative overflow-hidden aspect-[4/3] bg-surface-bg">
                   <img
@@ -115,19 +136,19 @@ export default function HomeFeaturedDishes() {
                     alt={name}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
                       e.target.onerror = null
                       e.target.src = '/img/steak-frites.jpg'
                     }}
                   />
-                  <div className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-surface-bg/80 border border-border-subtle text-[10px] font-medium text-brand-primary">
+                  <div className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-surface-bg/85 backdrop-blur-sm border border-border-subtle text-[10px] font-medium text-brand-primary">
                     {categoryName}
                   </div>
                 </div>
 
                 {/* Thông tin món ăn & Giá */}
-                <div className="p-4 flex-1 flex flex-col justify-between">
+                <div className="p-4 flex-1 flex flex-col justify-between relative z-10">
                   <div>
                     <h3 className="text-sm font-semibold text-text-main group-hover:text-brand-primary transition-colors line-clamp-1">
                       {name}
@@ -142,7 +163,7 @@ export default function HomeFeaturedDishes() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="w-full text-xs font-medium border-border-subtle hover:border-border-strong"
+                        className="w-full text-xs font-medium border-border-subtle hover:border-border-strong cursor-pointer"
                       >
                         Gọi món ngay
                       </Button>
@@ -152,7 +173,7 @@ export default function HomeFeaturedDishes() {
               </div>
             )
           })}
-        </div>
+        </AnimatedGroup>
       )}
     </section>
   )

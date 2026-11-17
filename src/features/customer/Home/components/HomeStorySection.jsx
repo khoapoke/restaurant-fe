@@ -1,11 +1,13 @@
 import { ChefHat, Leaf, Award, ShieldCheck } from 'lucide-react'
 import InView from '@/components/core/in-view'
+import TextEffect from '@/components/core/text-effect'
 
 /**
  * Component Triết lý Ẩm thực & Bếp trưởng (HomeStorySection)
  * Chuẩn mực Design System:
  * - Dưới 200 dòng, bố cục đối xứng 2 cột (Story Text & Chef Showcase)
- * - Tối ưu 60 FPS với InView Motion-Primitives
+ * - Tối ưu 60 FPS với InView & TextEffect Motion-Primitives
+ * - Kể chuyện đa tầng: Tiêu đề H2 (blur) & Lời trích dẫn Bếp trưởng (fade)
  * - Hình ảnh lazy loading, async decoding, fallback an toàn
  */
 export default function HomeStorySection() {
@@ -46,7 +48,9 @@ export default function HomeStorySection() {
             </div>
 
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-text-main leading-snug">
-              Tuyệt tác mỹ vị từ sự tỉ mỉ trong từng nguyên liệu
+              <TextEffect per="word" as="span" preset="blur">
+                Tuyệt tác mỹ vị từ sự tỉ mỉ trong từng nguyên liệu
+              </TextEffect>
             </h2>
 
             <p className="text-sm sm:text-base text-text-muted leading-relaxed">
@@ -55,9 +59,11 @@ export default function HomeStorySection() {
               và kỹ thuật ẩm thực đương đại chuẩn xác.
             </p>
 
-            {/* Trích dẫn Bếp trưởng */}
+            {/* Trích dẫn Bếp trưởng với TextEffect fade có độ trễ */}
             <div className="p-4 rounded-xl bg-surface-card border-l-2 border-brand-primary border-border-subtle text-text-body text-xs sm:text-sm italic">
-              &ldquo;Mỗi món ăn gửi đến bàn tiệc không đơn thuần là một khẩu phần, mà là sự hòa quyện của thời gian, hương vị và cảm xúc.&rdquo;
+              <TextEffect per="word" as="span" preset="fade" delay={0.35}>
+                &ldquo;Mỗi món ăn gửi đến bàn tiệc không đơn thuần là một khẩu phần, mà là sự hòa quyện của thời gian, hương vị và cảm xúc.&rdquo;
+              </TextEffect>
             </div>
 
             {/* 3 Trụ cột chất lượng */}
