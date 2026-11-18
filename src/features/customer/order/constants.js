@@ -69,11 +69,47 @@ export const ORDER_STATUS_CONFIG = {
 export const FulfillmentType = {
   DELIVERY: 'DELIVERY',
   PICKUP: 'PICKUP',
+  DINE_IN: 'DINE_IN',
 }
 
 export const FULFILLMENT_CONFIG = {
   DELIVERY: { label: 'Giao hàng tận nơi' },
   PICKUP: { label: 'Nhận tại nhà hàng' },
+  DINE_IN: { label: 'Dùng tại bàn ăn' },
+}
+
+export const OrderItemStatus = {
+  PENDING: 'PENDING',
+  COOKING: 'COOKING',
+  READY: 'READY',
+  SERVED: 'SERVED',
+}
+
+export const ORDER_ITEM_STATUS_CONFIG = {
+  PENDING: {
+    label: 'Chờ chế biến',
+    color: 'text-status-warning',
+    bg: 'bg-status-warning/10',
+    border: 'border-status-warning/30',
+  },
+  COOKING: {
+    label: 'Đang nấu',
+    color: 'text-brand-hover',
+    bg: 'bg-brand-primary/10',
+    border: 'border-brand-primary/30',
+  },
+  READY: {
+    label: 'Món đã sẵn sàng',
+    color: 'text-status-info',
+    bg: 'bg-status-info/10',
+    border: 'border-status-info/30',
+  },
+  SERVED: {
+    label: 'Đã phục vụ tại bàn',
+    color: 'text-status-success',
+    bg: 'bg-status-success/10',
+    border: 'border-status-success/30',
+  },
 }
 
 export const PaymentMethod = {
