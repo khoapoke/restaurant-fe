@@ -42,13 +42,15 @@ Mọi Controller API kế thừa `BaseController` và sử dụng Trait `ApiResp
 
 ---
 
-## 🏷️ 2. Danh Mục 9 Backed Enums Hệ Thống (`App\Modules\Core\Enums`)
+## 🏷️ 2. Danh Mục 11 Backed Enums Hệ Thống (`App\Modules\Core\Enums`)
 
 | Enum Class | Giá trị Enum trên API (FE nhận & gửi) | Chuỗi lưu trữ trong MySQL (Database Value) | Nhãn hiển thị tiếng Việt trên UI |
 | :--- | :--- | :--- | :--- |
 | **`RoleType`** | `ADMIN`, `STAFF`, `CUSTOMER` | `'ADMIN'`, `'STAFF'`, `'CUSTOMER'` | Quản trị viên, Nhân viên, Khách hàng |
 | **`AccountStatus`**| `ACTIVE`, `LOCKED` | `'ACTIVE'`, `'LOCKED'` | Đang hoạt động, Đã bị khóa |
 | **`OrderStatus`**  | `PENDING_CONFIRMATION`<br>`CONFIRMED`<br>`PREPARING`<br>`READY`<br>`DELIVERING`<br>`COMPLETED`<br>`CANCELLED` | `'Chờ xác nhận'`<br>`'Đã xác nhận'`<br>`'Đang chuẩn bị'`<br>`'Sẵn sàng'`<br>`'Đang giao'`<br>`'Đã giao'`<br>`'Đã hủy'` | Chờ xác nhận, Đã xác nhận, Đang chuẩn bị, Sẵn sàng, Đang giao, Đã hoàn tất, Đã hủy |
+| **`OrderItemStatus`**| `PENDING`<br>`COOKING`<br>`READY`<br>`SERVED` | `'Chờ chế biến'`<br>`'Đang nấu'`<br>`'Đã sẵn sàng'`<br>`'Đã phục vụ'` | Chờ chế biến, Đang nấu, Đã sẵn sàng, Đã phục vụ tại bàn |
+| **`OrderFulfillmentType`**| `DELIVERY`, `PICKUP`, `DINE_IN` | `'Giao tận nơi'`, `'Tự đến lấy'`, `'Tại bàn'` | Giao tận nơi, Tự đến lấy, Dùng tại bàn ăn |
 | **`TableStatus`**  | `AVAILABLE`, `RESERVED`, `OCCUPIED`, `MAINTENANCE` | `'Trống'`, `'Đã đặt'`, `'Đang phục vụ'`, `'Bảo trì'` | Bàn trống, Đã đặt, Đang phục vụ, Bảo trì |
 | **`ReservationStatus`**| `PENDING_DEPOSIT`<br>`PENDING`<br>`CONFIRMED`<br>`OCCUPIED`<br>`REJECTED`<br>`CANCELLED`<br>`COMPLETED` | `'Chờ đặt cọc'`<br>`'Chờ xử lý'`<br>`'Đã xác nhận'`<br>`'Đang có khách'`<br>`'Từ chối'`<br>`'Đã hủy'`<br>`'Hoàn thành'` | Chờ đặt cọc (15 phút), Chờ xử lý, Đã xác nhận, Đang có khách, Bị từ chối, Đã hủy, Hoàn thành |
 | **`PaymentMethod`**| `CASH`, `BANK_TRANSFER_QR` | `'Tiền mặt'`, `'Chuyển khoản'` | Tiền mặt, Chuyển khoản VietQR |
