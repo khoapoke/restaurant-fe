@@ -2,7 +2,7 @@ import apiClient from '../../../../lib/axios'
 
 /**
  * Service gọi API Giỏ hàng khách hàng
- * Tham chiếu đặc tả: docs/api/customer-cart.md
+ * Tham chiếu đặc tả: docs/modules/cart.md
  */
 
 export const getCartApi = async () => {

@@ -1,6 +1,6 @@
 /**
  * Profile Constants & Enums
- * Tuân thủ docs/api/enums.md
+ * Tuân thủ docs/system_conventions.md
  */
 
 export const ALLERGENS = [

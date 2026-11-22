@@ -2,7 +2,7 @@ import apiClient from '../../../../lib/axios'
 
 /**
  * Service Quản lý Tài khoản Người dùng (Admin)
- * Tham chiếu đặc tả: docs/api/admin-account.md (USR-07 -> USR-10)
+ * Tham chiếu đặc tả: docs/modules/auth.md (ADM-01 -> ADM-07)
  */
 
 export const getAdminAccountsApi = async (params = {}) => {

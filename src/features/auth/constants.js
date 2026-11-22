@@ -1,6 +1,6 @@
 /**
  * Auth Constants & Enums
- * Tuân thủ docs/api/enums.md (Toàn bộ ENUM viết hoa tiếng Anh)
+ * Tuân thủ docs/system_conventions.md (Toàn bộ ENUM viết hoa tiếng Anh)
  */
 
 export const Role = {

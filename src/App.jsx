@@ -14,12 +14,14 @@ import CustomerOrdersPage from './features/customer/order/pages/CustomerOrdersPa
 import CustomerReservationPage from './features/customer/reservation/pages/CustomerReservationPage'
 import HomePage from './features/customer/Home/pages/HomePage'
 import CustomerChatWidget from './features/customer/chat/components/CustomerChatWidget'
+import DineInOrderPage from './features/customer/order/pages/DineInOrderPage'
 
 // Admin Module Components & Layout (Code-split with React.lazy để tối ưu bundle)
 import AdminRoute from './features/admin/layout/routes/AdminRoute'
 import AdminLayout from './features/admin/layout/layouts/AdminLayout'
 
 const AdminDashboardPage = lazy(() => import('./features/admin/dashboard/pages/AdminDashboardPage'))
+const AdminKitchenPage = lazy(() => import('./features/admin/kitchen/pages/AdminKitchenPage'))
 const AdminDishPage = lazy(() => import('./features/admin/dish/pages/AdminDishPage'))
 const AdminCategoryPage = lazy(() => import('./features/admin/dish/pages/AdminCategoryPage'))
 const AdminOrdersPage = lazy(() => import('./features/admin/order/pages/AdminOrdersPage'))
@@ -49,6 +51,7 @@ function App() {
             <Route path="/orders" element={<CustomerOrdersPage />} />
             <Route path="/reservation" element={<CustomerReservationPage />} />
             <Route path="/reservations" element={<Navigate to="/reservation" replace />} />
+            <Route path="/dine-in" element={<DineInOrderPage />} />
 
             {/* Phân hệ Quản trị (Admin) — Được bảo vệ bởi AdminRoute & AdminLayout */}
             <Route
@@ -61,6 +64,7 @@ function App() {
             >
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="kitchen" element={<AdminKitchenPage />} />
               <Route path="dishes" element={<AdminDishPage />} />
               <Route path="categories" element={<AdminCategoryPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />

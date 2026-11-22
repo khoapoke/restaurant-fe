@@ -66,6 +66,7 @@ export const AccountFilterBar = ({
         >
           <option value="ALL">Tất cả vai trò</option>
           <option value={Role.ADMIN}>Quản trị viên (ADMIN)</option>
+          <option value={Role.STAFF}>Nhân viên (STAFF)</option>
           <option value={Role.CUSTOMER}>Khách hàng (CUSTOMER)</option>
         </select>
       </div>

@@ -2,7 +2,7 @@ import apiClient from '../../../../lib/axios'
 
 /**
  * Service gọi API Thực đơn & Gợi ý thời tiết
- * Tham chiếu đặc tả: docs/api/customer-menu.md
+ * Tham chiếu đặc tả: docs/modules/menu.md
  */
 
 export const getCategoriesApi = async () => {

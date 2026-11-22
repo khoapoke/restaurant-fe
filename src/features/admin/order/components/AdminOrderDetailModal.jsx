@@ -46,11 +46,15 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose, onConfirmPayme
   const paymentStatus = order?.payment?.status || order?.payment?.trang_thai || 'UNPAID'
   const payMethod = order?.payment?.paymentMethod || order?.payment?.method || order?.paymentMethod
   const payConfig = PAYMENT_STATUS_CONFIG[paymentStatus] || PAYMENT_STATUS_CONFIG.UNPAID
-  const methodLabel = PAYMENT_METHOD_CONFIG[payMethod]?.label || payMethod || 'Chưa chọn'
+  const methodLabel = PAYMENT_METHOD_CONFIG[payMethod]?.label || payMethod || 'Tại quầy / Tiền mặt'
+  const addr = String(order?.shippingAddress || order?.dia_chi_giao_hang || '')
+  const isDineIn = order?.fulfillmentType === 'DINE_IN' || Boolean(order?.tableId) || addr.startsWith('Tại bàn')
 
   const canConfirmPayment =
     (paymentStatus === 'UNPAID' || paymentStatus === 'CHUA_THANH_TOAN') &&
-    (payMethod === 'BANK_TRANSFER_QR' || payMethod === 'Chuyển khoản') &&
+    (payMethod === 'BANK_TRANSFER_QR' ||
+      payMethod === 'Chuyển khoản' ||
+      (isDineIn && Number(order?.totalAmount || 0) > 0)) &&
     status !== 'CANCELLED'
 
   return (
@@ -117,11 +121,11 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose, onConfirmPayme
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-text-body">
               <p className="flex items-center gap-1.5 truncate">
                 <User className="w-3.5 h-3.5 text-brand-primary shrink-0" />
-                <span>{order.recipientName || 'Khách hàng'}</span>
+                <span>{order.customerName || order.recipientName || 'Khách hàng'}</span>
               </p>
               <p className="flex items-center gap-1.5 truncate">
                 <Phone className="w-3.5 h-3.5 text-brand-primary shrink-0" />
-                <span>{order.recipientPhone || '—'}</span>
+                <span>{order.customerPhone || order.recipientPhone || '—'}</span>
               </p>
             </div>
             <p className="flex items-start gap-1.5 text-text-body pt-1 border-t border-border-subtle">

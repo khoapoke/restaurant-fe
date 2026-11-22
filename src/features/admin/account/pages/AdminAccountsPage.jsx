@@ -5,6 +5,7 @@ import {
   lockAccountApi,
   unlockAccountApi,
 } from '../services/adminAccountService'
+import { resolveAccountRole } from '../constants'
 import AccountFilterBar from '../components/AccountFilterBar'
 import AccountTable from '../components/AccountTable'
 import ToggleLockAccountModal from '../components/ToggleLockAccountModal'
@@ -56,10 +57,7 @@ export const AdminAccountsPage = () => {
 
         let filteredItems = Array.isArray(items) ? items : []
         if (roleFilter !== 'ALL') {
-          filteredItems = filteredItems.filter((acc) => {
-            const role = acc.role || (acc.ma_vai_tro === 1 ? 'ADMIN' : 'CUSTOMER')
-            return role === roleFilter
-          })
+          filteredItems = filteredItems.filter((acc) => resolveAccountRole(acc) === roleFilter)
         }
 
         setAccounts(filteredItems)

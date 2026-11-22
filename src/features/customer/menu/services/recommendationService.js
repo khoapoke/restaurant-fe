@@ -2,7 +2,7 @@ import apiClient from '../../../../lib/axios'
 
 /**
  * Service gọi API Gợi ý Món ăn (Neo4j Graph & AI Collaborative Filtering)
- * Tham chiếu đặc tả: docs/api/customer-recommendation.md
+ * Tham chiếu đặc tả: docs/modules/recommendation.md
  */
 
 /**

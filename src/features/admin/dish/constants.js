@@ -1,6 +1,6 @@
 /**
  * Constants & Enums cho Quản lý Danh mục & Món ăn (Admin)
- * Tham chiếu docs/api/enums.md và docs/api/admin-dish.md
+ * Tham chiếu docs/system_conventions.md và docs/modules/menu.md
  * Đồng bộ 100% Centralized Design Tokens
  */
 

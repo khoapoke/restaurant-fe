@@ -6,7 +6,7 @@ import Button from '../../../../components/ui/Button'
  * Bảng Danh Sách Đặt Bàn (ReservationTable)
  * - 100% Centralized Design Tokens
  * - Hiển thị tiền cọc và điều phối nhanh các hành động xác nhận cọc/duyệt/hủy/vào bàn
- * - Độ dài < 175 dòng
+ * - Độ dài < 200 dòng
  */
 export const ReservationTable = ({
   reservations = [],
@@ -31,8 +31,20 @@ export const ReservationTable = ({
         <tbody className="divide-y divide-border-subtle/60">
           {reservations.map((r) => {
             const id = r.reservationId || r.ma_dat_ban
-            const name = r.recipientName || r.customerName || r.account?.username || 'Khách'
-            const phone = r.recipientPhone || r.phoneNumber || '—'
+            const name =
+              r.customer?.fullName ||
+              r.customer?.username ||
+              r.recipientName ||
+              r.customerName ||
+              r.account?.userProfile?.fullName ||
+              r.account?.username ||
+              'Khách đặt bàn'
+            const phone =
+              r.customer?.phoneNumber ||
+              r.recipientPhone ||
+              r.phoneNumber ||
+              r.account?.userProfile?.phoneNumber ||
+              '—'
             const time = r.reservationTime || r.thoi_gian
             const guests = r.guestCount || r.so_luong_khach || 1
             const tableName = r.tableName || r.table?.tableName || (r.tableId ? `Bàn #${r.tableId}` : 'Chưa gán')

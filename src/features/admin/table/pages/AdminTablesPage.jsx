@@ -8,6 +8,7 @@ import {
 } from '../services/adminTableService'
 import TableCard from '../components/TableCard'
 import TableFormModal from '../components/TableFormModal'
+import DineInOpenModal from '../components/DineInOpenModal'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
@@ -36,6 +37,7 @@ export const AdminTablesPage = () => {
   // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTable, setEditingTable] = useState(null)
+  const [dineInTable, setDineInTable] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const showToast = (msg) => {
@@ -191,6 +193,7 @@ export const AdminTablesPage = () => {
               table={table}
               onEdit={(t) => { setEditingTable(t); setIsFormOpen(true) }}
               onQuickStatusChange={handleQuickStatusChange}
+              onOpenDineIn={(t) => setDineInTable(t)}
             />
           ))}
         </div>
@@ -203,6 +206,17 @@ export const AdminTablesPage = () => {
         onSubmit={handleFormSubmit}
         initialData={editingTable}
         isSubmitting={isSubmitting}
+      />
+
+      {/* Modal Phục vụ Mở bàn & Cấp mã QR tại chỗ */}
+      <DineInOpenModal
+        isOpen={!!dineInTable}
+        table={dineInTable}
+        onClose={() => setDineInTable(null)}
+        onSuccess={() => {
+          fetchTables()
+          showToast('Đã mở bàn và cấp mã QR thành công!')
+        }}
       />
     </div>
   )

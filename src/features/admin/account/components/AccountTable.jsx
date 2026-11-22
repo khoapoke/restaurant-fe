@@ -1,5 +1,5 @@
-import { Lock, Unlock, Shield, User } from 'lucide-react'
-import { ACCOUNT_STATUS_CONFIG, ROLE_CONFIG } from '../constants'
+import { Lock, Unlock, Shield, User, Briefcase } from 'lucide-react'
+import { ACCOUNT_STATUS_CONFIG, ROLE_CONFIG, resolveAccountRole } from '../constants'
 import Button from '../../../../components/ui/Button'
 import { useAuth } from '../../../../contexts/AuthContext'
 
@@ -28,7 +28,7 @@ export const AccountTable = ({ accounts = [], onToggleLock }) => {
             const email = acc.email || '—'
             const phone = acc.phoneNumber || acc.so_dien_thoai || acc.userProfile?.phoneNumber || '—'
             const status = acc.status || acc.trang_thai || 'ACTIVE'
-            const role = acc.role || (acc.ma_vai_tro === 1 ? 'ADMIN' : 'CUSTOMER')
+            const role = resolveAccountRole(acc)
 
             const isLocked = status === 'LOCKED'
             const isSelf =
@@ -70,6 +70,8 @@ export const AccountTable = ({ accounts = [], onToggleLock }) => {
                   >
                     {role === 'ADMIN' ? (
                       <Shield className="w-3 h-3" />
+                    ) : role === 'STAFF' ? (
+                      <Briefcase className="w-3 h-3" />
                     ) : (
                       <User className="w-3 h-3" />
                     )}

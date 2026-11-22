@@ -17,8 +17,22 @@ export const KitchenOrderCard = ({
 }) => {
   const orderId = order.orderId || order.ma_don_hang
   const tableId = order.tableId || order.ma_ban
-  const tableName = order.tableName || order.ten_ban || `Bàn #${tableId || 'Mang đi'}`
-  const waitingMinutes = Number(order.waitingMinutes || order.thoi_gian_cho || 0)
+  const orderStatus = order.status || order.orderStatus || order.trang_thai
+  const tableName =
+    tableId && Number(tableId) > 0
+      ? order.tableName || order.ten_ban || `Bàn #${tableId}`
+      : order.fulfillmentType === 'PICKUP'
+      ? 'Đơn Tự đến lấy'
+      : 'Đơn Giao tận nơi'
+
+  const rawDate = order.orderDate || order.orderTime || order.ngay_dat_hang
+  const computedWait = rawDate
+    ? Math.max(0, Math.floor((Date.now() - new Date(rawDate).getTime()) / 60000))
+    : 0
+  const waitingMinutes =
+    order.waitingMinutes !== undefined && order.waitingMinutes !== null
+      ? Number(order.waitingMinutes)
+      : computedWait
   const items = order.items || order.chi_tiet || []
 
   // Đếm tiến độ món
@@ -163,7 +177,7 @@ export const KitchenOrderCard = ({
         </span>
 
         {/* Nút báo sẵn sàng cả đơn nếu có món READY */}
-        {order.orderStatus !== 'READY' && readyOrServedCount === items.length && items.length > 0 && (
+        {orderStatus !== 'READY' && readyOrServedCount === items.length && items.length > 0 && (
           <button
             type="button"
             disabled={loadingOrderId === orderId}

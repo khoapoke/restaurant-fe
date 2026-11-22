@@ -1,6 +1,6 @@
 /**
  * Constants & Enums cho Quản lý Bàn ăn & Đặt bàn (Admin)
- * Tham chiếu docs/api/enums.md và docs/api/admin-table-report.md
+ * Tham chiếu docs/system_conventions.md và docs/modules/reservation.md
  * 100% Centralized Design Tokens
  */
 

@@ -26,7 +26,7 @@ export const AdminPlaceholderPage = ({
         <h2 className="text-2xl font-bold text-text-main tracking-tight">{title}</h2>
         <p className="text-xs text-text-muted max-w-md mx-auto leading-relaxed">
           {description ||
-            `Module ${title} đã được quy hoạch trong tài liệu admin-roadmap.md và sẵn sàng được triển khai ở bước tiếp theo.`}
+            `Module ${title} hiện đang trong giai đoạn chuẩn bị và sẽ được triển khai ở bước tiếp theo.`}
         </p>
       </div>
 

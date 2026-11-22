@@ -1,13 +1,13 @@
-import { Users, MapPin, Edit2 } from 'lucide-react'
+import { Users, MapPin, Edit2, QrCode } from 'lucide-react'
 import { TABLE_STATUS_CONFIG } from '../constants'
 
 /**
  * Thẻ Hiển Thị Bàn Ăn (TableCard)
  * - 100% Centralized Design Tokens
- * - Đổi trạng thái bàn nhanh chóng
- * - Độ dài < 80 dòng
+ * - Hỗ trợ thao tác Mở bàn QR tại chỗ
+ * - Độ dài < 100 dòng
  */
-export const TableCard = ({ table, onEdit, onQuickStatusChange }) => {
+export const TableCard = ({ table, onEdit, onQuickStatusChange, onOpenDineIn }) => {
   const id = table.tableId || table.ma_ban
   const name = table.tableName || table.ten_ban
   const capacity = table.capacity || table.suc_chua || 4
@@ -30,14 +30,28 @@ export const TableCard = ({ table, onEdit, onQuickStatusChange }) => {
           </h3>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onEdit(table)}
-          className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-card-hover transition-colors cursor-pointer"
-          title="Sửa thông tin bàn"
-        >
-          <Edit2 className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-1">
+          {(status === 'AVAILABLE' || status === 'OCCUPIED') && onOpenDineIn && (
+            <button
+              type="button"
+              onClick={() => onOpenDineIn(table)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-surface-bg transition-colors cursor-pointer"
+              title={status === 'AVAILABLE' ? 'Mở bàn gọi món QR tại chỗ' : 'Xem mã QR phục vụ'}
+            >
+              <QrCode className="w-3 h-3" />
+              <span>{status === 'AVAILABLE' ? 'Mở bàn' : 'Mã QR'}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onEdit(table)}
+            className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-card-hover transition-colors cursor-pointer"
+            title="Sửa thông tin bàn"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2 pt-2 border-t border-border-subtle">

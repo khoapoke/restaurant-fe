@@ -19,6 +19,7 @@ import Skeleton from '../../../../components/ui/Skeleton'
 export const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([])
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [fulfillmentFilter, setFulfillmentFilter] = useState('ALL')
   const [pagination, setPagination] = useState({ currentPage: 1, perPage: 10, totalItems: 0, lastPage: 1 })
 
   const [loading, setLoading] = useState(true)
@@ -44,6 +45,7 @@ export const AdminOrdersPage = () => {
     try {
       const params = { page, perPage: 10 }
       if (statusFilter !== 'ALL') params.status = statusFilter
+      if (fulfillmentFilter !== 'ALL') params.fulfillmentType = fulfillmentFilter
 
       const res = await getAdminOrdersApi(params)
       const raw = res.data?.data ?? res.data
@@ -66,7 +68,7 @@ export const AdminOrdersPage = () => {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter])
+  }, [statusFilter, fulfillmentFilter])
 
   useEffect(() => { fetchOrders(1) }, [fetchOrders])
 
@@ -149,6 +151,30 @@ export const AdminOrdersPage = () => {
       </div>
 
       <AdminOrderStatusTabs activeStatus={statusFilter} onSelectStatus={setStatusFilter} />
+
+      {/* Lọc nhanh theo hình thức phục vụ */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
+        <span className="text-text-muted font-semibold text-[11px] mr-1 shrink-0">Hình thức:</span>
+        {[
+          { key: 'ALL', label: 'Tất cả' },
+          { key: 'DELIVERY', label: 'Giao tận nơi' },
+          { key: 'PICKUP', label: 'Tự đến lấy' },
+          { key: 'DINE_IN', label: 'Dùng tại bàn' },
+        ].map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => setFulfillmentFilter(f.key)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              fulfillmentFilter === f.key
+                ? 'bg-surface-card-hover text-brand-primary border border-brand-primary/40 font-bold'
+                : 'text-text-muted hover:text-text-main bg-surface-card border border-border-subtle'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       {successToast && <Alert type="success" message={successToast} onClose={() => setSuccessToast(null)} />}
       {error && <Alert type="error" message={error} action={<Button variant="outline" size="sm" onClick={() => fetchOrders(1)}>Thử lại</Button>} />}

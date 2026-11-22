@@ -2,7 +2,7 @@ import apiClient from '../../../../lib/axios'
 
 /**
  * Service Quản lý Danh mục & Món ăn (Admin)
- * Tham chiếu đặc tả: docs/api/admin-dish.md (MNU-09 -> MNU-17)
+ * Tham chiếu đặc tả: docs/modules/menu.md (MNU-08 -> MNU-17)
  */
 
 // ==================== DANH MỤC (CATEGORIES) ====================

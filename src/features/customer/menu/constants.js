@@ -1,6 +1,6 @@
 /**
  * Menu Constants & Enums
- * Tuân thủ docs/api/enums.md và docs/api/customer-menu.md
+ * Tuân thủ docs/system_conventions.md và docs/modules/menu.md
  */
 
 export const DEFAULT_COORDINATES = {

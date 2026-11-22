@@ -2,7 +2,7 @@ import apiClient from '../../../../lib/axios'
 
 /**
  * Service gọi API Hồ sơ khách hàng
- * Tham chiếu đặc tả: docs/api/customer-profile.md
+ * Tham chiếu đặc tả: docs/modules/auth.md
  */
 
 export const getProfileApi = async () => {

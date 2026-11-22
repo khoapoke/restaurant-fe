@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Shield,
   X,
+  ChefHat,
 } from 'lucide-react'
 
 const navGroups = [
@@ -23,17 +24,18 @@ const navGroups = [
     ],
   },
   {
+    title: 'Vận hành Bếp & Đơn hàng',
+    items: [
+      { to: '/admin/kitchen', icon: ChefHat, label: 'Màn hình Bếp (KDS)' },
+      { to: '/admin/orders', icon: ShoppingBag, label: 'Quản lý Đơn hàng' },
+      { to: '/admin/payments', icon: CreditCard, label: 'Giao dịch Thanh toán' },
+    ],
+  },
+  {
     title: 'Thực đơn & Món ăn',
     items: [
       { to: '/admin/dishes', icon: UtensilsCrossed, label: 'Quản lý Món ăn' },
       { to: '/admin/categories', icon: FolderTree, label: 'Quản lý Danh mục' },
-    ],
-  },
-  {
-    title: 'Bán hàng & Thu chi',
-    items: [
-      { to: '/admin/orders', icon: ShoppingBag, label: 'Quản lý Đơn hàng' },
-      { to: '/admin/payments', icon: CreditCard, label: 'Giao dịch Thanh toán' },
     ],
   },
   {

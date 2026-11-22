@@ -2,7 +2,7 @@ import { Eye, XCircle, ArrowRight, Banknote } from 'lucide-react'
 import {
   ORDER_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
-  NEXT_STATUS_MAP,
+  getNextOrderAction,
 } from '../constants'
 import Button from '../../../../components/ui/Button'
 
@@ -32,21 +32,47 @@ export const AdminOrderTable = ({
           {orders.map((order) => {
             const id = order.orderId || order.ma_don_hang || order.id
             const status = order.status || order.trang_thai
+            const addr = String(order.shippingAddress || order.dia_chi_giao_hang || '')
+            const fulfillmentType =
+              order.fulfillmentType ||
+              (order.tableId || order.ma_ban || addr.startsWith('Tại bàn')
+                ? 'DINE_IN'
+                : addr.startsWith('[PICKUP]')
+                ? 'PICKUP'
+                : 'DELIVERY')
+
             const statusCfg = ORDER_STATUS_CONFIG[status] || {
               label: status,
               color: 'text-text-muted bg-surface-elevated border-border-strong',
             }
+            const statusLabel =
+              fulfillmentType === 'DINE_IN' && status === 'DELIVERING'
+                ? 'Đang dùng bữa'
+                : statusCfg.label
 
             const paymentStatus = order.payment?.status || order.payment?.trang_thai || 'UNPAID'
             const payMethod = order.payment?.paymentMethod || order.payment?.method || order.paymentMethod
             const payCfg = PAYMENT_STATUS_CONFIG[paymentStatus] || PAYMENT_STATUS_CONFIG.UNPAID
-            const nextStep = NEXT_STATUS_MAP[status]
+            const nextStep = getNextOrderAction(status, fulfillmentType)
             const isActionLoading = actionLoadingId === id
             const canCancel = status !== 'COMPLETED' && status !== 'CANCELLED'
+            const totalAmount = Number(order.totalAmount || order.tong_tien || 0)
             const canConfirmPay =
               (paymentStatus === 'UNPAID' || paymentStatus === 'CHUA_THANH_TOAN') &&
-              (payMethod === 'BANK_TRANSFER_QR' || payMethod === 'Chuyển khoản') &&
+              (payMethod === 'BANK_TRANSFER_QR' ||
+                payMethod === 'Chuyển khoản' ||
+                (fulfillmentType === 'DINE_IN' && totalAmount > 0)) &&
               status !== 'CANCELLED'
+
+            const customerDisplay =
+              fulfillmentType === 'DINE_IN'
+                ? order.tableName || (order.tableId ? `Bàn #${order.tableId}` : addr.replace('Tại bàn: ', '') || 'Khách tại bàn')
+                : order.customerName || order.recipientName || order.account?.username || 'Khách vãng lai'
+
+            const subDisplay =
+              fulfillmentType === 'DINE_IN'
+                ? `Phục vụ: ${order.customerName || 'Tại bàn'}`
+                : order.customerPhone || order.recipientPhone || (fulfillmentType === 'PICKUP' ? 'Tự đến lấy' : 'Giao tận nơi')
 
             return (
               <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
@@ -55,11 +81,23 @@ export const AdminOrderTable = ({
                 </td>
 
                 <td className="py-3.5 px-4">
-                  <p className="font-bold text-text-main truncate max-w-[140px]">
-                    {order.recipientName || order.account?.username || 'Khách vãng lai'}
-                  </p>
-                  <p className="text-[10px] text-text-muted font-mono">
-                    {order.recipientPhone || '—'}
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-text-main truncate max-w-[140px]">
+                      {customerDisplay}
+                    </p>
+                    {fulfillmentType === 'DINE_IN' && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-status-success/15 text-status-success border border-status-success/30 whitespace-nowrap">
+                        Tại bàn
+                      </span>
+                    )}
+                    {fulfillmentType === 'PICKUP' && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-status-info/15 text-status-info border border-status-info/30 whitespace-nowrap">
+                        Mang về
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-text-muted font-mono truncate max-w-[170px]">
+                    {subDisplay}
                   </p>
                 </td>
 
@@ -75,7 +113,7 @@ export const AdminOrderTable = ({
                 </td>
 
                 <td className="py-3.5 px-4 text-right font-mono font-bold text-brand-primary">
-                  {Number(order.totalAmount || 0).toLocaleString('vi-VN')} đ
+                  {totalAmount.toLocaleString('vi-VN')} đ
                 </td>
 
                 <td className="py-3.5 px-4 text-center">
@@ -86,7 +124,7 @@ export const AdminOrderTable = ({
 
                 <td className="py-3.5 px-4 text-center">
                   <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusCfg.color}`}>
-                    {statusCfg.label}
+                    {statusLabel}
                   </span>
                 </td>
 
@@ -98,7 +136,7 @@ export const AdminOrderTable = ({
                         onClick={() => onConfirmPayment?.(order)}
                         disabled={isActionLoading}
                         className="p-1.5 rounded-lg text-status-success hover:bg-status-success/10 border border-status-success/30 transition-colors cursor-pointer"
-                        title="Xác nhận đã nhận chuyển khoản"
+                        title="Xác nhận đã thu tiền đơn hàng"
                       >
                         <Banknote className="w-4 h-4" />
                       </button>
