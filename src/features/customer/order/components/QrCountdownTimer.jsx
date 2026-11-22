@@ -3,38 +3,60 @@ import { Clock } from 'lucide-react'
 
 /**
  * Đồng Hồ Đếm Ngược Thanh Toán QR (QrCountdownTimer)
- * - Cô lập chu kỳ đếm giây để chống re-render toàn bộ modal
- * - Độ dài < 50 dòng
+ * - Tính thời gian còn lại theo mốc thực tế (expiresAt + sessionStorage)
+ * - Không bị reset lại 15 phút khi khách đóng Modal đi và mở lại
+ * - Độ dài < 85 dòng
  */
 export default function QrCountdownTimer({
+  expiresAt,
+  storageKey,
   initialSeconds = 900,
   onExpire,
 }) {
-  const [secondsLeft, setSecondsLeft] = useState(initialSeconds)
-  const timerRef = useRef(null)
+  const resolveDeadlineMs = () => {
+    if (expiresAt) {
+      const parsed = new Date(expiresAt).getTime()
+      if (!Number.isNaN(parsed)) {
+        if (storageKey) sessionStorage.setItem(storageKey, String(parsed))
+        return parsed
+      }
+    }
+    if (storageKey) {
+      const saved = Number(sessionStorage.getItem(storageKey))
+      if (saved && !Number.isNaN(saved)) return saved
+    }
+    const fallback = Date.now() + initialSeconds * 1000
+    if (storageKey) sessionStorage.setItem(storageKey, String(fallback))
+    return fallback
+  }
+
+  const [secondsLeft, setSecondsLeft] = useState(() => {
+    const diff = Math.ceil((resolveDeadlineMs() - Date.now()) / 1000)
+    return Math.max(0, diff)
+  })
+  const expiredNotifiedRef = useRef(false)
 
   useEffect(() => {
-    setSecondsLeft(initialSeconds)
-  }, [initialSeconds])
+    expiredNotifiedRef.current = false
+    const deadlineMs = resolveDeadlineMs()
 
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current)
-          onExpire?.()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000))
+      setSecondsLeft(remaining)
+      if (remaining <= 0 && !expiredNotifiedRef.current) {
+        expiredNotifiedRef.current = true
+        onExpire?.()
+      }
+    }
 
-    return () => clearInterval(timerRef.current)
-  }, [onExpire])
+    tick()
+    const timerId = setInterval(tick, 1000)
+    return () => clearInterval(timerId)
+  }, [expiresAt, storageKey, initialSeconds, onExpire])
 
   const mins = Math.floor(secondsLeft / 60)
   const secs = secondsLeft % 60
-  const timeFormatted = `${mins}:${secs < 10 ? '0' : ''}${secs}`
+  const timeFormatted = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`
   const isUrgent = secondsLeft < 180
 
   return (
@@ -45,12 +67,15 @@ export default function QrCountdownTimer({
       </span>
       <span
         className={`font-mono font-bold tracking-wider ${
-          isUrgent ? 'text-status-error animate-pulse' : 'text-brand-primary'
+          secondsLeft === 0
+            ? 'text-status-error'
+            : isUrgent
+            ? 'text-status-error animate-pulse'
+            : 'text-brand-primary'
         }`}
       >
-        {timeFormatted}
+        {secondsLeft === 0 ? '00:00 (Đã hết hạn)' : timeFormatted}
       </span>
     </div>
   )
 }
-

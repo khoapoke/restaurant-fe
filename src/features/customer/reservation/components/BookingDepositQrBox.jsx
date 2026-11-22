@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { QrCode, Copy, Check, Zap } from 'lucide-react'
+import QrCountdownTimer from '../../order/components/QrCountdownTimer'
 
 /**
  * Khối Quét Mã VietQR và Giả Lập Cọc (BookingDepositQrBox)
  * Tách từ BookingStep4Result để đảm bảo quy chuẩn < 250 dòng
  */
 export default function BookingDepositQrBox({
+  reservationId,
+  depositDeadline,
   depositAmount,
   transferContent,
   qrUrl,
@@ -28,10 +31,13 @@ export default function BookingDepositQrBox({
           <QrCode className="w-4 h-4 text-brand-primary" />
           <span>Mã QR Thanh Toán Cọc</span>
         </span>
-        <span className="text-[11px] font-mono font-bold text-status-warning bg-status-warning/10 px-2 py-0.5 rounded-full border border-status-warning/30">
-          Giữ chỗ 15 phút
-        </span>
       </div>
+
+      <QrCountdownTimer
+        expiresAt={depositDeadline}
+        storageKey={reservationId ? `T_RESMK_DEPOSIT_QR_${reservationId}` : undefined}
+        initialSeconds={900}
+      />
 
       <div className="flex justify-center p-3 bg-surface-card rounded-xl border border-border-subtle">
         <img

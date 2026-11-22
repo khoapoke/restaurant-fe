@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { QrCode, Copy, Check, Zap, Clock, ShieldCheck, AlertCircle } from 'lucide-react'
+import { QrCode, Copy, Check, Zap, AlertCircle } from 'lucide-react'
 import Modal from '../../../../components/ui/Modal'
 import { mockDepositApi } from '../services/reservationService'
 import { DEPOSIT_RATE_PER_GUEST } from '../constants'
+import QrCountdownTimer from '../../order/components/QrCountdownTimer'
 
 /**
  * Modal Thanh Toán Đặt Cọc VietQR (DepositPaymentModal)
@@ -94,11 +95,13 @@ export default function DepositPaymentModal({
               <QrCode className="w-4 h-4 text-brand-primary" />
               <span>Quét mã VietQR chuyển khoản</span>
             </span>
-            <span className="text-[10px] font-mono text-status-warning bg-status-warning/10 px-2 py-0.5 rounded-full border border-status-warning/30 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              <span>Giữ chỗ 15 phút</span>
-            </span>
           </div>
+
+          <QrCountdownTimer
+            expiresAt={reservation.depositDeadline || reservation.han_chot_coc}
+            storageKey={`T_RESMK_DEPOSIT_QR_${id}`}
+            initialSeconds={900}
+          />
 
           <div className="flex justify-center p-2 bg-surface-bg rounded-lg border border-border-subtle">
             <img

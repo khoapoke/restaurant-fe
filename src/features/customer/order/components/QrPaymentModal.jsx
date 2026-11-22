@@ -29,6 +29,7 @@ export default function QrPaymentModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isPaid, setIsPaid] = useState(false)
+  const [isExpired, setIsExpired] = useState(false)
   const [copiedField, setCopiedField] = useState(null)
   const [isMocking, setIsMocking] = useState(false)
   const pollingTimerRef = useRef(null)
@@ -39,6 +40,7 @@ export default function QrPaymentModal({
       setQrData(null)
       setError(null)
       setIsPaid(false)
+      setIsExpired(false)
       clearInterval(pollingTimerRef.current)
       return
     }
@@ -46,6 +48,7 @@ export default function QrPaymentModal({
     const loadQr = async () => {
       setLoading(true)
       setError(null)
+      setIsExpired(false)
       try {
         const response = await generateQrApi(orderId)
         setQrData(response.data?.data || response.data)
@@ -85,7 +88,9 @@ export default function QrPaymentModal({
   const handleRetry = async () => {
     setLoading(true)
     setError(null)
+    setIsExpired(false)
     try {
+      sessionStorage.removeItem(`T_RESMK_QR_EXPIRE_${orderId}`)
       const response = await retryPaymentApi(orderId)
       setQrData(response.data?.data || response.data)
     } catch (err) {
@@ -143,15 +148,41 @@ export default function QrPaymentModal({
         </div>
       ) : qrData ? (
         <div className="space-y-4 font-sans">
-          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-brand-primary/40 shadow-xl shadow-brand-primary/5">
-            <img src={qrData.qrImageUrl || qrData.qrCodeUrl} alt="Mã QR VietQR" className="w-56 h-56 object-contain" />
+          <div className="relative flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-brand-primary/40 shadow-xl shadow-brand-primary/5 overflow-hidden">
+            <img
+              src={qrData.qrImageUrl || qrData.qrCodeUrl}
+              alt="Mã QR VietQR"
+              className={`w-56 h-56 object-contain transition-all duration-300 ${
+                isExpired ? 'opacity-20 blur-xs pointer-events-none select-none' : ''
+              }`}
+            />
             <div className="mt-2 text-center text-zinc-900 font-semibold text-xs flex items-center gap-1.5">
               <QrCode className="w-4 h-4 text-brand-primary" />
               <span>Quét bằng app ngân hàng bất kỳ (Napas 247)</span>
             </div>
+
+            {isExpired && (
+              <div className="absolute inset-0 bg-surface-card/90 backdrop-blur-xs flex flex-col items-center justify-center p-5 text-center space-y-3 animate-in fade-in duration-200">
+                <AlertTriangle className="w-9 h-9 text-status-warning" />
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-text-main">Mã QR đã hết hiệu lực (15 phút)</p>
+                  <p className="text-[11px] text-text-muted">
+                    Vui lòng bấm tạo lại mã QR mới để tiếp tục thanh toán đơn hàng.
+                  </p>
+                </div>
+                <Button variant="primary" size="sm" icon={RefreshCw} onClick={handleRetry}>
+                  Tạo lại mã QR mới (15 phút)
+                </Button>
+              </div>
+            )}
           </div>
 
-          <QrCountdownTimer initialSeconds={900} onExpire={() => {}} />
+          <QrCountdownTimer
+            expiresAt={qrData.expiresAt}
+            storageKey={`T_RESMK_QR_EXPIRE_${orderId}`}
+            initialSeconds={900}
+            onExpire={() => setIsExpired(true)}
+          />
 
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-surface-bg border border-border-subtle">

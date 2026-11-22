@@ -1,11 +1,15 @@
 import { Sun, Moon, ArrowLeft, ArrowRight } from 'lucide-react'
-import { LUNCH_TIME_SLOTS, DINNER_TIME_SLOTS } from '../constants'
+import {
+  LUNCH_TIME_SLOTS,
+  DINNER_TIME_SLOTS,
+  isTimeSlotAvailableForDate,
+} from '../constants'
 import BookingTablePicker from './BookingTablePicker'
 
 /**
  * Giai Đoạn 2: Chọn Khung Giờ & Bàn Ăn Khả Dụng (BookingStep2TimeTable)
- * - Tự động tải bàn trống theo giờ và số khách đã chọn ở Giai đoạn 1
- * - Độ dài < 140 dòng
+ * - Tự động khóa (disabled) các khung giờ đã qua trong ngày hôm nay (yêu cầu đặt trước >= 30 phút)
+ * - Độ dài < 155 dòng
  */
 export default function BookingStep2TimeTable({
   time,
@@ -27,7 +31,7 @@ export default function BookingStep2TimeTable({
           Giai đoạn 2: Chọn khung giờ &amp; vị trí bàn
         </h3>
         <p className="text-xs text-text-muted mt-0.5">
-          Khảo sát bàn trống cho <strong className="text-brand-primary">{guestCount} khách</strong> vào ngày <strong className="text-text-main">{date}</strong>.
+          Khảo sát bàn trống cho <strong className="text-brand-primary">{guestCount} khách</strong> vào ngày <strong className="text-text-main">{date}</strong> (đặt trước tối thiểu 30 phút).
         </p>
       </div>
 
@@ -45,16 +49,21 @@ export default function BookingStep2TimeTable({
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {LUNCH_TIME_SLOTS.map((slot) => {
-              const active = time === slot
+              const isValid = isTimeSlotAvailableForDate(date, slot)
+              const active = time === slot && isValid
               return (
                 <button
                   key={slot}
                   type="button"
-                  onClick={() => setTime(slot)}
-                  className={`py-2 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer ${
-                    active
-                      ? 'bg-brand-primary text-surface-bg font-bold shadow-sm'
-                      : 'bg-surface-bg text-text-muted hover:text-text-main border border-border-subtle hover:border-border-strong'
+                  disabled={!isValid}
+                  onClick={() => isValid && setTime(slot)}
+                  title={!isValid ? 'Khung giờ này đã qua hoặc còn dưới 30 phút' : `Chọn ${slot}`}
+                  className={`py-2 rounded-lg text-xs font-mono font-medium transition-colors ${
+                    !isValid
+                      ? 'bg-surface-bg/40 text-text-dim line-through opacity-40 border border-border-subtle cursor-not-allowed'
+                      : active
+                      ? 'bg-brand-primary text-surface-bg font-bold shadow-sm cursor-pointer'
+                      : 'bg-surface-bg text-text-muted hover:text-text-main border border-border-subtle hover:border-border-strong cursor-pointer'
                   }`}
                 >
                   {slot}
@@ -72,16 +81,21 @@ export default function BookingStep2TimeTable({
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
             {DINNER_TIME_SLOTS.map((slot) => {
-              const active = time === slot
+              const isValid = isTimeSlotAvailableForDate(date, slot)
+              const active = time === slot && isValid
               return (
                 <button
                   key={slot}
                   type="button"
-                  onClick={() => setTime(slot)}
-                  className={`py-2 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer ${
-                    active
-                      ? 'bg-brand-primary text-surface-bg font-bold shadow-sm'
-                      : 'bg-surface-bg text-text-muted hover:text-text-main border border-border-subtle hover:border-border-strong'
+                  disabled={!isValid}
+                  onClick={() => isValid && setTime(slot)}
+                  title={!isValid ? 'Khung giờ này đã qua hoặc còn dưới 30 phút' : `Chọn ${slot}`}
+                  className={`py-2 rounded-lg text-xs font-mono font-medium transition-colors ${
+                    !isValid
+                      ? 'bg-surface-bg/40 text-text-dim line-through opacity-40 border border-border-subtle cursor-not-allowed'
+                      : active
+                      ? 'bg-brand-primary text-surface-bg font-bold shadow-sm cursor-pointer'
+                      : 'bg-surface-bg text-text-muted hover:text-text-main border border-border-subtle hover:border-border-strong cursor-pointer'
                   }`}
                 >
                   {slot}

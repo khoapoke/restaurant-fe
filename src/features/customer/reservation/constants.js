@@ -150,3 +150,39 @@ export const extractReservationList = (res) => {
   if (Array.isArray(raw?.data)) return raw.data
   return []
 }
+
+/**
+ * Lấy chuỗi ngày hôm nay (YYYY-MM-DD) theo đúng múi giờ Local (Việt Nam)
+ */
+export const getLocalTodayStr = () => {
+  const now = new Date()
+  const yyyy = now.getFullYear()
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+/**
+ * Kiểm tra xem khung giờ `slotStr` ("18:00") trong ngày `dateStr` ("2026-11-20")
+ * có còn hợp lệ không (phải cách thời điểm hiện tại ít nhất minAdvanceMinutes = 30 phút)
+ */
+export const isTimeSlotAvailableForDate = (dateStr, slotStr, minAdvanceMinutes = 30) => {
+  if (!dateStr || !slotStr) return false
+  const todayStr = getLocalTodayStr()
+  if (dateStr < todayStr) return false
+  if (dateStr > todayStr) return true
+
+  const [hh, mm] = String(slotStr).substring(0, 5).split(':').map(Number)
+  const now = new Date()
+  const slotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh || 0, mm || 0, 0)
+  const diffMinutes = (slotDate.getTime() - now.getTime()) / 60000
+  return diffMinutes >= minAdvanceMinutes
+}
+
+/**
+ * Tìm khung giờ hợp lệ đầu tiên trong ngày `dateStr`
+ */
+export const getFirstAvailableTimeSlot = (dateStr, minAdvanceMinutes = 30) => {
+  const allSlots = [...LUNCH_TIME_SLOTS, ...DINNER_TIME_SLOTS]
+  return allSlots.find((slot) => isTimeSlotAvailableForDate(dateStr, slot, minAdvanceMinutes)) || null
+}

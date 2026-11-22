@@ -122,6 +122,8 @@ export default function BookingStep4Result({
       {/* Khối Quét Mã VietQR */}
       {isDepositPending && (
         <BookingDepositQrBox
+          reservationId={id}
+          depositDeadline={reservation?.depositDeadline || reservation?.han_chot_coc}
           depositAmount={depositAmount}
           transferContent={transferContent}
           qrUrl={qrUrl}
