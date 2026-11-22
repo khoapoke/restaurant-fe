@@ -79,21 +79,23 @@ $isBusy = Reservation::where('ma_ban', $tableId)
 
 ## 4. Schemas Dữ Liệu Chuẩn Dành Cho Frontend
 
-### Schema 4.1: Bàn Ăn (`TableResource`)
+### Schema 4.1: Bàn Ăn (`TableResource` & `AdminTableResource`)
 ```json
 {
   "tableId": 3,
   "tableName": "Bàn VIP 01",
   "capacity": 6,
-  "status": "AVAILABLE"
+  "status": "AVAILABLE",
+  "location": "Tầng 2 - Khu VIP"
 }
 ```
+*(Ghi chú: `AdminTableResource` bổ sung thêm object `activeOrder: { orderId, qrToken, qrCodeToken, status, totalAmount } | null` cho bàn đang phục vụ Dine-in.)*
 
 ### Schema 4.2: Phiếu Đặt Bàn Khách Hàng (`ReservationResource`)
 ```json
 {
   "reservationId": 25,
-  "reservationTime": "2026-11-20 19:00:00",
+  "reservationTime": "2026-11-20T19:00:00",
   "guestCount": 6,
   "status": "PENDING_DEPOSIT",
   "note": "Kỷ niệm ngày cưới, cần bàn yên tĩnh",
@@ -101,32 +103,42 @@ $isBusy = Reservation::where('ma_ban', $tableId)
   "isDepositPaid": false,
   "depositDeadline": "2026-11-17T02:30:00+07:00",
   "qrCodeUrl": "https://img.vietqr.io/image/970436-1029384756-compact2.png?amount=300000&addInfo=DB25+COC",
-  "table": { "tableId": 3, "tableName": "Bàn VIP 01", "capacity": 6 }
+  "table": {
+    "tableId": 3,
+    "tableName": "Bàn VIP 01",
+    "capacity": 6,
+    "status": "RESERVED",
+    "location": "Tầng 2 - Khu VIP"
+  }
 }
 ```
+*(Ghi chú: `AdminReservationResource` trả thêm `customer: { accountId, username, fullName, phoneNumber }` và dùng `AdminTableResource` cho trường `table`.)*
 
 ---
 
-## 5. Bảng Tổng Hợp Endpoints Đặt Bàn
+## 5. Bảng Tổng Hợp Endpoints Đặt Bàn & Bàn Ăn (19 APIs chính + 1 alias)
 
 | Mã API | Method | Endpoint URL | Phân quyền | Body / Query Request | Response Payload | Mã HTTP |
 | :---: | :---: | :--- | :---: | :--- | :--- | :---: |
-| `BKG-01` | `GET` | `/api/v1/customer/reservations/available-tables` | Public | Query: `date`, `time`, `guestCount` | Danh sách `[TableResource]` | `200 / 422` |
-| `BKG-02` | `POST` | `/api/v1/customer/reservations` | `CUSTOMER` | `{ "tableId", "reservationTime", "guestCount", "note"? }` | `201`: `ReservationResource` *(Chi tiết tại Mục 6)* | `201 / 400 / 409` |
-| `BKG-03` | `PUT` | `/api/v1/customer/reservations/{id}` | `CUSTOMER` | `{ "tableId"?, "reservationTime"?, "guestCount"?, "note"? }` | `ReservationResource` đã sửa *(Quy tắc 60' tại Mục 6)* | `200 / 409` |
-| `BKG-04` | `PUT` | `/api/v1/customer/reservations/{id}/cancel` | `CUSTOMER` | *(Không)* | `{ "message": "Reservation cancelled" }` *(Quy tắc 60' tại Mục 6)* | `200 / 409` |
-| `BKG-05` | `GET` | `/api/v1/customer/reservations` | `CUSTOMER` | Query: `page`, `status` | Paginated `[ReservationResource]` | `200` |
-| `BKG-06` | `GET` | `/api/v1/customer/reservations/{id}` | `CUSTOMER` | *(Không)* | `ReservationResource` (Schema 4.2) | `200 / 404` |
-| `BKG-07` | `GET` | `/api/v1/admin/tables` | `ADMIN,STAFF` | Query: `status` | Danh sách `[AdminTableResource]` | `200` |
-| `BKG-08` | `PATCH`| `/api/v1/admin/tables/{id}/status` | `ADMIN,STAFF` | `{ "status": "AVAILABLE|MAINTENANCE" }` | Cập nhật trạng thái bàn ăn | `200 / 404` |
-| `BKG-09` | `GET` | `/api/v1/admin/reservations` | `ADMIN,STAFF` | Query: `page`, `date`, `status` | Paginated `[AdminReservationResource]` | `200` |
-| `BKG-10` | `GET` | `/api/v1/admin/reservations/{id}` | `ADMIN,STAFF` | *(Không)* | `AdminReservationResource` | `200 / 404` |
-| `BKG-11` | `PATCH`| `/api/v1/admin/reservations/{id}/status` | `ADMIN,STAFF` | `{ "targetStatus": string }` | Duyệt / Đồng bộ trạng thái bàn *(Chi tiết tại Mục 6)* | `200 / 400` |
+| `BKG-01` | `GET` | `/api/v1/customer/tables/available` *(Alias: `/customer/reservations/available-tables`)* | Public | Query: `date`, `time`, `guestCount` | Danh sách `[TableResource]` | `200 / 422` |
+| `BKG-02` | `POST` | `/api/v1/customer/reservations` | `CUSTOMER` | `{ "tableId", "reservationTime", "guestCount", "note"? }` | `201`: `ReservationResource` *(Chi tiết tại Mục 6)* | `201 / 400 / 409 / 422` |
+| `BKG-03` | `PUT` | `/api/v1/customer/reservations/{reservationId}` | `CUSTOMER` | `{ "tableId"?, "reservationTime"?, "guestCount"?, "note"? }` | `ReservationResource` đã sửa *(Quy tắc 60' tại Mục 6)* | `200 / 409` |
+| `BKG-04` | `POST\|PUT` | `/api/v1/customer/reservations/{reservationId}/cancel` | `CUSTOMER` | *(Không)* | `{ "reservationId", "status": "CANCELLED" }` *(Quy tắc 60')* | `200 / 409` |
+| `BKG-05` | `GET` | `/api/v1/customer/reservations` | `CUSTOMER` | Query: `page`, `perPage`, `status` | Paginated `[ReservationResource]` | `200` |
+| `BKG-06` | `GET` | `/api/v1/customer/reservations/{reservationId}` | `CUSTOMER` | *(Không)* | `ReservationResource` (Schema 4.2) | `200 / 404` |
+| `BKG-13` | `POST`| `/api/v1/customer/reservations/{reservationId}/mock-deposit` | `CUSTOMER` | *(Không)* | `ReservationResource` (`CONFIRMED`) | `200 / 400 / 404` |
+| `BKG-07` | `GET` | `/api/v1/admin/tables` | `ADMIN,STAFF` | Query: `status`, `location`, `search` | Danh sách `[AdminTableResource]` | `200` |
+| `BKG-07B` | `POST`| `/api/v1/admin/tables` | `ADMIN,STAFF` | `{ "tableName", "capacity", "location"?, "status"? }` | `201`: `AdminTableResource` mới tạo | `201 / 422` |
+| `BKG-07C` | `GET` | `/api/v1/admin/tables/{tableId}` | `ADMIN,STAFF` | *(Không)* | `AdminTableResource` chi tiết | `200 / 404` |
+| `BKG-07D` | `PUT` | `/api/v1/admin/tables/{tableId}` | `ADMIN,STAFF` | `{ "tableName"?, "capacity"?, "location"?, "status"? }` | `AdminTableResource` đã sửa | `200 / 404 / 422` |
+| `BKG-08` | `PATCH`| `/api/v1/admin/tables/{tableId}/status` | `ADMIN,STAFF` | `{ "status": "AVAILABLE|RESERVED|OCCUPIED|MAINTENANCE" }` | Cập nhật trạng thái bàn ăn | `200 / 404` |
+| `BKG-08B` | `DELETE`| `/api/v1/admin/tables/{tableId}` | `ADMIN,STAFF` | *(Không)* | Xóa bàn ăn (chặn nếu còn lượt đặt active) | `200 / 400 / 404` |
+| `BKG-09` | `GET` | `/api/v1/admin/reservations` | `ADMIN,STAFF` | Query: `page`, `perPage`, `date`, `status`, `tableId`, `search` | Paginated `[AdminReservationResource]` | `200` |
+| `BKG-10` | `GET` | `/api/v1/admin/reservations/{reservationId}` | `ADMIN,STAFF` | *(Không)* | `AdminReservationResource` | `200 / 404` |
+| `BKG-11` | `PATCH`| `/api/v1/admin/reservations/{reservationId}/status` | `ADMIN,STAFF` | `{ "targetStatus", "tableId"?, "tableStatus"?, "adminNote"? }` | Duyệt / Vào bàn / Hoàn tất / Hủy & đồng bộ bàn *(Chi tiết tại Mục 6)* | `200 / 400 / 409` |
 | `BKG-12` | `GET` | `/api/v1/admin/reservations/time-slots` | `ADMIN,STAFF` | *(Không)* | Cấu hình khung giờ đặt bàn | `200` |
-| `BKG-13` | `POST`| `/api/v1/customer/reservations/{id}/mock-deposit` | `CUSTOMER` | *(Không)* | `ReservationResource` (CONFIRMED) | `200 / 400 / 404` |
-| `BKG-14` | `POST`| `/api/v1/admin/reservations/{id}/confirm-deposit` | `ADMIN,STAFF` | *(Không)* | `AdminReservationResource` (CONFIRMED) | `200 / 404` |
-| `BKG-10` | `GET` | `/api/v1/admin/reservations/{id}` | `ADMIN` | *(Không)* | `AdminReservationResource` | `200 / 404` |
-| `BKG-11` | `PATCH`| `/api/v1/admin/reservations/{id}/status` | `ADMIN` | `{ "targetStatus": string }` | Duyệt / Đồng bộ trạng thái bàn *(Chi tiết tại Mục 6)* | `200 / 400` |
+| `BKG-12B` | `PUT` | `/api/v1/admin/reservations/time-slots` | `ADMIN,STAFF` | `{ "openTime", "closeTime", "slotDurationMinutes", "slots": [...] }` | Cập nhật cấu hình khung giờ đặt bàn | `200 / 422` |
+| `BKG-14` | `POST`| `/api/v1/admin/reservations/{reservationId}/confirm-deposit` | `ADMIN,STAFF` | *(Không)* | `AdminReservationResource` (`CONFIRMED`) | `200 / 404` |
 
 ---
 
@@ -144,7 +156,7 @@ $isBusy = Reservation::where('ma_ban', $tableId)
   1. Kiểm tra sức chứa bàn: `$guestCount <= $table->suc_chua` $\rightarrow$ Nếu vượt quá ném `400 Bad Request`.
   2. Kiểm tra quy tắc báo trước: Phải $\ge 30$ phút. Nếu có từ khóa đặc biệt (*"vip", "sinh nhật"...*) phải $\ge 120$ phút.
   3. Kiểm tra xung đột khung giờ: Truy vấn theo công thức Carbon $\pm 119$ phút. Nếu bị trùng ném `409 Conflict` (*"Bàn đã có người đặt trong khung giờ này"*).
-  4. Tạo bản ghi `DAT_BAN` trạng thái `PENDING` (`Chờ xử lý`).
+  4. Tính tiền cọc theo Quy tắc 3.5: nếu `guestCount >= 6` và rơi vào giờ cao điểm $\rightarrow$ tạo bản ghi `DAT_BAN` trạng thái `PENDING_DEPOSIT` (`Chờ đặt cọc`), `tien_coc = guestCount * 50000`, `han_chot_coc = now() + 15 phút`; ngược lại $\rightarrow$ trạng thái `PENDING` (`Chờ xử lý`), `tien_coc = 0`.
 - **Response `201 Created`:** `ReservationResource`.
 
 ---

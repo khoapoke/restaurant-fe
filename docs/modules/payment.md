@@ -83,18 +83,20 @@ Module **Payment** quản lý toàn bộ chu trình thanh toán của đơn hàn
 
 ---
 
-## 5. Bảng Tổng Hợp Endpoints Thanh Toán
+## 5. Bảng Tổng Hợp Endpoints Thanh Toán (10 APIs chính + 1 alias)
 
 | Mã API | Method | Endpoint URL | Phân quyền | Body / Query Request | Response Payload | Mã HTTP |
 | :---: | :---: | :--- | :---: | :--- | :--- | :---: |
-| `PAY-01` | `POST`| `/api/v1/customer/payments/{orderId}/qr` | `CUSTOMER` | *(Không)* | `CustomerQrResponse` (Schema 4.1) | `200 / 404` |
-| `PAY-02` | `GET` | `/api/v1/customer/payments/{orderId}/status` | `CUSTOMER` | *(Không)* | `{ "status": "PAID", "isPaid": true }` | `200` |
-| `PAY-03` | `POST`| `/api/v1/admin/payments/{id}/confirm` | `ADMIN,STAFF` | `{ "note"?: string }` | Xác nhận thanh toán thủ công bởi Nhân viên/Quản lý | `200 / 400 / 404` |
-| `PAY-04` | `GET` | `/api/v1/admin/payments` | `ADMIN,STAFF` | Query: `page`, `status`, `method`, `search` | Paginated `[AdminPaymentResource]` | `200` |
-| `PAY-05` | `POST`| `/api/v1/admin/payments/{id}/refund` | `ADMIN,STAFF` | `{ "refundReason": string }` | Hoàn tiền giao dịch & Tự hủy đơn hàng | `200 / 400` |
-| `PAY-06` | `POST`| `/api/v1/admin/payments/reconcile` | `ADMIN,STAFF` | `{ "orderId"?: int, "paymentId"?: int }` | Báo cáo đối soát doanh thu | `200` |
-| `PAY-07` | `POST`| `/api/v1/customer/payments/webhook` | Public | Webhook payload (dự phòng) | Tự động xử lý nếu có webhook | `200 / 400` |
-| `PAY-08` | `POST`| `/api/v1/customer/payments/{orderId}/mock-payment` | `CUSTOMER` | *(Không)* | Mock thanh toán thành công (dành cho FE test) | `200 / 400 / 404` |
+| `PAY-01` | `POST`| `/api/v1/customer/payments/{orderId}/qr` | `CUSTOMER` | *(Không)* | `CustomerQrResponse` (Schema 4.1) | `200 / 400 / 404 / 409` |
+| `PAY-02` | `GET` | `/api/v1/customer/payments/{orderId}/status` | `CUSTOMER` | *(Không)* | `{ "orderId", "paymentId", "amount", "paymentMethod", "status", "transactionCode", "isPaid" }` | `200 / 404` |
+| `PAY-03` | `POST`| `/api/v1/customer/payments/{orderId}/retry` | `CUSTOMER` | *(Không)* | Sinh lại mã giao dịch & gia hạn VietQR thêm 15 phút | `200 / 400 / 409` |
+| `PAY-04` | `GET` | `/api/v1/admin/payments` | `ADMIN,STAFF` | Query: `page`, `perPage`, `status`, `paymentMethod`, `orderId`, `search` | Paginated `[AdminPaymentResource]` | `200` |
+| `PAY-05` | `POST`| `/api/v1/admin/payments/reconcile` | `ADMIN,STAFF` | `{ "orderId"?: int, "paymentId"?: int }` | Báo cáo đối soát số tiền (`totalChecked`, `matchedCount`, `discrepancyCount`, `discrepancies`) | `200` |
+| `PAY-06` | `POST`| `/api/v1/admin/payments/{paymentId}/refund` | `ADMIN,STAFF` | `{ "refundReason": string }` | Hoàn tiền giao dịch `PAID` & Tự hủy đơn hàng | `200 / 400 / 404` |
+| `PAY-07` | `GET` | `/api/v1/admin/payments/callback-logs` | `ADMIN,STAFF` | Query: `page`, `perPage`, `onlyErrors`? | Paginated `[CallbackLogResource]` | `200` |
+| `PAY-08` | `POST\|PATCH`| `/api/v1/admin/payments/{paymentId}/confirm` | `ADMIN,STAFF` | `{ "note"?: string }` | Xác nhận thanh toán thủ công bởi Nhân viên/Quản lý & đồng bộ đơn `CONFIRMED` | `200 / 400 / 404` |
+| `PAY-09` | `POST`| `/api/v1/customer/payments/{orderId}/mock-payment` | `CUSTOMER` | *(Không)* | Mock thanh toán thành công (dành cho FE demo/test) | `200 / 400 / 404` |
+| `PAY-10` | `POST`| `/api/v1/webhooks/payment-callback` *(Alias: `/customer/payments/webhook`)* | Public (Gateway) | Webhook payload (hỗ trợ cả `DH{orderId}` và cọc bàn `DB{reservationId}`) | Tự động xác nhận thanh toán & lưu `log_callback` | `200 / 400` |
 
 ---
 

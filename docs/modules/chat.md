@@ -168,6 +168,10 @@ Module **Chat** chịu trách nhiệm cung cấp kênh tương tác thời gian 
 | `STAFF-03` | `POST` | `/api/v1/staff/chat/sessions/{id}/assign` | `STAFF`, `ADMIN` | *(Không)* | `200`: `ChatSessionResource` (Status: `STAFF_CONNECTED`) | **Nút "Tiếp nhận":** Nhân viên nhận phiên, gán `ma_nhan_vien = currentStaffId`. |
 | `STAFF-04` | `POST` | `/api/v1/staff/chat/sessions/{id}/messages` | `STAFF`, `ADMIN` | `{ "content": string }` | `201`: `ChatMessageResource` | **Nhân viên nhắn tin:** Gửi tin nhắn trực tiếp đến khách hàng. |
 | `STAFF-05` | `POST` | `/api/v1/staff/chat/sessions/{id}/close` | `STAFF`, `ADMIN` | *(Không)* | `200`: `ChatSessionResource` (Status: `CLOSED`) | **Nút "Đóng phiên":** Kết thúc hỗ trợ khách hàng. |
+| `STAFF-06` | `GET` | `/api/v1/staff/chat/pending` | `STAFF`, `ADMIN` | Query: `page`?, `perPage`? | `200`: Paginated `[ChatSessionResource]` | Lấy nhanh hàng đợi phiên đang `WAITING_STAFF` (tương đương `STAFF-01` với `?status=WAITING_STAFF`). |
+
+> [!NOTE]
+> **Lưu ý cấu trúc phân trang của Module Chat:** Các endpoint danh sách (`CHT-06`, `STAFF-01`, `STAFF-06`) hiện trả về Laravel Resource Collection `{ "data": [...], "links": {...}, "meta": { "current_page", "last_page", "per_page", "total" } }` bọc trong trường `data` của `ApiResponse`.
 
 ---
 

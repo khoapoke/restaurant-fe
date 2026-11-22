@@ -25,7 +25,7 @@ Module **Auth** chịu trách nhiệm quản lý toàn bộ vòng đời tài kh
 | **Services** | `AuthService`<br>`Customer\ProfileService`<br>`Admin\AccountService` | Xử lý transaction đăng ký/đăng nhập, cập nhật hồ sơ, quản trị tài khoản và Rule `AUTH-LOCK`. |
 | **Controllers** | `AuthController`<br>`Customer\ProfileController`<br>`Admin\AccountController` | Tiếp nhận request, gọi Service và trả về qua `ApiResponse`. |
 | **FormRequests** | `RegisterRequest`, `LoginRequest`<br>`Customer\UpdateProfileRequest`<br>`ForgotPasswordRequest`, `ResetPasswordRequest` | Kiểm thực dữ liệu đầu vào. |
-| **Mails** | `ResetPasswordOtpMail` | Gửi email chứa mã OTP 6 số (hạn 5 phút) định dạng HTML đẹp mắt đến người dùng. |
+| **Mails** | `ResetPasswordOtpMail` | Gửi email chứa mã OTP 6 số (cấu hình `OTP_EXPIRE_MINUTES=5`, mặc định 15 phút) định dạng HTML đến người dùng. |
 | **Resources** | `AccountResource`, `UserProfileResource`<br>`CustomerProfileResource`, `AdminAccountResource` | Định dạng dữ liệu đầu ra chuẩn JSON cho Frontend. |
 | **Routes** | `app/Modules/Auth/Routes/api.php` | Định tuyến `/api/v1/auth/*`, `/api/v1/customer/*`, `/api/v1/admin/accounts/*`. |
 
@@ -56,21 +56,28 @@ Model `Account` luôn bật thuộc tính `protected $hidden = ['mat_khau'];`. 1
 
 ## 4. Schemas Dữ Liệu Chuẩn Dành Cho Frontend
 
-### Schema 4.1: Hồ sơ Khách hàng (`UserProfileResource`)
+### Schema 4.1: Hồ sơ Khách hàng (`CustomerProfileResource`)
 ```json
 {
-  "userId": 1,
+  "accountId": 3,
+  "username": "kh1",
+  "email": "khachhang1@gmail.com",
+  "userId": 3,
   "fullName": "Nguyễn Văn A",
-  "phoneNumber": "0901234567",
   "birthDate": "1995-08-15",
+  "phoneNumber": "0901234567",
   "defaultAddress": "123 Lê Duẩn, P. Bến Nghé, Quận 1, TP.HCM",
   "savedAddresses": [
-    { "label": "Văn phòng", "address": "456 Nguyễn Thị Minh Khai, Q.3", "isDefault": false }
+    {
+      "addressId": "addr_1",
+      "recipientName": "Nguyễn Văn A",
+      "recipientPhone": "0901234567",
+      "fullAddress": "456 Nguyễn Thị Minh Khai, Q.3",
+      "isDefault": true
+    }
   ],
   "allergies": ["SHELLFISH", "PEANUT"],
-  "dietaryPreferences": ["LESS_SUGAR"],
-  "username": "customer1",
-  "role": "CUSTOMER"
+  "dietaryPreferences": ["LOW_SUGAR"]
 }
 ```
 
@@ -79,32 +86,56 @@ Model `Account` luôn bật thuộc tính `protected $hidden = ['mat_khau'];`. 1
 {
   "accountId": 2,
   "username": "staff1",
+  "email": "staff1@restaurant.com",
   "status": "ACTIVE",
-  "createdAt": "2026-11-01 08:00:00",
-  "role": { "roleId": 2, "roleCode": "STAFF", "roleName": "Nhân viên phục vụ" },
-  "userProfile": { "fullName": "Trần Thị B", "phoneNumber": "0912345678", "birthDate": "1998-05-20" }
+  "role": "STAFF",
+  "roleCode": "STAFF",
+  "roleName": "Nhân viên",
+  "fullName": "Trần Thị B",
+  "phoneNumber": "0912345678"
+}
+```
+
+### Schema 4.3: Tài khoản Đăng nhập / Đăng ký (`AccountResource`)
+```json
+{
+  "accountId": 3,
+  "username": "kh1",
+  "email": "khachhang1@gmail.com",
+  "status": "ACTIVE",
+  "role": "CUSTOMER",
+  "userProfile": {
+    "userId": 3,
+    "fullName": "Nguyễn Văn A",
+    "phoneNumber": "0901234567",
+    "birthDate": "1995-08-15",
+    "address": "123 Lê Duẩn, Q.1"
+  },
+  "cartId": 1
 }
 ```
 
 ---
 
-## 5. Bảng Tổng Hợp Endpoints CRUD Chuẩn
+## 5. Bảng Tổng Hợp Endpoints CRUD Chuẩn (15 APIs)
 
 | Mã API | Method | Endpoint URL | Phân quyền | Body Request | Response Payload | Mã HTTP |
 | :---: | :---: | :--- | :---: | :--- | :--- | :---: |
-| `USR-01` | `POST` | `/api/v1/auth/register` | Public | `{ "username", "password", "passwordConfirmation", "email", "fullName", "phoneNumber" }` | `201`: `AccountResource` + Token *(Chi tiết Use Case tại Mục 6)* | `201 / 422` |
-| `USR-02` | `POST` | `/api/v1/auth/login` | Public | `{ "username", "password", "rememberMe"? }` | `200`: `AccountResource` + Token *(Chi tiết Use Case tại Mục 6)* | `200 / 401 / 403` |
+| `USR-01` | `POST` | `/api/v1/auth/register` | Public | `{ "username", "password", "passwordConfirmation", "email", "fullName", "phoneNumber", "birthDate"?, "address"? }` | `201`: `AccountResource` + Token *(Chi tiết tại Mục 6)* | `201 / 422` |
+| `USR-02` | `POST` | `/api/v1/auth/login` | Public | `{ "username", "password", "rememberMe"? }` | `200`: `AccountResource` + Token *(Chi tiết tại Mục 6)* | `200 / 401 / 403` |
 | `USR-03` | `POST` | `/api/v1/auth/logout` | `auth:sanctum` | *(Không)* | `{ "message": "Logged out successfully" }` | `200` |
-| `USR-04` | `GET` | `/api/v1/customer/profile` | `CUSTOMER` | *(Không)* | `UserProfileResource` (Schema 4.1) | `200` |
-| `USR-05` | `PUT` | `/api/v1/customer/profile` | `CUSTOMER` | `{ "fullName", "phoneNumber", "birthDate", "savedAddresses", "allergies", "dietaryPreferences" }` | `UserProfileResource` đã cập nhật | `200` |
+| `USR-04` | `GET` | `/api/v1/customer/profile` | `CUSTOMER` | *(Không)* | `CustomerProfileResource` (Schema 4.1) | `200` |
+| `USR-05` | `PUT` | `/api/v1/customer/profile` | `CUSTOMER` | `{ "fullName", "phoneNumber", "email"?, "birthDate"?, "address"?, "savedAddresses"?, "allergies"?, "dietaryPreferences"? }` | Dữ liệu hồ sơ đã cập nhật (`accountId`, `email`, `fullName`, `phoneNumber`, `defaultAddress`, `allergies`, `dietaryPreferences`) | `200` |
 | `USR-06` | `PUT` | `/api/v1/customer/password` | `CUSTOMER` | `{ "currentPassword", "newPassword", "newPassword_confirmation" }` | `{ "message": "Password changed successfully" }` (Thu hồi toàn bộ token cũ) | `200` |
 | `USR-07` | `POST` | `/api/v1/auth/forgot-password` | Public | `{ "email" }` | `{ "message": "Mã xác thực OTP đã được gửi về email của bạn..." }` *(Chi tiết tại Mục 6)* | `200 / 404 / 403 / 422` |
 | `USR-08` | `POST` | `/api/v1/auth/reset-password` | Public | `{ "email", "otp", "password", "password_confirmation" }` | `{ "message": "Đặt lại mật khẩu thành công..." }` (Thu hồi toàn bộ token cũ) | `200 / 400 / 404 / 422` |
-| `ADM-01` | `GET` | `/api/v1/admin/accounts` | `ADMIN` | Query: `page`, `perPage`, `search`, `role`, `status` | Paginated `[AdminAccountResource]` | `200` |
-| `ADM-02` | `GET` | `/api/v1/admin/accounts/{id}` | `ADMIN` | *(Không)* | `AdminAccountResource` (Schema 4.2) | `200 / 404` |
-| `ADM-03` | `POST` | `/api/v1/admin/accounts/staff` | `ADMIN` | `{ "username", "password", "password_confirmation", "fullName", "phoneNumber", "birthDate"? }` | `201`: `AdminAccountResource` nhân viên mới | `201 / 422` |
-| `ADM-04` | `PUT` | `/api/v1/admin/accounts/{id}` | `ADMIN` | `{ "fullName"?, "phoneNumber"?, "birthDate"? }` | `AdminAccountResource` đã sửa | `200 / 404` |
-| `ADM-05` | `PATCH`| `/api/v1/admin/accounts/{id}/status` | `ADMIN` | `{ "status": "ACTIVE|LOCKED" }` | Khóa/Mở khóa tài khoản & Thu hồi Token *(Chi tiết tại Mục 6)* | `200 / 400` |
+| `ADM-01` | `GET` | `/api/v1/admin/accounts` | `ADMIN` | Query: `page`, `perPage`, `keyword`, `roleId`, `status` | Paginated `[AdminAccountResource]` | `200` |
+| `ADM-02` | `GET` | `/api/v1/admin/accounts/{accountId}` | `ADMIN` | *(Không)* | `AdminAccountResource` (Schema 4.2) | `200 / 404` |
+| `ADM-03` | `POST` | `/api/v1/admin/accounts/staff` | `ADMIN` | `{ "username", "password", "password_confirmation", "email", "fullName", "phoneNumber", "birthDate"? }` | `201`: `AdminAccountResource` nhân viên mới | `201 / 422` |
+| `ADM-04` | `PUT` | `/api/v1/admin/accounts/{accountId}` | `ADMIN` | `{ "fullName"?, "phoneNumber"?, "birthDate"?, "email"? }` | `AdminAccountResource` đã sửa | `200 / 404` |
+| `ADM-05` | `PATCH`| `/api/v1/admin/accounts/{accountId}/status` | `ADMIN` | `{ "status": "ACTIVE|LOCKED" }` | Khóa/Mở khóa tài khoản & Thu hồi Token *(Chi tiết tại Mục 6)* | `200 / 400` |
+| `ADM-06` | `PATCH`| `/api/v1/admin/accounts/{accountId}/lock` | `ADMIN` | *(Không)* | Khóa tài khoản & thu hồi toàn bộ Sanctum Token (Rule `AUTH-LOCK`) | `200 / 400 / 404` |
+| `ADM-07` | `PATCH`| `/api/v1/admin/accounts/{accountId}/unlock` | `ADMIN` | *(Không)* | Mở khóa tài khoản về trạng thái `ACTIVE` | `200 / 404` |
 
 ---
 
@@ -114,11 +145,12 @@ Model `Account` luôn bật thuộc tính `protected $hidden = ['mat_khau'];`. 1
 - **Actor:** Khách vãng lai (Public).
 - **Precondition:** Tên đăng nhập và số điện thoại chưa tồn tại trong hệ thống.
 - **Validation Rules:**
-  - `username`: `required|string|min:3|max:50|unique:TAI_KHOAN,ten_dang_nhap`
-  - `password`: `required|string|min:6|confirmed`
+  - `username`: `required|string|min:3|max:50|alpha_dash|unique:TAI_KHOAN,ten_dang_nhap`
+  - `password`: `required|string|min:6|max:100`
+  - `passwordConfirmation`: `required|string|same:password`
   - `email`: `required|string|email|max:100|unique:TAI_KHOAN,email`
   - `fullName`: `required|string|max:100`
-  - `phoneNumber`: `required|string|regex:/^0[0-9]{9}$/`
+  - `phoneNumber`: `required|string|regex:/^(0|\+84)[0-9]{9,10}$/`
 - **Luồng thực thi (`DB::transaction`):**
   1. **Bước 1 (Xác thực dữ liệu):** FormRequest kiểm tra tính hợp lệ và không trùng lặp của `username`, `email`, `phoneNumber`.
   2. **Bước 2 (Khởi tạo dữ liệu trong Transaction):**
@@ -145,8 +177,9 @@ Model `Account` luôn bật thuộc tính `protected $hidden = ['mat_khau'];`. 1
         "username": "newuser",
         "email": "newuser@example.com",
         "status": "ACTIVE",
-        "role": { "roleId": 3, "roleCode": "CUSTOMER", "roleName": "Khách hàng" },
-        "userProfile": { "fullName": "Nguyễn Văn A", "phoneNumber": "0901234567" }
+        "role": "CUSTOMER",
+        "userProfile": { "userId": 10, "fullName": "Nguyễn Văn A", "phoneNumber": "0901234567" },
+        "cartId": 10
       }
     }
   }
@@ -199,8 +232,9 @@ flowchart TD
         "username": "customer1",
         "email": "customer1@example.com",
         "status": "ACTIVE",
-        "role": { "roleId": 3, "roleCode": "CUSTOMER", "roleName": "Khách hàng" },
-        "userProfile": { "fullName": "Nguyễn Văn A", "phoneNumber": "0901234567" }
+        "role": "CUSTOMER",
+        "userProfile": { "userId": 1, "fullName": "Nguyễn Văn A", "phoneNumber": "0901234567" },
+        "cartId": 1
       }
     }
   }
@@ -237,7 +271,7 @@ flowchart TD
   2. Kiểm tra trạng thái tài khoản $\rightarrow$ nếu `LOCKED`, trả về `403 Forbidden` (*"Tài khoản đang bị khóa..."*).
   3. Tạo mã OTP ngẫu nhiên gồm 6 chữ số (ví dụ: `849201`).
   4. Băm mã OTP bằng BCrypt và lưu vào bảng `password_reset_tokens` cùng mốc thời gian `created_at = now()` (sử dụng `updateOrInsert` theo email).
-  5. Gửi email chứa mã OTP đến địa chỉ email của người dùng bằng Mailable `ResetPasswordOtpMail` (mẫu HTML tiếng Việt trang nhã, hiệu lực trong 5 phút).
+  5. Gửi email chứa mã OTP đến địa chỉ email của người dùng bằng Mailable `ResetPasswordOtpMail` (thời hạn lấy từ `config('auth.passwords.users.expire', 15)` — cấu hình `.env` hiện tại `OTP_EXPIRE_MINUTES=5` tương đương **5 phút**).
 - **Response `200 OK`:**
   ```json
   {
@@ -259,7 +293,7 @@ flowchart TD
   - `password`: `required|string|min:6|confirmed`
 - **Luồng thực thi:**
   1. Tìm bản ghi trong `password_reset_tokens` theo `email` $\rightarrow$ nếu không thấy, trả về `400 Bad Request`.
-  2. Kiểm tra thời hạn OTP $\rightarrow$ nếu đã quá 5 phút (`addMinutes(15)->isPast()`), xóa bản ghi và trả về `400 Bad Request` (*"Mã OTP đã hết hạn..."*).
+  2. Kiểm tra thời hạn OTP $\rightarrow$ đọc `$expireMinutes = (int) config('auth.passwords.users.expire', 15)` (`.env` hiện tại là **5 phút**); nếu đã quá hạn (`addMinutes($expireMinutes)->isPast()`), xóa bản ghi và trả về `400 Bad Request` (*"Mã OTP đã hết hạn..."*).
   3. So khớp mã OTP (`Hash::check($otp, $record->token)`) $\rightarrow$ nếu sai, trả về `400 Bad Request` (*"Mã OTP không chính xác."*).
   4. Cập nhật mật khẩu mới đã băm BCrypt (`Hash::make($newPassword)`) vào bảng `TAI_KHOAN`.
   5. Xóa mã OTP đã sử dụng khỏi `password_reset_tokens`.

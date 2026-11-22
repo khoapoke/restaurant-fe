@@ -45,28 +45,26 @@ Module **Report** cung cấp các báo cáo phân tích kinh doanh và Dashboard
 ### Schema 4.1: Dashboard Tổng Quan (`RPT-00`)
 ```json
 {
-  "period": { "fromDate": "2026-11-01", "toDate": "2026-11-13" },
   "revenue": {
-    "totalRevenue": 45200000,
+    "totalPaidRevenue": 45200000,
     "dailySeries": [
-      { "date": "2026-11-10", "revenue": 5200000 },
-      { "date": "2026-11-11", "revenue": 6800000 }
+      { "date": "2026-11-10", "amount": 5200000 },
+      { "date": "2026-11-11", "amount": 6800000 }
     ]
   },
   "orders": {
-    "totalOrders": 120,
-    "completedOrders": 105,
-    "cancelledOrders": 15,
+    "totalCount": 120,
+    "completedCount": 105,
+    "cancelledCount": 15,
     "completionRate": 87.5
   },
-  "topDishes": [
+  "topSellingDishes": [
     { "dishId": 5, "dishName": "Gỏi ngó sen tôm thịt", "totalSold": 85, "revenue": 7225000 }
   ],
   "reservations": {
-    "totalReservations": 45,
-    "confirmedReservations": 38,
-    "totalTables": 15,
-    "occupancyRatePercent": 63.3
+    "totalBookings": 45,
+    "confirmedBookings": 38,
+    "occupancyRatePercent": 63.33
   }
 }
 ```
@@ -78,7 +76,7 @@ Module **Report** cung cấp các báo cáo phân tích kinh doanh và Dashboard
 | Mã API | Method | Endpoint URL | Query Parameters | Response Metrics Trả Về | Mã HTTP |
 | :---: | :---: | :--- | :--- | :--- | :---: |
 | `RPT-00` | `GET` | `/api/v1/admin/reports/dashboard` | `fromDate`, `toDate`, `limit` | Tổng hợp cả 4 nhóm chỉ số (Schema 4.1) | `200 / 422` |
-| `RPT-01` | `GET` | `/api/v1/admin/reports/revenue` | `fromDate`, `toDate` | `totalRevenue` và mảng `dailySeries` | `200 / 422` |
-| `RPT-02` | `GET` | `/api/v1/admin/reports/orders` | `fromDate`, `toDate` | `totalOrders`, `completedOrders`, `completionRate` | `200 / 422` |
-| `RPT-03` | `GET` | `/api/v1/admin/reports/top-dishes` | `fromDate`, `toDate`, `limit` | Danh sách xếp hạng món ăn bán chạy nhất | `200 / 422` |
-| `RPT-04` | `GET` | `/api/v1/admin/reports/reservations` | `fromDate`, `toDate` | Số lượt đặt bàn và tỷ lệ lấp đầy bàn ăn | `200 / 422` |
+| `RPT-01` | `GET` | `/api/v1/admin/reports/revenue` | `fromDate`, `toDate` | `totalPaidRevenue` và mảng `dailySeries` (`[{ date, amount }]`) | `200 / 422` |
+| `RPT-02` | `GET` | `/api/v1/admin/reports/orders` | `fromDate`, `toDate` | `totalCount`, `completedCount`, `cancelledCount`, `completionRate` | `200 / 422` |
+| `RPT-03` | `GET` | `/api/v1/admin/reports/top-dishes` | `fromDate`, `toDate`, `limit` | Mảng `topSellingDishes` (`[{ dishId, dishName, totalSold, revenue }]`) | `200 / 422` |
+| `RPT-04` | `GET` | `/api/v1/admin/reports/reservations` | `fromDate`, `toDate` | `totalBookings`, `confirmedBookings`, `occupancyRatePercent` | `200 / 422` |

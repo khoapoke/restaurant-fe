@@ -48,20 +48,20 @@ Module **Cart** quản lý giỏ hàng mua sắm quan hệ **1-1 với tài kho�
 ```json
 {
   "cartId": 10,
+  "accountId": 3,
   "items": [
     {
       "dishId": 5,
       "dishName": "Gỏi ngó sen tôm thịt",
-      "price": 85000,
-      "quantity": 2,
-      "itemTotal": 170000,
       "imageUrl": "https://example.com/images/goi-ngo-sen.jpg",
+      "unitPrice": 85000,
+      "quantity": 2,
+      "subTotal": 170000,
       "isAvailable": true
     }
   ],
-  "totalItems": 1,
   "totalQuantity": 2,
-  "estimatedTotal": 170000
+  "estimatedTotalAmount": 170000
 }
 ```
 
@@ -75,7 +75,7 @@ Module **Cart** quản lý giỏ hàng mua sắm quan hệ **1-1 với tài kho�
 | `CRT-02` | `POST` | `/api/v1/customer/cart/items` | `{ "dishId": int, "quantity": int >= 1 }` | `200 OK`: `CartResource` | Cộng dồn số lượng nếu món đã có sẵn |
 | `CRT-03` | `PUT` | `/api/v1/customer/cart/items/{dishId}`| `{ "quantity": int >= 0 }` | `200 OK`: `CartResource` | Nếu `quantity = 0` $\rightarrow$ tự động xóa món khỏi giỏ |
 | `CRT-04` | `DELETE`| `/api/v1/customer/cart/items/{dishId}`| *(Không)* | `200 OK`: `CartResource` | Xóa 1 món cụ thể qua `detach($dishId)` |
-| `CRT-05` | `DELETE`| `/api/v1/customer/cart/clear` | *(Không)* | `200 OK`: `{ "message": "Cart cleared successfully" }` | Làm rỗng toàn bộ giỏ qua `detach()` |
+| `CRT-05` | `DELETE`| `/api/v1/customer/cart/clear` *(Alias: `DELETE /customer/cart`)* | *(Không)* | `200 OK`: `CartResource` (giỏ rỗng) | Làm rỗng toàn bộ giỏ qua `detach()` |
 
 ---
 
@@ -89,6 +89,6 @@ flowchart TD
     D --> E{Món đã có trong Giỏ?}
     E -- Đã có --> F[Cộng dồn số lượng: updateExistingPivot]
     E -- Chưa có --> G[Chèn bản ghi mới: attach]
-    F & G --> H[Load lại dishes & Tính estimatedTotal]
+    F & G --> H[Load lại dishes & Tính estimatedTotalAmount]
     H --> I[Trả về CartResource 200 OK]
 ```

@@ -18,6 +18,9 @@
 | **6** | **`Payment`** | [`modules/payment.md`](modules/payment.md) | Sinh mã VietQR, Đối soát giao dịch, Hoàn tiền, Webhook biến động số dư |
 | **7** | **`Report`** | [`modules/report.md`](modules/report.md) | Dashboard tổng quan, Báo cáo Doanh thu, Đơn hàng, Món bán chạy, Lấp đầy bàn |
 | **8** | **`Recommendation`** | [`modules/recommendation.md`](modules/recommendation.md) | Gợi ý món bán kèm (Cross-sell / Market Basket Analysis) & Cá nhân hóa (Collaborative Filtering) qua Đồ thị Neo4j |
+| **9** | **`Chat`** | [`modules/chat.md`](modules/chat.md) | Trợ lý ảo Google Gemini AI & Hỗ trợ trực tuyến bàn giao nhân viên CSKH (`BOT` / `WAITING_STAFF` / `STAFF_CONNECTED` / `CLOSED`) |
+
+*Tổng cộng toàn hệ thống:* **9 Modules — 103 API Endpoints chính** (+ 11 route aliases tương thích ngược). Xem bảng kê chi tiết tại [`modules.md`](modules.md).
 
 ---
 
@@ -114,6 +117,13 @@ Authorization: Bearer <sanctum_access_token>
   }
 }
 ```
+
+> [!NOTE]
+> **Lưu ý thực trạng phân trang giữa các Module hiện hành (Known Implementation Variance):**
+> - **Module `Menu`** (`/customer/dishes`, `/admin/dishes`): trả đúng chuẩn `pagination.lastPage`.
+> - **Các Module `Auth` (Admin Accounts), `Order`, `Payment`, `Reservation`:** hiện trả tên khóa `pagination.totalPages` thay vì `lastPage`.
+> - **Module `Chat`** (`/customer/chat/sessions`, `/staff/chat/sessions`, `/staff/chat/pending`): hiện trả cấu trúc Laravel Resource Collection `{ "data": [...], "links": {...}, "meta": { "current_page", "last_page", "total", ... } }` lồng bên trong `data`.
+> - Client nên đọc fallback `pagination?.lastPage ?? pagination?.totalPages ?? meta?.last_page ?? 1` cho đến khi Backend đồng nhất toàn bộ về `lastPage`.
 
 ---
 

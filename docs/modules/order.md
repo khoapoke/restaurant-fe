@@ -37,14 +37,16 @@ Module **Order** quản lý toàn bộ quy trình vận hành đơn hàng của 
 ### 3.1. Sơ Đồ Chuyển Đổi Trạng Thái Đơn Hàng Tổng Thể
 ```mermaid
 stateDiagram-v2
-    [*] --> PENDING_CONFIRMATION: Khách Checkout Online (ORD-01) / Phục vụ mở bàn (ORD-DINE-01)
-    PENDING_CONFIRMATION --> CONFIRMED: Admin xác nhận (ORD-08) / Khách gửi gọi món tại bàn (ORD-DINE-02)
-    PENDING_CONFIRMATION --> CANCELLED: Khách hủy (ORD-02) / Admin hủy
+    [*] --> PENDING_CONFIRMATION: Khách Checkout Online (ORD-01)
+    [*] --> CONFIRMED: Phục vụ mở bàn tại chỗ (ORD-DINE-01)
+    PENDING_CONFIRMATION --> CONFIRMED: Admin/Staff xác nhận (ORD-08 / ORD-13)
+    PENDING_CONFIRMATION --> CANCELLED: Khách hủy (ORD-06) / Admin hủy (ORD-12)
     CONFIRMED --> PREPARING: Bếp bắt đầu nấu (KTC-02)
     CONFIRMED --> CANCELLED: Hủy đơn có lý do
-    PREPARING --> READY: Bếp đã nấu xong tất cả món (KTC-03)
+    PREPARING --> READY: Bếp đã nấu xong tất cả món (KTC-02 / KTC-04)
     READY --> DELIVERING: Nhân viên bưng món ra bàn / Giao hàng
-    DELIVERING --> COMPLETED: Khách dùng xong & Đã thanh toán (ORD-13)
+    READY --> COMPLETED: Khách nhận tại quán & Đã thanh toán
+    DELIVERING --> COMPLETED: Khách dùng xong / Giao xong & Đã thanh toán
 ```
 
 ### 3.2. Máy Trạng Thái Từng Món Trong Bếp (`OrderItemStatus`)
@@ -68,7 +70,7 @@ stateDiagram-v2
 - Khi khách gửi món (`ORD-DINE-02`) hoặc xem tiến độ (`ORD-DINE-03`), hệ thống kiểm tra token hợp lệ với `orderId` và đảm bảo bàn đang ở trạng thái `OCCUPIED`.
 - Khách có thể gửi gọi món thành nhiều đợt (Round 1 khai vị, Round 2 món chính, Round 3 nước uống), hệ thống tự động cộng dồn vào đơn của bàn và cập nhật tổng tiền `tong_tien`.
 
-### 3.3. Quy Tắc Khóa Phân Tán Redis (Distributed Lock)
+### 3.5. Quy Tắc Khóa Phân Tán Redis (Distributed Lock)
 - Key: `lock:order:checkout:{accountId}`, TTL 10 giây.
 - Sử dụng callback `Cache::lock($key, 10)->block(5, function () { ... })` đảm bảo luôn giải phóng lock trong mọi tình huống, tránh Deadlock nếu phát sinh lỗi.
 - Người dùng bấm đúp sẽ nhận lỗi `429 Too Many Requests`.
@@ -77,34 +79,35 @@ stateDiagram-v2
 
 ## 4. Schemas Dữ Liệu Chuẩn Dành Cho Frontend
 
-### Schema 4.1: Đơn Hàng Online Trực Tuyến (`OrderResource`)
+### Schema 4.1: Đơn Hàng Khách Hàng (`Customer\OrderResource`)
 ```json
 {
   "orderId": 105,
-  "orderDate": "2026-11-10 12:30:00",
-  "totalAmount": 170000,
+  "orderDate": "2026-11-10T12:30:00",
   "status": "PENDING_CONFIRMATION",
-  "fulfillmentType": "DELIVERY",
+  "totalAmount": 170000,
   "shippingAddress": "[DELIVERY] Nguyễn Văn A - 0901234567 | 123 Lê Duẩn, Q.1",
+  "payment": {
+    "paymentId": 50,
+    "amount": 170000,
+    "paymentMethod": "CASH",
+    "status": "UNPAID",
+    "transactionCode": null
+  },
   "items": [
     {
       "dishId": 5,
       "dishName": "Gỏi ngó sen tôm thịt",
       "quantity": 2,
       "unitPrice": 85000,
-      "itemTotal": 170000,
+      "subTotal": 170000,
       "note": "Không hành",
       "itemStatus": "PENDING"
     }
-  ],
-  "payment": {
-    "paymentId": 50,
-    "method": "TIEN_MAT",
-    "status": "CHUA_THANH_TOAN",
-    "amount": 170000
-  }
+  ]
 }
 ```
+*(Ghi chú: `AdminOrderResource` bổ sung thêm `fulfillmentType`, `tableId`, `tableName`, `accountId`, `customerName`, `customerPhone`, `recipientName`, `recipientPhone`.)*
 
 ### Schema 4.2: Phục Vụ Mở Bàn Tại Chỗ (`DineInOpenTableResource`)
 ```json
@@ -112,12 +115,13 @@ stateDiagram-v2
   "orderId": 106,
   "tableId": 1,
   "tableName": "Bàn T01",
-  "orderStatus": "PENDING_CONFIRMATION",
-  "qrCodeToken": "tbl_token_9a8b7c6d5e",
-  "qrCodeUrl": "https://restaurant.com/dine-in?orderId=106&token=tbl_token_9a8b7c6d5e",
-  "openedAt": "2026-11-17T09:45:00+07:00"
+  "qrToken": "9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
+  "qrUrl": "http://localhost:5173/dine-in/9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
+  "status": "CONFIRMED",
+  "orderDate": "2026-11-17T09:45:00"
 }
 ```
+*(Lưu ý: `qrUrl` lấy domain từ biến môi trường `FRONTEND_URL`, fallback về `config('app.url')`.)*
 
 ### Schema 4.3: Khách Hàng Theo Dõi Tiến Độ Món Ăn Tại Bàn Real-time (`DineInTrackingResource`)
 ```json
@@ -125,35 +129,31 @@ stateDiagram-v2
   "orderId": 106,
   "tableId": 1,
   "tableName": "Bàn T01",
-  "orderStatus": "PREPARING",
+  "status": "PREPARING",
+  "statusName": "Đang chuẩn bị",
   "totalAmount": 450000,
   "items": [
     {
       "dishId": 1,
       "dishName": "Gỏi ngó sen tôm thịt",
+      "imageUrl": "/img/goi-ngo-sen.jpg",
       "quantity": 1,
       "unitPrice": 85000,
+      "subTotal": 85000,
       "note": "Không hành",
       "itemStatus": "READY",
-      "statusLabel": "Món đã sẵn sàng"
+      "itemStatusName": "Đã sẵn sàng"
     },
     {
       "dishId": 5,
       "dishName": "Bò lúc lắc",
+      "imageUrl": "/img/bo-luc-lac.jpg",
       "quantity": 2,
       "unitPrice": 120000,
+      "subTotal": 240000,
       "note": "Ít cay",
       "itemStatus": "COOKING",
-      "statusLabel": "Đang nấu"
-    },
-    {
-      "dishId": 8,
-      "dishName": "Lẩu hải sản",
-      "quantity": 1,
-      "unitPrice": 245000,
-      "note": "Mang bún sau",
-      "itemStatus": "PENDING",
-      "statusLabel": "Chờ chế biến"
+      "itemStatusName": "Đang nấu"
     }
   ]
 }
@@ -163,25 +163,30 @@ stateDiagram-v2
 ```json
 {
   "orderId": 106,
+  "orderDate": "2026-11-17T09:45:00",
+  "orderTime": "2026-11-17T09:45:00",
+  "waitingMinutes": 12,
+  "fulfillmentType": "DINE_IN",
   "tableId": 1,
   "tableName": "Bàn T01",
+  "status": "PREPARING",
   "orderStatus": "PREPARING",
-  "orderTime": "2026-11-17T09:45:00+07:00",
-  "waitingMinutes": 12,
   "items": [
     {
       "dishId": 1,
       "dishName": "Gỏi ngó sen tôm thịt",
       "quantity": 1,
       "note": "Không hành",
-      "itemStatus": "READY"
+      "itemStatus": "READY",
+      "itemStatusName": "Đã sẵn sàng"
     },
     {
       "dishId": 5,
       "dishName": "Bò lúc lắc",
       "quantity": 2,
       "note": "Ít cay",
-      "itemStatus": "COOKING"
+      "itemStatus": "COOKING",
+      "itemStatusName": "Đang nấu"
     }
   ]
 }
@@ -189,24 +194,26 @@ stateDiagram-v2
 
 ---
 
-## 5. Bảng Tổng Hợp Endpoints Đơn Hàng & Bếp (KDS)
+## 5. Bảng Tổng Hợp Endpoints Đơn Hàng & Bếp (16 APIs chính + 5 aliases)
 
 | Mã API | Method | Endpoint URL | Phân quyền | Body / Query Request | Response Payload | Mã HTTP |
 | :---: | :---: | :--- | :---: | :--- | :--- | :---: |
-| `ORD-01` | `POST` | `/api/v1/customer/orders/checkout` | `CUSTOMER` | `{ "fulfillmentType", "recipientName", "recipientPhone", "shippingAddress"?, "paymentMethod" }` | `201`: `OrderResource` *(Chi tiết Use Case tại Mục 6)* | `201 / 400 / 429` |
-| `ORD-02` | `PUT` | `/api/v1/customer/orders/{id}/cancel` | `CUSTOMER` | `{ "cancelReason": string }` | `OrderResource` (Status `CANCELLED`) | `200 / 409` |
-| `ORD-04` | `GET` | `/api/v1/customer/orders` | `CUSTOMER` | Query: `page`, `status` | Paginated `[OrderResource]` | `200` |
-| `ORD-05` | `GET` | `/api/v1/customer/orders/{id}` | `CUSTOMER` | *(Không)* | `OrderResource` chi tiết | `200 / 404` |
-| `ORD-06` | `GET` | `/api/v1/admin/orders` | `ADMIN,STAFF` | Query: `page`, `status`, `date`, `fulfillmentType` | Paginated `[AdminOrderResource]` | `200` |
-| `ORD-07` | `GET` | `/api/v1/admin/orders/{id}` | `ADMIN,STAFF` | *(Không)* | `AdminOrderResource` chi tiết | `200 / 404` |
-| `ORD-08` | `PATCH`| `/api/v1/admin/orders/{id}/status` | `ADMIN,STAFF` | `{ "targetStatus": string, "cancelReason"?: string }` | `AdminOrderResource` *(Chi tiết FSM tại Mục 6)* | `200 / 400` |
-| `ORD-13` | `POST`| `/api/v1/admin/orders/{id}/confirm-payment` | `ADMIN,STAFF` | `{ "note"?: string }` | Xác nhận đơn đã thanh toán thành công | `200 / 404` |
-| `ORD-DINE-01`| `POST`| `/api/v1/admin/orders/dine-in/open-table` | `ADMIN,STAFF` | `{ "tableId": int, "note"?: string }` | `DineInOpenTableResource` (Schema 4.2 kèm mã QR) | `201 / 400 / 404` |
-| `ORD-DINE-02`| `POST`| `/api/v1/customer/orders/dine-in/{id}/items` | Public *(kèm token)* | `{ "token": string, "items": [{ "dishId", "quantity", "note"? }] }` | Thêm món thành công, chuyển thẳng vào Bếp | `200 / 400 / 403` |
-| `ORD-DINE-03`| `GET` | `/api/v1/customer/orders/dine-in/{id}` | Public *(kèm token)* | Query: `token` | `DineInTrackingResource` (Theo dõi tiến độ món) | `200 / 403 / 404` |
-| `KTC-01` | `GET` | `/api/v1/kitchen/orders` | `ADMIN,STAFF` | Query: `status`, `tableId` | Danh sách `[KitchenOrderResource]` chờ nấu & đang nấu | `200` |
-| `KTC-02` | `PATCH`| `/api/v1/kitchen/orders/{id}/dishes/{dishId}/status` | `ADMIN,STAFF` | `{ "status": "COOKING|READY|SERVED" }` | Cập nhật tiến độ món lẻ trong bếp | `200 / 400 / 404` |
-| `KTC-03` | `PATCH`| `/api/v1/kitchen/orders/{id}/status` | `ADMIN,STAFF` | `{ "targetStatus": "PREPARING|READY" }` | Bếp cập nhật nhanh trạng thái cả đơn | `200 / 400 / 404` |
+| `ORD-01` | `POST` | `/api/v1/customer/orders/checkout` | `CUSTOMER` | `{ "fulfillmentType", "recipientName", "recipientPhone", "shippingAddress"?, "orderNote"?, "paymentMethod" }` | `201`: `OrderResource` *(Chi tiết tại Mục 6)* | `201 / 400 / 429` |
+| `ORD-04` | `GET` | `/api/v1/customer/orders` | `CUSTOMER` | Query: `page`, `perPage`, `status` | Paginated `[OrderResource]` | `200` |
+| `ORD-05` | `GET` | `/api/v1/customer/orders/{orderId}` | `CUSTOMER` | *(Không)* | `OrderResource` chi tiết | `200 / 404` |
+| `ORD-06` | `POST\|PUT` | `/api/v1/customer/orders/{orderId}/cancel` | `CUSTOMER` | `{ "cancelReason"?: string }` | `{ "orderId", "status": "CANCELLED" }` | `200 / 409` |
+| `ORD-07` | `GET` | `/api/v1/admin/orders` | `ADMIN,STAFF` | Query: `page`, `perPage`, `status`, `date`, `fulfillmentType`, `search` | Paginated `[AdminOrderResource]` | `200` |
+| `ORD-07B` | `GET` | `/api/v1/admin/orders/{orderId}` | `ADMIN,STAFF` | *(Không)* | `AdminOrderResource` chi tiết | `200 / 404` |
+| `ORD-08` | `PATCH`| `/api/v1/admin/orders/{orderId}/status` | `ADMIN,STAFF` | `{ "targetStatus": string }` | `{ "orderId", "previousStatus", "currentStatus" }` *(Chi tiết FSM tại Mục 6)* | `200 / 400` |
+| `ORD-12` | `POST\|PUT` | `/api/v1/admin/orders/{orderId}/cancel` | `ADMIN,STAFF` | `{ "cancelReason"?: string }` | `{ "orderId", "status": "CANCELLED" }` + giải phóng bàn (nếu là Dine-in) | `200 / 400 / 404` |
+| `ORD-13` | `POST`| `/api/v1/admin/orders/{orderId}/confirm-payment` | `ADMIN,STAFF` | `{ "note"?: string }` | `{ "orderId", "paymentId", "paymentStatus": "PAID", "orderStatus", "amount" }` | `200 / 404` |
+| `ORD-DINE-01`| `POST`| `/api/v1/admin/orders/dine-in/open-table` | `ADMIN,STAFF` | `{ "tableId": int, "guestCount"?: int, "note"?: string }` | `DineInOpenTableResource` (Schema 4.2 kèm mã QR) | `201 / 400 / 404` |
+| `ORD-DINE-02`| `POST`| `/api/v1/dine-in/{token}/items` *(FE aliases: `POST /customer/orders/dine-in/{orderId}/items`, `POST /orders/dine-in/{orderId}/items`)* | Public *(kèm token)* | `{ "token"?, "items": [{ "dishId", "quantity", "note"? }] }` | `DineInTrackingResource` sau khi thêm món vào bếp | `200 / 400 / 403` |
+| `ORD-DINE-03`| `GET` | `/api/v1/dine-in/{token}/tracking` *(FE aliases: `GET /customer/orders/dine-in/{orderId}`, `GET /orders/dine-in/{orderId}`)* | Public *(kèm token)* | Query: `token` *(với alias theo `orderId`)* | `DineInTrackingResource` (Theo dõi tiến độ món) | `200 / 403 / 404` |
+| `KTC-01` | `GET` | `/api/v1/kitchen/orders` | `ADMIN,STAFF` | *(Không)* | Danh sách `[KitchenOrderResource]` đang `CONFIRMED`/`PREPARING`/`READY` | `200` |
+| `KTC-02` | `PUT\|PATCH`| `/api/v1/kitchen/orders/{orderId}/items/{dishId}/status` *(FE alias: `/kitchen/orders/{orderId}/dishes/{dishId}/status`)* | `ADMIN,STAFF` | `{ "status": "PENDING|COOKING|READY|SERVED" }` | `{ "orderId", "dishId", "itemStatus", "itemStatusName", "orderStatus" }` | `200 / 400 / 404` |
+| `KTC-03` | `PUT\|PATCH`| `/api/v1/kitchen/orders/{orderId}/items/{dishId}/serve` | `ADMIN,STAFF` | *(Không)* | Đánh dấu món đã bưng ra bàn (`SERVED`) & tự sync đơn | `200 / 404` |
+| `KTC-04` | `PUT\|PATCH`| `/api/v1/kitchen/orders/{orderId}/status` | `ADMIN,STAFF` | `{ "targetStatus": "PREPARING|READY" }` | Cập nhật nhanh trạng thái tổng cả đơn qua FSM | `200 / 400 / 404` |
 
 ---
 
@@ -218,48 +225,46 @@ stateDiagram-v2
 - **Validation:** `tableId`: `required|integer|exists:BAN_AN,ma_ban`.
 - **Luồng thực thi:**
   1. Kiểm tra trạng thái bàn ăn: nếu đang `MAINTENANCE` ném lỗi `400 Bad Request`.
-  2. Cập nhật `BAN_AN.trang_thai = OCCUPIED` (Đang phục vụ).
-  3. Sinh mã `qr_token` ngẫu nhiên bảo mật (32 ký tự).
-  4. Tạo bản ghi `DON_HANG` với `loai_don_hang = 'DINE_IN'`, `ma_ban = $tableId`, `ma_truy_cap_ban = $qrToken`, `trang_thai = PENDING_CONFIRMATION`.
-  5. Trả về `DineInOpenTableResource` chứa link ảnh/URL mã QR để phục vụ đưa cho khách tại bàn quét.
+  2. Kiểm tra tính idempotent: nếu bàn đã có đơn Dine-in đang hoạt động (`trang_thai NOT IN (COMPLETED, CANCELLED)`), trả lại luôn đơn đó cùng `qrToken`.
+  3. Cập nhật `BAN_AN.trang_thai = OCCUPIED` (`Đang phục vụ`).
+  4. Sinh mã `qrToken` ngẫu nhiên bảo mật (32 ký tự hex).
+  5. Tạo bản ghi `DON_HANG` với `loai_don_hang = OrderFulfillmentType::DINE_IN`, `ma_ban = $tableId`, `ma_truy_cap_ban = $qrToken`, `trang_thai = CONFIRMED`, kèm bản ghi `THANH_TOAN` khởi tạo (`CASH`, `UNPAID`, `so_tien = 0`).
+  6. Trả về `DineInOpenTableResource` (HTTP `201`) chứa `qrToken` và `qrUrl` để phục vụ đưa cho khách tại bàn quét.
 
 ---
 
 ### UC ORD-DINE-02: Khách Hàng Gọi Món Qua Mã QR Tại Bàn
 - **Actor:** Khách hàng tại bàn (`CUSTOMER` hoặc Public quét QR).
-- **Endpoint:** `POST /api/v1/customer/orders/dine-in/{id}/items`
+- **Endpoint:** `POST /api/v1/dine-in/{token}/items` *(hoặc FE alias `POST /api/v1/customer/orders/dine-in/{orderId}/items`)*
 - **Validation:**
-  - `token`: `required|string`
   - `items`: `required|array|min:1`
   - `items.*.dishId`: `required|integer|exists:MON_AN,ma_mon_an`
   - `items.*.quantity`: `required|integer|min:1`
   - `items.*.note`: `nullable|string|max:255`
 - **Luồng thực thi:**
   1. Xác thực `token` khớp với `DON_HANG.ma_truy_cap_ban`. Nếu sai ném `403 Forbidden`.
-  2. Kiểm tra bàn ăn vẫn đang mở (không ở trạng thái `COMPLETED` hay `CANCELLED`).
-  3. Duyệt từng món, kiểm tra món còn mở bán (`da_xoa = false`, `hien_thi = true`, `is_available = true`).
-  4. Lưu chi tiết món vào `CHI_TIET_DON_HANG` kèm snapshot đơn giá, `ghi_chu`, và gán `trang_thai_mon = PENDING`.
-  5. Tính lại `DON_HANG.tong_tien` và chuyển trạng thái đơn `DON_HANG.trang_thai = CONFIRMED` (Đã xác nhận, đưa thẳng vào KDS bếp).
-  6. Trả về chi tiết đơn và thông báo thành công.
+  2. Kiểm tra đơn bàn vẫn đang mở (không ở trạng thái `COMPLETED` hay `CANCELLED`).
+  3. Duyệt từng món, kiểm tra món còn mở bán (`da_xoa = false`, `hien_thi = true`, `con_ban = true`).
+  4. Lưu hoặc cộng dồn chi tiết món vào `CHI_TIET_DON_HANG` kèm snapshot đơn giá, `ghi_chu`, và gán `trang_thai_mon = PENDING`.
+  5. Tính lại `DON_HANG.tong_tien` và đồng bộ `THANH_TOAN.so_tien`.
+  6. Trả về `DineInTrackingResource` (`200 OK`).
 
 ---
 
 ### UC KTC-02: Bếp Cập Nhật Tiến Độ Món Ăn Lẻ (Kitchen Item Tracking)
 - **Actor:** Đầu bếp / Nhân viên bếp (`ADMIN, STAFF`).
-- **Endpoint:** `PATCH /api/v1/kitchen/orders/{id}/dishes/{dishId}/status`
-- **Validation:** `status`: `required|string|in:COOKING,READY,SERVED`.
+- **Endpoint:** `PUT|PATCH /api/v1/kitchen/orders/{orderId}/items/{dishId}/status` *(hoặc alias `/dishes/{dishId}/status`)*
+- **Validation:** `status`: `required|string|in:PENDING,COOKING,READY,SERVED`.
 - **Luồng thực thi:**
   1. Tìm chi tiết món trong `CHI_TIET_DON_HANG` theo `(ma_don_hang, ma_mon_an)`.
   2. Cập nhật `trang_thai_mon = $status`.
   3. Tự động kiểm tra và đồng bộ trạng thái chung của `DON_HANG`:
-     - Nếu có món đang `COOKING` $\rightarrow$ Đơn chuyển sang `PREPARING`.
-     - Nếu tất cả món đều `READY` hoặc `SERVED` $\rightarrow$ Đơn chuyển sang `READY`.
      - Nếu tất cả món đều `SERVED` $\rightarrow$ Đơn chuyển sang `DELIVERING` (Đang phục vụ tại bàn).
+     - Ngược lại, nếu tất cả món đều `READY` hoặc `SERVED` $\rightarrow$ Đơn chuyển sang `READY`.
+     - Ngược lại, nếu có món đang `COOKING` $\rightarrow$ Đơn chuyển sang `PREPARING`.
   4. Trả về thông tin món và trạng thái đơn hàng sau khi đồng bộ.
 
 ---
-
-## 6. Use Cases Nghiệp Vụ Phức Tạp (Complex Use Cases)
 
 ### UC ORD-01: Checkout Đặt Hàng Từ Giỏ Hàng (Redis Lock + Transaction)
 - **Actor:** Khách hàng (`CUSTOMER`).
@@ -267,7 +272,7 @@ stateDiagram-v2
 - **Validation:**
   - `fulfillmentType`: `required|in:DELIVERY,PICKUP`
   - `recipientName`: `required|string|max:100`
-  - `recipientPhone`: `required|regex:/^0[0-9]{9}$/`
+  - `recipientPhone`: `required|regex:/^(0|\+84)[0-9]{9,10}$/`
   - `shippingAddress`: `required_if:fulfillmentType,DELIVERY|string`
   - `paymentMethod`: `required|in:CASH,BANK_TRANSFER_QR`
 - **Luồng thực thi 7 bước (Bọc trong `Cache::lock` & `DB::transaction`):**
@@ -278,17 +283,18 @@ stateDiagram-v2
   5. **Lưu Chi Tiết Món:** Gọi `$order->dishes()->attach($pivotData)` lưu `so_luong` và `don_gia`.
   6. **Khởi tạo Thanh toán:** Tạo bản ghi `THANH_TOAN` tương ứng với trạng thái `UNPAID`.
   7. **Làm rỗng giỏ:** Gọi `$cart->dishes()->detach()`.
-- **Response `201 Created`:** `OrderResource` (Schema 4).
+- **Response `201 Created`:** `OrderResource` (Schema 4.1).
 
 ---
 
-### UC ORD-08: Cập Nhật Trạng Thái Quy Trình Đơn Hàng (Admin/Bếp)
-- **Actor:** Quản trị viên (`ADMIN`).
-- **Endpoint:** `PATCH /api/v1/admin/orders/{id}/status`
-- **Validation:** `targetStatus`: `required|string|in:CONFIRMED,PREPARING,READY,COMPLETED,CANCELLED`, `cancelReason` (required nếu hủy).
+### UC ORD-08: Cập Nhật Trạng Thái Quy Trình Đơn Hàng (Admin/Staff)
+- **Actor:** Quản trị viên / Nhân viên (`ADMIN, STAFF`).
+- **Endpoint:** `PATCH /api/v1/admin/orders/{orderId}/status`
+- **Validation:** `targetStatus`: `required|string|in:CONFIRMED,PREPARING,READY,DELIVERING,COMPLETED,CANCELLED`.
 - **Luồng thực thi:**
-  1. Kiểm tra trạng thái hiện tại đối chiếu với Ma trận FSM ở mục 3.2. Nếu bước chuyển không hợp lệ ném `400 Bad Request`.
+  1. Kiểm tra trạng thái hiện tại đối chiếu với `OrderStatus::canTransitionTo()`. Nếu bước chuyển không hợp lệ ném `400 Bad Request`.
   2. Nếu chuyển sang `COMPLETED`:
-     - Nếu `phuong_thuc === 'Tiền mặt'`: tự động cập nhật `Payment.trang_thai = PAID`.
-     - Nếu `phuong_thuc === 'Chuyển khoản'` mà `Payment.trang_thai !== PAID`: ném `400 Bad Request` (*"Chưa thanh toán QR"*).
-  3. Cập nhật trạng thái và trả về `AdminOrderResource`.
+     - Nếu `phuong_thuc === 'Tiền mặt'` hoặc đơn tại bàn (`ma_ban != null`): tự động cập nhật `Payment.trang_thai = PAID`.
+     - Nếu `phuong_thuc === 'Chuyển khoản'` (online) mà `Payment.trang_thai === UNPAID`: ném `400 Bad Request` (*"Đơn hàng chuyển khoản QR chưa được xác nhận thanh toán thành công"*).
+  3. Nếu đơn có gắn `ma_ban` và chuyển sang `COMPLETED` hoặc `CANCELLED`: tự động giải phóng bàn ăn về `AVAILABLE` và đồng bộ phiếu đặt bàn `OCCUPIED` tương ứng.
+  4. Trả về `{ "orderId", "previousStatus", "currentStatus" }`.

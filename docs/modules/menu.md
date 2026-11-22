@@ -47,27 +47,36 @@ Module **Menu** là trung tâm quản lý thực đơn của hệ thống nhà h
 
 ## 4. Schemas Dữ Liệu Chuẩn Dành Cho Frontend
 
-### Schema 4.1: Danh mục Món ăn (`CategoryResource`)
+### Schema 4.1: Danh mục Món ăn (`CategoryResource` & `AdminCategoryResource`)
 ```json
+// Customer: CategoryResource
 {
   "categoryId": 1,
   "categoryName": "Khai vị",
   "description": "Các món gỏi, súp khai vị nhẹ nhàng",
-  "isActive": true
+  "displayOrder": 1
 }
+
+// Admin: AdminCategoryResource bổ sung thêm:
+// "isVisible": true, "isDeleted": false, "dishesCount": 6
 ```
 
-### Schema 4.2: Món ăn Thu gọn (`DishResource` - Dùng cho Danh sách)
+### Schema 4.2: Món ăn Danh sách (`DishResource`)
 ```json
 {
   "dishId": 5,
   "dishName": "Gỏi ngó sen tôm thịt",
   "price": 85000,
+  "description": "Ngó sen tươi giòn trộn tôm sú và thịt ba chỉ",
   "imageUrl": "https://example.com/images/goi-ngo-sen.jpg",
+  "categoryId": 1,
+  "categoryName": "Khai vị",
   "isAvailable": true,
-  "category": { "categoryId": 1, "categoryName": "Khai vị" }
+  "ingredients": ["Ngó sen", "Tôm sú", "Thịt ba chỉ"],
+  "allergens": ["SHELLFISH", "PEANUT"]
 }
 ```
+*(Lưu ý: `AdminDishResource` trả cùng cấu trúc phẳng này và bổ sung thêm `weatherTags`, `isVisible`, `isDeleted`.)*
 
 ### Schema 4.3: Chi Tiết Món ăn Đầy đủ (`DishDetailResource`)
 ```json
@@ -77,38 +86,42 @@ Module **Menu** là trung tâm quản lý thực đơn của hệ thống nhà h
   "price": 85000,
   "description": "Ngó sen tươi giòn trộn tôm sú và thịt ba chỉ",
   "imageUrl": "https://example.com/images/goi-ngo-sen.jpg",
+  "category": { "categoryId": 1, "categoryName": "Khai vị" },
   "isAvailable": true,
-  "allergens": ["SHELLFISH", "PEANUT"],
-  "weatherTags": ["HOT_SUNNY", "PLEASANT_NORMAL"],
-  "category": { "categoryId": 1, "categoryName": "Khai vị" }
+  "ingredients": ["Ngó sen", "Tôm sú", "Thịt ba chỉ"],
+  "allergens": ["SHELLFISH", "PEANUT"]
 }
 ```
 
 ---
 
-## 5. Bảng Tổng Hợp Endpoints CRUD Chuẩn
+## 5. Bảng Tổng Hợp Endpoints CRUD Chuẩn (17 APIs + 2 aliases)
 
 ### 5.1. Nhóm API Danh Mục Thực Đơn (Category Endpoints)
 | Mã API | Method | Endpoint URL | Phân quyền | Body Request | Response Payload | Mã HTTP |
 | :---: | :---: | :--- | :---: | :--- | :--- | :---: |
 | `MNU-01` | `GET` | `/api/v1/customer/categories` | Public | *(Không)* | Danh sách `[CategoryResource]` (Redis Cache 3600s) | `200` |
-| `MNU-09` | `POST` | `/api/v1/admin/categories` | `ADMIN` | `{ "categoryName", "description"? }` | `CategoryResource` mới tạo (Busting Cache) | `201 / 422` |
-| `MNU-10` | `PUT` | `/api/v1/admin/categories/{id}` | `ADMIN` | `{ "categoryName", "description"? }` | `CategoryResource` đã sửa (Busting Cache) | `200 / 404` |
-| `MNU-11` | `PATCH`| `/api/v1/admin/categories/{id}/visibility` | `ADMIN` | `{ "isVisible": boolean }` | `CategoryResource` cập nhật cờ ẩn/hiện | `200 / 404` |
-| `MNU-12` | `DELETE`| `/api/v1/admin/categories/{id}` | `ADMIN` | *(Không)* | `{ "message": "Xóa mềm danh mục thành công" }` | `200 / 404` |
+| `MNU-08A` | `GET` | `/api/v1/admin/categories` | `ADMIN` | *(Không)* | Danh sách `[AdminCategoryResource]` (kèm `dishesCount`) | `200` |
+| `MNU-08B` | `GET` | `/api/v1/admin/categories/{categoryId}` | `ADMIN` | *(Không)* | `AdminCategoryResource` chi tiết | `200 / 404` |
+| `MNU-09` | `POST` | `/api/v1/admin/categories` | `ADMIN` | `{ "categoryName", "description"?, "displayOrder"?, "isVisible"? }` | `AdminCategoryResource` mới tạo (Busting Cache) | `201 / 422` |
+| `MNU-10` | `PUT` | `/api/v1/admin/categories/{categoryId}` | `ADMIN` | `{ "categoryName", "description"?, "displayOrder"?, "isVisible"? }` | `AdminCategoryResource` đã sửa (Busting Cache) | `200 / 404` |
+| `MNU-11` | `PATCH`| `/api/v1/admin/categories/{categoryId}/visibility` | `ADMIN` | `{ "isVisible"?: boolean }` *(rỗng sẽ toggle)* | `AdminCategoryResource` cập nhật cờ ẩn/hiện | `200 / 404` |
+| `MNU-12` | `DELETE`| `/api/v1/admin/categories/{categoryId}` | `ADMIN` | *(Không)* | Xóa mềm danh mục & tự ẩn toàn bộ món thuộc danh mục | `200 / 404` |
 
 ### 5.2. Nhóm API Món Ăn (Dish Endpoints)
 | Mã API | Method | Endpoint URL | Phân quyền | Body / Query Request | Response Payload | Mã HTTP |
 | :---: | :---: | :--- | :---: | :--- | :--- | :---: |
 | `MNU-02` | `GET` | `/api/v1/customer/dishes` | Public | Query: `keyword` (hoặc `q`), `categoryId`, `minPrice`, `maxPrice`, `isAvailable`, `excludeAllergens`, `page`, `perPage` | Paginated `[DishResource]` (Tìm kiếm Meilisearch) | `200` |
-| `MNU-03` | `GET` | `/api/v1/customer/dishes/search` | Public | Query: `keyword` (hoặc `q`), `minPrice`, `maxPrice`, `excludeAllergens` | Paginated `[DishResource]` (Tìm kiếm Meilisearch) | `200` |
-| `MNU-04` | `GET` | `/api/v1/customer/dishes/recommendations/weather` | Public | Query: `lat`, `lon` | Gợi ý món ăn theo thời tiết thực tế *(Xem chi tiết tại Mục 6)* | `200 / 422` |
-| `MNU-07` | `GET` | `/api/v1/customer/dishes/{id}` | Public | *(Không)* | `DishDetailResource` (Schema 4.3) | `200 / 404` |
-| `MNU-08` | `GET` | `/api/v1/admin/dishes` | `ADMIN` | Query: `page`, `search`, `categoryId`, `includeDeleted` | Paginated `[AdminDishResource]` | `200` |
-| `MNU-13` | `POST` | `/api/v1/admin/dishes` | `ADMIN` | `{ "dishName", "price", "categoryId", "description"?, "imageUrl"?, "allergens"?, "weatherTags"? }` | `201`: `DishDetailResource` mới tạo | `201 / 422` |
-| `MNU-14` | `PUT` | `/api/v1/admin/dishes/{id}` | `ADMIN` | Body tương tự `POST` | `DishDetailResource` đã cập nhật | `200 / 404` |
-| `MNU-15` | `PATCH`| `/api/v1/admin/dishes/{id}/availability` | `ADMIN` | `{ "isAvailable": boolean }` | Đánh dấu còn hoặc hết món | `200 / 404` |
-| `MNU-16` | `DELETE`| `/api/v1/admin/dishes/{id}` | `ADMIN` | *(Không)* | `{ "message": "Xóa mềm món ăn thành công" }` | `200 / 404` |
+| `MNU-03` | `GET` | `/api/v1/customer/dishes/search` *(Alias của `MNU-02`)* | Public | Query giống `MNU-02` | Paginated `[DishResource]` (Tìm kiếm Meilisearch) | `200` |
+| `MNU-04` | `GET` | `/api/v1/customer/dishes/recommendations/weather` *(Alias FE: `/customer/recommendations/weather`)* | Public | Query: `lat`, `lon` | Gợi ý món ăn theo thời tiết thực tế & lọc dị ứng *(Xem Mục 6)* | `200 / 422` |
+| `MNU-07` | `GET` | `/api/v1/customer/dishes/{dishId}` | Public | *(Không)* | `DishDetailResource` (Schema 4.3) | `200 / 404` |
+| `MNU-08` | `GET` | `/api/v1/admin/dishes` | `ADMIN` | Query: `page`, `perPage`, `keyword`, `categoryId`, `isAvailable`, `isVisible`, `minPrice`, `maxPrice` | Paginated `[AdminDishResource]` (`da_xoa = false`) | `200` |
+| `MNU-08C` | `GET` | `/api/v1/admin/dishes/{dishId}` | `ADMIN` | *(Không)* | `AdminDishResource` chi tiết | `200 / 404` |
+| `MNU-13` | `POST` | `/api/v1/admin/dishes` | `ADMIN` | `{ "dishName", "price", "categoryId", "description"?, "imageUrl"?, "ingredients"?, "allergens"?, "weatherTags"?, "isAvailable"?, "isVisible"? }` | `201`: `AdminDishResource` mới tạo | `201 / 422` |
+| `MNU-14` | `PUT` | `/api/v1/admin/dishes/{dishId}` | `ADMIN` | Body tương tự `POST` | `AdminDishResource` đã cập nhật | `200 / 404` |
+| `MNU-15` | `PATCH`| `/api/v1/admin/dishes/{dishId}/availability` | `ADMIN` | `{ "isAvailable"?: boolean }` *(rỗng sẽ toggle)* | Đánh dấu còn bán / tạm hết món | `200 / 404` |
+| `MNU-16` | `PATCH`| `/api/v1/admin/dishes/{dishId}/visibility` | `ADMIN` | `{ "isVisible"?: boolean }` *(rỗng sẽ toggle)* | Ẩn / Hiện món ăn trên thực đơn khách | `200 / 404` |
+| `MNU-17` | `DELETE`| `/api/v1/admin/dishes/{dishId}` | `ADMIN` | *(Không)* | Xóa mềm món ăn (`da_xoa = true, hien_thi = false, con_ban = false`) | `200 / 404` |
 
 ---
 
@@ -120,40 +133,46 @@ Module **Menu** là trung tâm quản lý thực đơn của hệ thống nhà h
 - **Validation:** `lat`: `required|numeric|between:-90,90`, `lon`: `required|numeric|between:-180,180`.
 - **Luồng thực thi gợi ý theo thời tiết:**
   1. **Lấy danh sách chất dị ứng:** Nếu có Sanctum Token, lấy mảng `allergies` từ `UserProfile`. Nếu là khách vãng lai, mảng dị ứng là rỗng.
-  2. **Truy vấn Thời tiết:** Kiểm tra cache `weather_{lat}_{lon}` (TTL 900s). Nếu miss, gọi OpenWeatherMap API lấy nhiệt độ $T$ và thời tiết chính.
+  2. **Truy vấn Thời tiết:** Kiểm tra cache `weather_rec_{lat}_{lon}_{accountId}` (TTL 900s). Nếu miss, gọi OpenWeatherMap API (hoặc fallback theo tọa độ TP.HCM/Hà Nội/Đà Nẵng).
   3. **Phân loại thời tiết:**
-     - $T \ge 31^\circ\text{C}$ & không mưa: `HOT_SUNNY` $\rightarrow$ Ưu tiên Đồ uống, Tráng miệng, Khai vị mát.
-     - $T \le 24^\circ\text{C}$ hoặc có mưa/bão: `RAINY_OR_COLD` $\rightarrow$ Ưu tiên Món chính nóng, Lẩu, Súp, Nướng.
+     - $T \ge 32^\circ\text{C}$: `HOT_SUNNY` $\rightarrow$ Ưu tiên các món thanh mát.
+     - $T \le 22^\circ\text{C}$: `RAINY_OR_COLD` $\rightarrow$ Ưu tiên món cay nóng, lẩu, súp ấm bụng.
      - Còn lại: `PLEASANT_NORMAL`.
-  4. **Lọc Cứng Dị Ứng (Strict Allergen Exclusion):**
-     ```php
-     $safeDishes = $activeDishes->reject(function ($dish) use ($userAllergies) {
-         return count(array_intersect($dish->allergens ?? [], $userAllergies)) > 0;
-     });
-     ```
-  5. **Chấm điểm & Sắp xếp:** Món có category ưu tiên (+10 điểm), món có `weatherTag` khớp (+20 điểm). Lấy top 6 món cao điểm nhất.
+  4. **Lọc Thẻ Thời Tiết & Lọc Cứng Dị Ứng (`whereJsonContains` / `whereJsonDoesntContain`):** Lọc các món có `the_thoi_tiet` khớp `$condition` (hoặc `NULL`) và loại bỏ 100% món có `chat_di_ung` chứa bất kỳ chất dị ứng nào của khách, lấy tối đa 6 món.
 - **Sơ đồ luồng thực thi (Mermaid):**
 ```mermaid
 flowchart TD
     A[Request: lat, lon] --> B[Lấy User Allergies từ Hồ Sơ Khách]
     B --> C[Lấy Dữ liệu OpenWeatherMap - Cache 15p]
     C --> D{Xác định Loại Thời tiết}
-    D -- Nắng nóng >= 31C --> E[HOT_SUNNY: Đồ uống, Tráng miệng]
-    D -- Mưa hoặc Lạnh <= 24C --> F[RAINY_OR_COLD: Món nóng, Súp, Lẩu]
+    D -- Nắng nóng >= 32C --> E[HOT_SUNNY: Món thanh mát]
+    D -- Mưa hoặc Lạnh <= 22C --> F[RAINY_OR_COLD: Món nóng, Súp, Lẩu]
     D -- Mát mẻ --> G[PLEASANT_NORMAL]
     E & F & G --> H[Lọc cứng: Loại bỏ 100% món chứa dị ứng của User]
-    H --> I[Chấm điểm phù hợp Thời tiết & Lấy Top 6 món]
-    I --> J[Trả về ApiResponse kèm thông tin nhiệt độ]
+    H --> I[Lọc theo the_thoi_tiet & Lấy tối đa 6 món]
+    I --> J[Trả về ApiResponse kèm thông tin thời tiết]
 ```
 - **Response mẫu `200 OK`:**
   ```json
   {
     "success": true, "code": 200, "message": "Weather recommendations retrieved successfully",
     "data": {
-      "weather": { "temperatureCelsius": 33.5, "condition": "HOT_SUNNY" },
+      "weather": {
+        "city": "Ho Chi Minh City",
+        "temperatureCelsius": 33.8,
+        "condition": "HOT_SUNNY",
+        "advice": "Trời nắng nóng (33.8°C), ưu tiên các món thanh mát. Đã lọc bỏ món chứa chất gây dị ứng: SHELLFISH."
+      },
       "excludedAllergens": ["SHELLFISH"],
       "recommendedDishes": [
-        { "dishId": 12, "dishName": "Trà đào cam sả", "price": 45000, "isAvailable": true }
+        {
+          "dishId": 12,
+          "dishName": "Trà đào cam sả",
+          "price": 45000,
+          "imageUrl": "/img/tra-dao.jpg",
+          "categoryName": "Đồ uống",
+          "allergens": []
+        }
       ]
     }
   }

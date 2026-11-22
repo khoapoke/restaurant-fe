@@ -39,45 +39,70 @@ Module **Recommendation** là động cơ trí tuệ đề xuất món ăn thôn
 ```cypher
 MATCH (target:Dish {dishId: $dishId})<-[:INCLUDES]-(o:Order)-[:INCLUDES]->(rec:Dish)
 WHERE rec.dishId <> $dishId
-WITH rec, count(DISTINCT o) AS pairedCount
-ORDER BY pairedCount DESC
+RETURN rec.dishId AS dishId,
+       rec.name AS dishName,
+       rec.price AS price,
+       rec.imageUrl AS imageUrl,
+       rec.categoryName AS categoryName,
+       count(o) AS pairedCount
+ORDER BY pairedCount DESC, rec.dishId ASC
 LIMIT $limit
-RETURN rec.dishId AS dishId, rec.name AS name, rec.price AS price, pairedCount
 ```
 
 ### 3.3. Thuật Toán Lọc Cộng Tác Cá Nhân Hóa (Collaborative Filtering - GRA-02)
 ```cypher
-MATCH (u:Customer {accountId: $accountId})-[:ORDERED]->(:Order)-[:INCLUDES]->(d:Dish)
-      <-[:INCLUDES]-(:Order)<-[:ORDERED]-(peer:Customer)
-WHERE peer.accountId <> $accountId
-MATCH (peer)-[:ORDERED]->(:Order)-[:INCLUDES]->(rec:Dish)
-WHERE NOT (u)-[:ORDERED]->(:Order)-[:INCLUDES]->(rec)
-WITH rec, count(DISTINCT peer) AS peerCount
-ORDER BY peerCount DESC
+MATCH (me:Customer {customerId: $customerId})-[:ORDERED]->(:Order)-[:INCLUDES]->(d:Dish)
+MATCH (other:Customer)-[:ORDERED]->(:Order)-[:INCLUDES]->(d)
+WHERE other.customerId <> me.customerId
+MATCH (other)-[:ORDERED]->(:Order)-[:INCLUDES]->(rec:Dish)
+WHERE NOT (me)-[:ORDERED]->(:Order)-[:INCLUDES]->(rec)
+RETURN rec.dishId AS dishId,
+       rec.name AS dishName,
+       rec.price AS price,
+       rec.imageUrl AS imageUrl,
+       rec.categoryName AS categoryName,
+       count(DISTINCT other) AS affinityScore
+ORDER BY affinityScore DESC, rec.dishId ASC
 LIMIT $limit
-RETURN rec.dishId AS dishId, rec.name AS name, rec.price AS price, peerCount
 ```
+> [!NOTE]
+> **Lưu ý hiện trạng:** `DishRecommendationService::getPersonalizedRecommendations()` hiện thực hiện lọc cộng tác theo lịch sử đơn hàng và fallback `trending_supplement` từ MySQL; **chưa tự động lọc `userProfile.allergies`** (chức năng lọc dị ứng hiện nằm tại `Menu` Weather/Filter).
 
 ---
 
 ## 4. Schemas Dữ Liệu Chuẩn Dành Cho Frontend
 
-### Schema 4.1: Gợi Ý Món Bán Kèm (`CrossSellResponse`)
+### Schema 4.1: Gợi Ý Món Bán Kèm (`GRA-01` — Trả Mảng Phẳng trong `data`)
 ```json
-{
-  "targetDishId": 5,
-  "source": "neo4j_graph",
-  "recommendations": [
-    {
-      "dishId": 12,
-      "dishName": "Trà đào cam sả",
-      "price": 45000,
-      "score": 15,
-      "recommendationReason": "Thường được gọi cùng món này trong các đơn hàng trước"
-    }
-  ]
-}
+[
+  {
+    "dishId": 12,
+    "dishName": "Trà đào cam sả",
+    "price": 45000,
+    "imageUrl": "/img/tra-dao.jpg",
+    "categoryName": "Đồ uống",
+    "pairedCount": 15,
+    "source": "neo4j_graph"
+  }
+]
 ```
+*(Fallback MySQL trả `"pairedCount": 0, "source": "catalog_supplement"`.)*
+
+### Schema 4.2: Gợi Ý Cá Nhân Hóa (`GRA-02` — Trả Mảng Phẳng trong `data`)
+```json
+[
+  {
+    "dishId": 8,
+    "dishName": "Lẩu hải sản chua cay",
+    "price": 280000,
+    "imageUrl": "/img/lau-hai-san.jpg",
+    "categoryName": "Lẩu & Nướng",
+    "affinityScore": 4,
+    "source": "neo4j_collaborative"
+  }
+]
+```
+*(Fallback MySQL khi khách chưa có đơn hàng trước đó trả `"affinityScore": 0, "source": "trending_supplement"`.)*
 
 ---
 
@@ -85,6 +110,6 @@ RETURN rec.dishId AS dishId, rec.name AS name, rec.price AS price, peerCount
 
 | Mã API | Method | Endpoint URL | Phân quyền | Query Parameters | Response Payload | Mã HTTP |
 | :---: | :---: | :--- | :---: | :--- | :--- | :---: |
-| `GRA-01` | `GET` | `/api/v1/customer/dishes/{dishId}/recommendations/graph` | Public | Query: `limit` (mặc định 4) | `CrossSellResponse` (Schema 4.1) | `200 / 404` |
-| `GRA-02` | `GET` | `/api/v1/customer/recommendations/personalized` | `CUSTOMER` | Query: `limit` (mặc định 6) | Danh sách món gợi ý cá nhân hóa | `200` |
-| `GRA-03` | `GET` | `/api/v1/customer/recommendations/graph-stats` | Public | *(Không)* | Thống kê số lượng Nodes & Relationships | `200` |
+| `GRA-01` | `GET` | `/api/v1/customer/dishes/{dishId}/recommendations/graph` | Public | Query: `limit` (mặc định `4`) | Mảng phẳng món bán kèm (Schema 4.1) | `200` |
+| `GRA-02` | `GET` | `/api/v1/customer/recommendations/personalized` | `CUSTOMER` | Query: `limit` (mặc định `5`) | Mảng phẳng món gợi ý cá nhân hóa (Schema 4.2) | `200` |
+| `GRA-03` | `GET` | `/api/v1/customer/recommendations/graph-stats` | Public | *(Không)* | `{ "customers", "dishes", "categories", "orders", "includesRelationships", "orderedRelationships" }` | `200` |

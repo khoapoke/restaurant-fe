@@ -54,12 +54,13 @@ Dự án được tổ chức theo **Kiến trúc hướng tính năng (Modular 
 
 ```text
 restaurant/fe/
-├── docs/                             # 📖 Toàn bộ tài liệu đặc tả hệ thống
-│   ├── api/                          # Hợp đồng API từng phân hệ (Request/Response JSON chuẩn)
-│   │   └── api-matrix-cheatsheet.md  # Bảng tra cứu chéo 63 APIs <-> Service JS
-│   ├── modules/                      # 8 Bounded Contexts chi tiết từ Backend v2.0
+├── docs/                             # 📖 Toàn bộ tài liệu đặc tả hệ thống (đồng bộ 1-1 từ BE)
+│   ├── README.md                     # Mục lục trung tâm toàn bộ 9 Modules
+│   ├── modules.md                    # Bảng tra cứu chéo 103 APIs chính (+11 aliases)
+│   ├── modules/                      # 9 Bounded Contexts chi tiết từ Backend (auth, menu, cart, order, reservation, payment, report, recommendation, chat)
 │   ├── api_protocol_specification.md # Chuẩn ApiResponse Envelope & HTTP Codes
-│   └── system_conventions.md         # Bảng 7 Backed Enums chuẩn hệ thống
+│   ├── system_conventions.md         # Bảng 11 Backed Enums chuẩn hệ thống
+│   └── archives/                     # Tài liệu kiến trúc cũ (đã ngưng sử dụng, chỉ lưu tham khảo)
 ├── public/                           # Tài nguyên tĩnh không qua bundling (ảnh món ăn mẫu, logos)
 └── src/
     ├── assets/                       # Ảnh, fonts và styles tĩnh phục vụ giao diện
@@ -69,20 +70,23 @@ restaurant/fe/
     │   ├── AuthContext.jsx           # Quản lý phiên đăng nhập, thông tin user, vai trò (RBAC)
     │   └── CartContext.jsx           # Quản lý giỏ hàng, số lượng và tổng tiền tạm tính
     ├── features/                     # 🚀 Các miền nghiệp vụ độc lập (Feature Modules)
-    │   ├── auth/                     # Đăng ký, đăng nhập, bảo vệ token Sanctum
-    │   ├── customer/                 # Phân hệ Khách hàng (Menu, Giỏ hàng, Checkout QR, Đặt bàn, Hồ sơ, Gợi ý Neo4j)
+    │   ├── auth/                     # Đăng ký, đăng nhập, quên mật khẩu OTP, bảo vệ token Sanctum
+    │   ├── customer/                 # Phân hệ Khách hàng (Menu, Giỏ hàng, Checkout QR, Dine-in QR, Đặt bàn, Hồ sơ, Chat AI)
     │   │   ├── cart/                 # Quản lý giỏ hàng và danh sách món đã chọn
+    │   │   ├── chat/                 # Trợ lý ảo Gemini AI & Chat trực tiếp với nhân viên
     │   │   ├── menu/                 # Thực đơn, bộ lọc Meilisearch, thời tiết & gợi ý Neo4j
-    │   │   ├── order/                # Checkout đơn hàng, lịch sử và trang hiển thị VietQR
+    │   │   ├── order/                # Checkout đơn hàng, gọi món tại bàn QR, lịch sử và VietQR
     │   │   ├── profile/              # Thông tin cá nhân, sổ địa chỉ và cảnh báo dị ứng
-    │   │   └── reservation/          # Tìm bàn trống và tạo phiếu đặt bàn
-    │   └── admin/                    # Phân hệ Quản trị viên (Layout, Dashboard, Món, Bàn, Đơn, Tài khoản)
+    │   │   └── reservation/          # Tìm bàn trống, đặt bàn & thanh toán tiền cọc VietQR
+    │   └── admin/                    # Phân hệ Quản trị & Vận hành (Layout, Dashboard, Món, Bếp KDS, Bàn, Đơn, Chat, Tài khoản)
     │       ├── account/              # Phân trang người dùng, khóa/mở khóa tài khoản
+    │       ├── chat/                 # Bàn trực chat CSKH (Chờ tiếp nhận / Đang hỗ trợ / Đã đóng)
     │       ├── dashboard/            # Báo cáo doanh thu và 4 nhóm chỉ số vận hành
     │       ├── dish/                 # CRUD món ăn (xóa mềm), danh mục và chọn ảnh
+    │       ├── kitchen/              # Màn hình Bếp (Kitchen Display System - KDS)
     │       ├── layout/               # AdminLayout, AdminSidebar, Header và Guard route
-    │       ├── order/                # Quản lý đơn hàng (FSM 5 bước) & giao dịch thanh toán
-    │       └── table/                # Sơ đồ trạng thái bàn (8 bàn) và điều phối đặt bàn
+    │       ├── order/                # Quản lý đơn hàng (FSM) & giao dịch thanh toán
+    │       └── table/                # Sơ đồ bàn ăn, mở bàn QR Dine-in và điều phối đặt bàn
     ├── lib/
     │   └── axios.js                  # 🔌 Cấu hình Axios Client & Interceptors tập trung
     ├── App.jsx                       # 🧭 Khai báo cây định tuyến (Router Registry) toàn ứng dụng
@@ -104,7 +108,8 @@ flowchart LR
 ```
 
 1. **Bước 1 — Tra cứu Hợp đồng API:**
-   - Mở [docs/api/api-matrix-cheatsheet.md](./docs/api/api-matrix-cheatsheet.md) để xác định mã Use Case (`ORD-01`, `BKG-02`...), Endpoint URL, Body Request và Response Payload.
+   - Mở [docs/modules.md](./docs/modules.md) và thư mục [docs/modules/](./docs/modules/) để xác định mã Use Case (`ORD-01`, `BKG-02`, `CHT-01`...), Endpoint URL, Body Request và Response Payload.
+   - Tra cứu danh sách 11 Backed Enums chuẩn tại [docs/system_conventions.md](./docs/system_conventions.md).
 2. **Bước 2 — Viết hàm Service:**
    - Tạo hoặc bổ sung hàm gọi API trong `src/features/<domain>/<module>/services/<name>Service.js`.
    - Sử dụng instance `apiClient` từ `src/lib/axios.js`.
@@ -132,23 +137,28 @@ Backend Laravel luôn bọc kết quả trong envelope chuẩn:
 // Dữ liệu thực tế nhận được từ Service:
 const res = await getDishesApi(params)
 
-// Bóc tách phòng thủ kép an toàn cho cả mảng và phân trang:
+// Bóc tách phòng thủ kép an toàn cho cả mảng và phân trang (hỗ trợ cả lastPage và totalPages):
 const items = res?.data?.items || res?.data || []
-const pagination = res?.data?.pagination || { currentPage: 1, lastPage: 1, totalItems: 0 }
+const p = res?.data?.pagination || {}
+const pagination = {
+  currentPage: p.currentPage || 1,
+  lastPage: p.lastPage || p.totalPages || 1,
+  totalItems: p.totalItems || 0,
+}
 ```
 
 ### 5.2. Quản lý Phiên & Token Sanctum
-- Token được lưu trữ tại `STORAGE_KEYS.ACCESS_TOKEN` (`auth_token`).
+- Token được lưu trữ tại `STORAGE_KEYS.ACCESS_TOKEN` (`restaurant_access_token`).
 - Request Interceptor tự động gắn `Authorization: Bearer <token>` cho mọi request (ngoại trừ `/auth/login` và `/auth/register`).
 - Khi Backend trả về lỗi `401 Unauthorized` (Token hết hạn hoặc tài khoản bị Admin khóa `LOCKED`), interceptor sẽ tự động xóa sạch storage và yêu cầu người dùng đăng nhập lại.
 
 ### 5.3. Xử lý Trạng thái Bàn ăn & Đặt bàn
-- Hệ thống hỗ trợ 4 trạng thái bàn: `AVAILABLE` (Trống), `RESERVED` (Đã đặt trước), `OCCUPIED` (Đang sử dụng), `MAINTENANCE` (Đang bảo trì).
-- Khi điều phối đặt bàn: Chuyển khách vào bàn bằng `SEATED` $\rightarrow$ Bàn tự động chuyển sang `OCCUPIED`.
+- Hệ thống hỗ trợ 4 trạng thái bàn: `AVAILABLE` (Trống), `RESERVED` (Đã đặt trước), `OCCUPIED` (Đang phục vụ), `MAINTENANCE` (Đang bảo trì).
+- Khi điều phối đặt bàn: Chuyển khách vào bàn bằng `OCCUPIED` $\rightarrow$ Bàn tự động chuyển sang `OCCUPIED`.
 
 ### 5.4. Động cơ Gợi ý Món Neo4j & VietQR
 - **Neo4j Graph AI:** Gọi qua `recommendationService.js` (`/dishes/{id}/recommendations/graph` và `/recommendations/personalized`). Luôn có fallback tự động nếu Neo4j offline.
-- **VietQR:** Hiển thị ảnh QR theo cú pháp `https://img.vietqr.io/image/{bankBin}-{accountNo}-compact2.png?...&addInfo=DH{orderId}%20THANH%20TOAN`. Trang Checkout tiến hành polling mỗi 3-5s qua `PAY-06` để phát hiện biến động số dư.
+- **VietQR:** Hiển thị ảnh QR theo cú pháp `https://img.vietqr.io/image/{bankBin}-{accountNo}-compact2.png?...&addInfo=DH{orderId}%20THANH%20TOAN`. Modal thanh toán tiến hành polling định kỳ qua `PAY-02` (`GET /customer/payments/{orderId}/status`) để phát hiện trạng thái `PAID`.
 
 ---
 

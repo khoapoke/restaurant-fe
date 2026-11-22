@@ -46,8 +46,8 @@ Mọi Controller API kế thừa `BaseController` và sử dụng Trait `ApiResp
 
 | Enum Class | Giá trị Enum trên API (FE nhận & gửi) | Chuỗi lưu trữ trong MySQL (Database Value) | Nhãn hiển thị tiếng Việt trên UI |
 | :--- | :--- | :--- | :--- |
-| **`RoleType`** | `ADMIN`, `STAFF`, `CUSTOMER` | `'ADMIN'`, `'STAFF'`, `'CUSTOMER'` | Quản trị viên, Nhân viên, Khách hàng |
-| **`AccountStatus`**| `ACTIVE`, `LOCKED` | `'ACTIVE'`, `'LOCKED'` | Đang hoạt động, Đã bị khóa |
+| **`RoleType`** | `ADMIN`, `STAFF`, `CUSTOMER` | `'Quản trị viên'`, `'Nhân viên'`, `'Khách hàng'` | Quản trị viên, Nhân viên, Khách hàng |
+| **`AccountStatus`**| `ACTIVE`, `LOCKED` | `'Hoạt động'`, `'Bị khóa'` | Đang hoạt động, Đã bị khóa |
 | **`OrderStatus`**  | `PENDING_CONFIRMATION`<br>`CONFIRMED`<br>`PREPARING`<br>`READY`<br>`DELIVERING`<br>`COMPLETED`<br>`CANCELLED` | `'Chờ xác nhận'`<br>`'Đã xác nhận'`<br>`'Đang chuẩn bị'`<br>`'Sẵn sàng'`<br>`'Đang giao'`<br>`'Đã giao'`<br>`'Đã hủy'` | Chờ xác nhận, Đã xác nhận, Đang chuẩn bị, Sẵn sàng, Đang giao, Đã hoàn tất, Đã hủy |
 | **`OrderItemStatus`**| `PENDING`<br>`COOKING`<br>`READY`<br>`SERVED` | `'Chờ chế biến'`<br>`'Đang nấu'`<br>`'Đã sẵn sàng'`<br>`'Đã phục vụ'` | Chờ chế biến, Đang nấu, Đã sẵn sàng, Đã phục vụ tại bàn |
 | **`OrderFulfillmentType`**| `DELIVERY`, `PICKUP`, `DINE_IN` | `'Giao tận nơi'`, `'Tự đến lấy'`, `'Tại bàn'` | Giao tận nơi, Tự đến lấy, Dùng tại bàn ăn |
@@ -67,7 +67,7 @@ Mọi Controller API kế thừa `BaseController` và sử dụng Trait `ApiResp
 | **Checkout Đơn hàng** | Distributed Lock | `lock:order:checkout:{accountId}` | 10 giây | Tự động nhả trong `finally` block |
 | **Đặt bàn ăn** | Distributed Lock | `lock:reservation:table:{tableId}` | 5 giây | Tự động nhả trong `finally` block |
 | **Danh mục Menu** | In-Memory Cache | `menu:categories:active` | 3600s (1 giờ) | Cache Busting (`Cache::forget`) khi Admin sửa danh mục |
-| **Gợi ý Thời tiết** | In-Memory Cache | `weather_rec_{lat}_{lon}` | 900s (15 phút)| Hết hạn tự nhiên theo TTL |
+| **Gợi ý Thời tiết** | In-Memory Cache | `weather_rec_{lat}_{lon}_{accountId}` | 900s (15 phút)| Hết hạn tự nhiên theo TTL (với khách vãng lai dùng `guest`) |
 
 ---
 
@@ -116,6 +116,7 @@ Hệ thống kết hợp 4 công nghệ cơ sở dữ liệu chuyên biệt ph�
 | **Redis 7.2** | In-Memory Cache (Docker) | `6379` | Cache danh mục thực đơn (TTL 3600s), Khóa phân tán Distributed Locks chống Race Condition (`lock:order`, `lock:reservation`). |
 | **Neo4j 5 Community** | Graph Database (Docker) | `7474` (HTTP)<br>`7687` (Bolt) | Đồ thị tri thức khách hàng - món ăn, phục vụ gợi ý món bán kèm (Market Basket Analysis) và cá nhân hóa (Collaborative Filtering). |
 | **Meilisearch 1.7** | Search Engine (Docker) | `7700` | Động cơ tìm kiếm full-text đa ngôn ngữ, chịu lỗi chính tả (Typo-Tolerance) và tìm tiếng Việt không dấu siêu tốc. |
+| **Google Gemini AI** | External Cloud LLM API | HTTPS | Mô hình `gemini-3.5-flash-lite` vận hành Trợ lý ẩm thực thông minh trong Module `Chat` kèm Graceful Fallback. |
 | **Laravel 11 API** | Backend Service (PHP 8.3) | `8000` | Cung cấp RESTful API cho toàn bộ Client ứng dụng. |
 
 ---
