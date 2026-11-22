@@ -43,14 +43,14 @@ export const AdminManualPaymentModal = ({
         </div>
 
         <p className="text-text-muted leading-relaxed">
-          Vui lòng kiểm tra kỹ thông báo biến động số dư trên thiết bị ngân hàng của quán trước khi xác nhận. Sau khi xác nhận, trạng thái thanh toán sẽ chuyển sang <strong className="text-status-success">Đã thanh toán (PAID)</strong> và đơn hàng tự động chuyển sang <strong className="text-status-info">Đã xác nhận (CONFIRMED)</strong> để bếp nấu.
+          Vui lòng kiểm tra kỹ đã thu đủ tiền mặt hoặc kiểm tra biến động số dư trên ứng dụng ngân hàng trước khi xác nhận. Sau khi xác nhận, trạng thái thanh toán sẽ chuyển sang <strong className="text-status-success">Đã thanh toán (PAID)</strong> (đơn đang chờ xác nhận sẽ tự chuyển sang <strong className="text-status-info">Đã xác nhận (CONFIRMED)</strong>).
         </p>
 
         <div>
           <label className="block text-text-muted mb-1 font-medium">Ghi chú xác nhận (tùy chọn):</label>
           <input
             type="text"
-            placeholder="Ví dụ: Đã thấy số dư ngân hàng qua App..."
+            placeholder="Ví dụ: Đã thu đủ tiền mặt / Đã thấy tiền vào tài khoản..."
             value={note}
             onChange={(e) => setNote(e.target.value)}
             disabled={isLoading}

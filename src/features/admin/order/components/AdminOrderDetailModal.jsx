@@ -50,12 +50,9 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose, onConfirmPayme
   const addr = String(order?.shippingAddress || order?.dia_chi_giao_hang || '')
   const isDineIn = order?.fulfillmentType === 'DINE_IN' || Boolean(order?.tableId) || addr.startsWith('Tại bàn')
 
+  const isPaid = paymentStatus === 'PAID' || paymentStatus === 'Đã thanh toán'
   const canConfirmPayment =
-    (paymentStatus === 'UNPAID' || paymentStatus === 'CHUA_THANH_TOAN') &&
-    (payMethod === 'BANK_TRANSFER_QR' ||
-      payMethod === 'Chuyển khoản' ||
-      (isDineIn && Number(order?.totalAmount || 0) > 0)) &&
-    status !== 'CANCELLED'
+    !isPaid && Number(order?.totalAmount || 0) > 0 && status !== 'CANCELLED'
 
   return (
     <Modal
@@ -96,7 +93,7 @@ export const AdminOrderDetailModal = ({ orderId, isOpen, onClose, onConfirmPayme
           {canConfirmPayment && (
             <div className="p-3 rounded-xl bg-status-warning/10 border border-status-warning/30 flex items-center justify-between gap-3">
               <span className="text-[11px] text-status-warning font-medium">
-                Đơn hàng chuyển khoản QR này chưa được ghi nhận thanh toán.
+                Đơn hàng ({methodLabel}) chưa được xác nhận thanh toán. Vui lòng kiểm tra tiền mặt hoặc chuyển khoản rồi xác nhận.
               </span>
               <Button
                 variant="primary"

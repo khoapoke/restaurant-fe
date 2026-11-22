@@ -74,15 +74,12 @@ export const AdminOrdersPage = () => {
 
   // Chuyển bước FSM
   const handleNextStatus = async (orderId, targetStatus, order) => {
-    // Kiểm tra quy tắc FSM 3.2: Chặn hoàn thành nếu chưa thanh toán QR
+    // Quy tắc thống nhất: Mọi đơn có giá trị > 0đ (tiền mặt, chuyển khoản, online & tại bàn) đều phải xác nhận thanh toán trước khi Hoàn tất
     const payStatus = order?.payment?.status || order?.payment?.trang_thai
-    const payMethod = order?.payment?.paymentMethod || order?.payment?.method || order?.paymentMethod
-    if (
-      targetStatus === 'COMPLETED' &&
-      (payMethod === 'BANK_TRANSFER_QR' || payMethod === 'Chuyển khoản') &&
-      payStatus !== 'PAID'
-    ) {
-      alert('Đơn hàng chuyển khoản VietQR chưa được thanh toán. Vui lòng xác nhận đã nhận tiền trước khi hoàn thành đơn.')
+    const totalAmount = Number(order?.totalAmount || order?.tong_tien || 0)
+    const isPaid = payStatus === 'PAID' || payStatus === 'Đã thanh toán'
+    if (targetStatus === 'COMPLETED' && totalAmount > 0 && !isPaid) {
+      alert('Đơn hàng chưa được xác nhận thanh toán. Vui lòng kiểm tra tiền mặt hoặc chuyển khoản và bấm xác nhận đã nhận tiền trước khi hoàn tất đơn.')
       setConfirmingOrder(order)
       return
     }

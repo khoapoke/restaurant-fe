@@ -57,12 +57,8 @@ export const AdminOrderTable = ({
             const isActionLoading = actionLoadingId === id
             const canCancel = status !== 'COMPLETED' && status !== 'CANCELLED'
             const totalAmount = Number(order.totalAmount || order.tong_tien || 0)
-            const canConfirmPay =
-              (paymentStatus === 'UNPAID' || paymentStatus === 'CHUA_THANH_TOAN') &&
-              (payMethod === 'BANK_TRANSFER_QR' ||
-                payMethod === 'Chuyển khoản' ||
-                (fulfillmentType === 'DINE_IN' && totalAmount > 0)) &&
-              status !== 'CANCELLED'
+            const isPaid = paymentStatus === 'PAID' || paymentStatus === 'Đã thanh toán'
+            const canConfirmPay = !isPaid && totalAmount > 0 && status !== 'CANCELLED'
 
             const customerDisplay =
               fulfillmentType === 'DINE_IN'
