@@ -76,11 +76,15 @@ export const AdminPaymentsPage = () => {
     }
   }
 
-  const handleRefundConfirm = async (paymentId, refundReason) => {
+  const handleRefundConfirm = async (paymentId, refundReason, meta = {}) => {
     setIsRefunding(true)
     try {
-      await refundPaymentApi(paymentId, refundReason)
-      showToast(`Đã ghi nhận hoàn tiền cho giao dịch #${paymentId}!`)
+      await refundPaymentApi(paymentId, refundReason, meta)
+      const detailText =
+        meta.refundPercent && meta.refundAmount !== undefined
+          ? ` (${meta.refundPercent}% - ${Number(meta.refundAmount).toLocaleString('vi-VN')} đ)`
+          : ''
+      showToast(`Đã ghi nhận hoàn tiền${detailText} cho giao dịch #${paymentId}!`)
       setRefundingPayment(null)
       fetchPayments(pagination.currentPage)
     } catch (err) {

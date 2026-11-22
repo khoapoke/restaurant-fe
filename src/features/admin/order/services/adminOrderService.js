@@ -60,9 +60,10 @@ export const confirmPaymentApi = async (paymentId, note = '') => {
 }
 
 // PAY-05: Hoàn tiền giao dịch & tự hủy đơn hàng
-export const refundPaymentApi = async (paymentId, refundReason) => {
+export const refundPaymentApi = async (paymentId, refundReason, extra = {}) => {
   return await apiClient.post(`/admin/payments/${paymentId}/refund`, {
     refundReason,
+    ...extra,
   })
 }
 

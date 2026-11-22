@@ -32,6 +32,11 @@ export const PaymentTable = ({ payments = [], onOpenRefund, onOpenConfirmPayment
             const methodLabel = PAYMENT_METHOD_CONFIG[method]?.label || method || 'Khác'
             const canRefund = status === 'PAID'
             const canConfirm = status === 'UNPAID' || status === 'CHUA_THANH_TOAN'
+            const rawReason = String(p.refundReason || p.ly_do_hoan_tien || '')
+            const refundMatch = rawReason.match(/^\[Hoàn\s+(\d+)%\s*-\s*([^/\]]+)(?:\/[^\]]+)?\]\s*(.*)$/i)
+            const refundBadgeText = refundMatch ? `Hoàn ${refundMatch[1]}% (${refundMatch[2]})` : null
+            const cleanRefundNote = refundMatch ? refundMatch[3] : rawReason
+            const timeValue = p.orderDate || p.createdAt || p.created_at
 
             return (
               <tr key={id} className="hover:bg-surface-card-hover/40 transition-colors">
@@ -54,8 +59,15 @@ export const PaymentTable = ({ payments = [], onOpenRefund, onOpenConfirmPayment
                   </div>
                 </td>
 
-                <td className="py-3.5 px-4 text-right font-mono font-bold text-text-main">
-                  {amount.toLocaleString('vi-VN')} đ
+                <td className="py-3.5 px-4 text-right font-mono">
+                  <span className="font-bold text-text-main block">
+                    {amount.toLocaleString('vi-VN')} đ
+                  </span>
+                  {status === 'REFUNDED' && refundBadgeText && (
+                    <span className="text-[10px] font-semibold text-brand-primary block mt-0.5">
+                      ↺ {refundBadgeText}
+                    </span>
+                  )}
                 </td>
 
                 <td className="py-3.5 px-4 text-center">
@@ -64,11 +76,19 @@ export const PaymentTable = ({ payments = [], onOpenRefund, onOpenConfirmPayment
                   >
                     {statusCfg.label}
                   </span>
+                  {status === 'REFUNDED' && cleanRefundNote && (
+                    <p
+                      className="text-[10px] text-text-muted truncate max-w-[140px] mx-auto mt-0.5"
+                      title={cleanRefundNote}
+                    >
+                      {cleanRefundNote}
+                    </p>
+                  )}
                 </td>
 
                 <td className="py-3.5 px-4 text-text-muted text-[11px] whitespace-nowrap">
-                  {p.createdAt || p.created_at
-                    ? new Date(p.createdAt || p.created_at).toLocaleString('vi-VN')
+                  {timeValue
+                    ? new Date(timeValue).toLocaleString('vi-VN')
                     : '—'}
                 </td>
 
