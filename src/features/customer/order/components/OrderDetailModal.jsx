@@ -9,7 +9,8 @@ import {
   PAYMENT_STATUS_CONFIG,
 } from '../constants'
 import { resolveDishImage, handleImageError } from '../../../../utils/imageUtils'
-import { Loader2, AlertTriangle, QrCode, XCircle } from 'lucide-react'
+import { Loader2, AlertTriangle, QrCode, XCircle, Star } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, onOpenCancel }) {
   const [order, setOrder] = useState(null)
@@ -110,9 +111,22 @@ export default function OrderDetailModal({ orderId, isOpen, onClose, onOpenQr, o
                       <p className="text-text-muted font-mono text-[11px]">{Number(it.unitPrice || 0).toLocaleString('vi-VN')} đ × {it.quantity}</p>
                     </div>
                   </div>
-                  <span className="font-mono font-bold text-text-main shrink-0">
-                    {Number(it.subTotal || (it.unitPrice * it.quantity) || 0).toLocaleString('vi-VN')} đ
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-mono font-bold text-text-main">
+                      {Number(it.subTotal || (it.unitPrice * it.quantity) || 0).toLocaleString('vi-VN')} đ
+                    </span>
+                    {(status === 'COMPLETED' || status === 'Đã giao') && (it.dishId || it.ma_mon) && (
+                      <Link
+                        to={`/menu/${it.dishId || it.ma_mon}?review=1&orderId=${order.orderId || order.id}`}
+                        onClick={onClose}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-surface-bg transition-colors"
+                        title="Đánh giá món ăn này"
+                      >
+                        <Star className="w-3 h-3 fill-current" />
+                        <span>Đánh giá</span>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

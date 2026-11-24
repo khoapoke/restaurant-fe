@@ -30,6 +30,7 @@ const AdminTablesPage = lazy(() => import('./features/admin/table/pages/AdminTab
 const AdminReservationsPage = lazy(() => import('./features/admin/table/pages/AdminReservationsPage'))
 const AdminAccountsPage = lazy(() => import('./features/admin/account/pages/AdminAccountsPage'))
 const AdminChatPage = lazy(() => import('./features/admin/chat/pages/AdminChatPage'))
+const AdminReviewsPage = lazy(() => import('./features/admin/review/pages/AdminReviewsPage'))
 
 function App() {
   return (
@@ -73,6 +74,7 @@ function App() {
               <Route path="reservations" element={<AdminReservationsPage />} />
               <Route path="accounts" element={<AdminAccountsPage />} />
               <Route path="chats" element={<AdminChatPage />} />
+              <Route path="reviews" element={<AdminReviewsPage />} />
             </Route>
 
             {/* Fallback route */}

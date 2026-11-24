@@ -10,20 +10,22 @@
 Module `Review` quản lý toàn bộ đánh giá và nhận xét món ăn của thực khách, lưu trữ trên **MongoDB (Document Database)** nhằm tối ưu dữ liệu bán cấu trúc (mảng `tags`, mảng `images`, đối tượng nhúng `adminReply`) và tính điểm trung bình + phân bổ 1–5 sao theo thời gian thực qua **MongoDB Aggregation Pipeline**.
 
 - **Phân hệ Khách hàng (`Public` & `CUSTOMER`):** Xem đánh giá + biểu đồ sao món ăn, viết đánh giá (tự động đối chiếu MySQL gắn huy hiệu **"Đã mua hàng"**), xem lịch sử đánh giá của mình, tự sửa & tự xóa.
-- **Phân hệ Quản trị (`ADMIN`, `STAFF`):** Xem danh sách toàn hệ thống kèm thẻ thống kê (`stats`), lọc theo món/sao/trạng thái/chưa phản hồi, gửi phản hồi của quán (`adminReply`), ẩn/hiện đánh giá vi phạm (`VISIBLE`/`HIDDEN`), và xóa spam.
+- **Phân hệ Khách hàng (`Public` & `CUSTOMER`):** Xem đánh giá + biểu đồ sao món ăn, viết đánh giá (tự động đối chiếu MySQL gắn huy hiệu **"Đã mua hàng"** và tự động kiểm duyệt ngôn từ), xem lịch sử đánh giá của mình, tự sửa & tự xóa.
+- **Phân hệ Quản trị (`ADMIN`, `STAFF`):** Xem danh sách toàn hệ thống kèm thẻ thống kê (`stats`), lọc theo món/sao/trạng thái/chưa phản hồi/vi phạm ngôn từ, **lọc riêng hàng đợi bình luận tục tĩu/không phù hợp (`REV-10`)**, **ẩn hàng loạt bình luận vi phạm (`REV-11`)**, gửi phản hồi của quán (`adminReply`), ẩn/hiện đánh giá (`VISIBLE`/`HIDDEN`), và xóa spam.
 
 ---
 
 ## 2. Thành phần Kỹ thuật (`app/Modules/Review/`)
 - **Core Client:** `app/Modules/Core/Services/MongoClientService.php` & `config/mongodb.php`
-- **Repository:** `app/Modules/Review/Services/ReviewRepository.php` (CRUD MongoDB, Aggregation Pipeline, Index `uniq_account_dish` & `idx_dish_status_created`)
+- **Moderation Config & Rule Engine:** `config/review_moderation.php` & `app/Modules/Review/Services/ReviewModerationService.php`
+- **Repository:** `app/Modules/Review/Services/ReviewRepository.php` (CRUD MongoDB, Aggregation Pipeline, Indexes `uniq_account_dish`, `idx_dish_status_created`, `idx_moderation_flagged`)
 - **Service:** `app/Modules/Review/Services/ReviewService.php`
 - **Controllers:**
   - `app/Modules/Review/Http/Controllers/Customer/ReviewController.php`
   - `app/Modules/Review/Http/Controllers/Admin/ReviewController.php`
 - **Form Requests:** `CreateReviewRequest`, `UpdateReviewRequest`, `ReplyReviewRequest`, `ToggleReviewVisibilityRequest`
 - **Routes:** `app/Modules/Review/Routes/api.php`
-- **Artisan Seed Command:** `php artisan mongodb:seed-reviews` (`--fresh` để reset mẫu)
+- **Artisan Seed Command:** `php artisan mongodb:seed-reviews` (`--fresh` để reset mẫu, `--with-flagged` để thêm 2 mẫu vi phạm demo lọc)
 
 ---
 
@@ -32,8 +34,12 @@ Module `Review` quản lý toàn bộ đánh giá và nhận xét món ăn của
    - Mọi khách hàng đã đăng nhập (`CUSTOMER`) đều được gửi đánh giá, **tối đa 1 đánh giá / 1 món** (gửi trùng trả `409 Conflict`, khách có thể gọi `PUT` để sửa lại đánh giá cũ).
    - Hệ thống tự động kiểm tra MySQL (`DON_HANG.trang_thai = 'Đã giao'` + `CHI_TIET_DON_HANG`): nếu khách đã từng hoàn tất đơn chứa món đó → tự gắn `isVerifiedPurchase: true` và `orderId`; ngược lại `isVerifiedPurchase: false`.
 2. **Bảo vệ IDOR:** Khách chỉ được sửa (`REV-04`) hoặc xóa (`REV-05`) đánh giá có `accountId` trùng với chính mình (vi phạm trả `403 Forbidden`).
-3. **Kiểm duyệt mềm (`VISIBLE` / `HIDDEN`):** Khi Admin ẩn đánh giá (`HIDDEN`), đánh giá đó lập tức bị loại khỏi danh sách công khai `REV-01` và không còn tính vào `averageRating` / `ratingBreakdown`.
-4. **An toàn `ObjectId` & Graceful Fallback:**
+3. **Kiểm duyệt ngôn từ tục tĩu tự động (Rule Engine 1A + 2A):**
+   - Mọi bình luận khi tạo (`REV-02`) hoặc chỉnh sửa (`REV-04`) đều được quét tự động qua `ReviewModerationService` (hỗ trợ tiếng Việt có dấu, không dấu, từ che ký tự lách luật như `đ.m`, `v*l`, `f*ck`, spam URL và chống bắt nhầm từ ẩm thực như `bún`, `đủ`, `lớn`, `cắt`, `500cc`).
+   - **Mức `HIGH` (tục tĩu/chửi thề nặng):** Tự động đặt `status = "HIDDEN"` ngay lập tức (không hiển thị công khai) và gắn `moderation.isFlagged = true` để Admin xem trong `REV-10`.
+   - **Mức `MEDIUM` / `LOW` (xúc phạm/công kích/spam):** Giữ `status = "VISIBLE"` kèm cờ `moderation.isFlagged = true` để Admin kiểm duyệt qua `REV-10` hoặc ẩn hàng loạt bằng `REV-11`.
+4. **Kiểm duyệt mềm (`VISIBLE` / `HIDDEN`):** Khi Admin ẩn đánh giá (`HIDDEN`), đánh giá đó lập tức bị loại khỏi danh sách công khai `REV-01` và không còn tính vào `averageRating` / `ratingBreakdown`.
+5. **An toàn `ObjectId` & Graceful Fallback:**
    - Truyền `reviewId` không phải chuỗi 24 ký tự hex → trả `404` (không lỗi `500`).
    - Nếu MongoDB tắt: `REV-01` (public) tự fallback trả mảng rỗng & `averageRating: 0` để không sập trang chi tiết món; các API ghi trả `503 Service Unavailable`.
 
@@ -56,6 +62,15 @@ Module `Review` quản lý toàn bộ đánh giá và nhận xét món ăn của
   "tags": ["Ngon miệng", "Nóng hổi", "Đóng gói kỹ"],
   "images": ["https://example.com/photo1.jpg"],
   "status": "VISIBLE",
+  "moderation": {
+    "isFlagged": false,
+    "severity": "NONE",
+    "categories": [],
+    "matchedTerms": [],
+    "reason": null,
+    "checkedBy": "RULE_ENGINE",
+    "checkedAt": "2026-11-24T15:05:00+07:00"
+  },
   "adminReply": {
     "staffId": 2,
     "staffName": "Nguyễn Văn Quản Trị",
@@ -66,25 +81,27 @@ Module `Review` quản lý toàn bộ đánh giá và nhận xét món ăn của
   "updatedAt": "2026-11-24T01:10:00+07:00"
 }
 ```
-*(Nếu quán chưa trả lời thì `adminReply` là `null`.)*
+*(Nếu quán chưa trả lời thì `adminReply` là `null`. Giá trị `moderation.severity` gồm `NONE` | `LOW` | `MEDIUM` | `HIGH`; `moderation.categories` gồm `PROFANITY` | `INSULT` | `SPAM`.)*
 
 ---
 
-## 5. Chi Tiết 9 API Endpoints Cho Frontend
+## 5. Chi Tiết 11 API Endpoints Cho Frontend
 
 ### Bảng Tóm Tắt Nhanh
 
 | Mã | Method | Endpoint | Phân quyền | Mô tả |
 | :---: | :---: | :--- | :---: | :--- |
 | `REV-01` | `GET` | `/api/v1/customer/dishes/{dishId}/reviews` | Public | Danh sách đánh giá `VISIBLE` + `summary` điểm sao |
-| `REV-02` | `POST` | `/api/v1/customer/dishes/{dishId}/reviews` | `CUSTOMER` | Gửi đánh giá mới cho món ăn |
+| `REV-02` | `POST` | `/api/v1/customer/dishes/{dishId}/reviews` | `CUSTOMER` | Gửi đánh giá mới (tự kiểm duyệt & tự ẩn nếu mức `HIGH`) |
 | `REV-03` | `GET` | `/api/v1/customer/reviews/my` | `CUSTOMER` | Lịch sử đánh giá của tôi |
-| `REV-04` | `PUT` | `/api/v1/customer/reviews/{reviewId}` | `CUSTOMER` | Sửa đánh giá của chính mình |
+| `REV-04` | `PUT` | `/api/v1/customer/reviews/{reviewId}` | `CUSTOMER` | Sửa đánh giá của chính mình (tự quét lại ngôn từ) |
 | `REV-05` | `DELETE` | `/api/v1/customer/reviews/{reviewId}` | `CUSTOMER` | Xóa đánh giá của chính mình |
-| `REV-06` | `GET` | `/api/v1/admin/reviews` | `ADMIN,STAFF` | Quản lý toàn bộ đánh giá + bộ lọc + `stats` |
+| `REV-06` | `GET` | `/api/v1/admin/reviews` | `ADMIN,STAFF` | Quản lý toàn bộ đánh giá + bộ lọc (`isFlagged`, `severity`...) + `stats` |
 | `REV-07` | `POST` | `/api/v1/admin/reviews/{reviewId}/reply` | `ADMIN,STAFF` | Phản hồi đánh giá của khách |
 | `REV-08` | `PATCH` | `/api/v1/admin/reviews/{reviewId}/visibility` | `ADMIN,STAFF` | Ẩn / Hiện đánh giá (`VISIBLE` ↔ `HIDDEN`) |
 | `REV-09` | `DELETE` | `/api/v1/admin/reviews/{reviewId}` | `ADMIN,STAFF` | Xóa vĩnh viễn đánh giá |
+| `REV-10` | `GET` | `/api/v1/admin/reviews/flagged` | `ADMIN,STAFF` | **Lọc danh sách bình luận tục tĩu / ngôn từ không phù hợp + `summary`** |
+| `REV-11` | `POST` | `/api/v1/admin/reviews/flagged/auto-hide` | `ADMIN,STAFF` | **Ẩn hàng loạt bình luận vi phạm đang hiển thị (`VISIBLE` → `HIDDEN`)** |
 
 ---
 
@@ -168,7 +185,7 @@ Module `Review` quản lý toàn bộ đánh giá và nhận xét món ăn của
 ### `REV-06`: Danh Sách Đánh Giá Quản Trị & Thống Kê
 - **URL:** `GET /api/v1/admin/reviews`
 - **Headers:** `Authorization: Bearer <admin_or_staff_token>`
-- **Query Params (tùy chọn):** `dishId`, `rating` (`1..5`), `status` (`VISIBLE` | `HIDDEN`), `hasReply` (`true` | `false`), `search` (hoặc `keyword`), `page`, `perPage`.
+- **Query Params (tùy chọn):** `dishId`, `rating` (`1..5`), `status` (`VISIBLE` | `HIDDEN`), `hasReply` (`true` | `false`), `isFlagged` (`true` | `false`), `severity` (`HIGH` | `MEDIUM` | `LOW`), `category` (`PROFANITY` | `INSULT` | `SPAM`), `search` (hoặc `keyword`), `page`, `perPage`.
 - **Response `200 OK`:**
   ```json
   {
@@ -177,17 +194,18 @@ Module `Review` quản lý toàn bộ đánh giá và nhận xét món ăn của
     "message": "Lấy danh sách đánh giá toàn hệ thống thành công.",
     "data": {
       "stats": {
-        "totalReviews": 8,
-        "visibleCount": 8,
-        "hiddenCount": 0,
+        "totalReviews": 10,
+        "visibleCount": 9,
+        "hiddenCount": 1,
         "repliedCount": 3,
-        "averageRating": 4.5
+        "flaggedCount": 2,
+        "averageRating": 3.8
       },
       "items": [ /* ReviewItem[] */ ],
       "pagination": {
         "currentPage": 1,
         "perPage": 10,
-        "totalItems": 8,
+        "totalItems": 10,
         "lastPage": 1,
         "totalPages": 1
       }
@@ -210,6 +228,102 @@ Module `Review` quản lý toàn bộ đánh giá và nhận xét món ăn của
   - **Response:** `200 OK` trả về `ReviewItem` với `status` mới.
 - **Xóa vĩnh viễn:** `DELETE /api/v1/admin/reviews/{reviewId}`
   - **Response:** `200 OK` với `data: { "reviewId": "...", "deleted": true }`.
+
+---
+
+### `REV-10`: Lọc Danh Sách Bình Luận Tục Tĩu / Ngôn Từ Không Phù Hợp
+- **URL:** `GET /api/v1/admin/reviews/flagged`
+- **Headers:** `Authorization: Bearer <admin_or_staff_token>`
+- **Query Params (tùy chọn):**
+  - `severity`: `HIGH` | `MEDIUM` | `LOW` *(hỗ trợ nhiều mức cách nhau bằng dấu phẩy, vd: `HIGH,MEDIUM`)*
+  - `category`: `PROFANITY` | `INSULT` | `SPAM`
+  - `status`: `VISIBLE` | `HIDDEN`
+  - `onlyVisible`: `true` | `false` *(lọc nhanh các bình luận vi phạm vẫn đang hiển thị công khai)*
+  - `dishId`: ID món ăn
+  - `search` (hoặc `keyword`): Tìm kiếm trong nội dung bình luận, tên món, tên khách
+  - `page`, `perPage`
+- **Response `200 OK`:**
+  ```json
+  {
+    "success": true,
+    "code": 200,
+    "message": "Lọc danh sách bình luận chứa ngôn từ không phù hợp thành công.",
+    "data": {
+      "summary": {
+        "totalFlagged": 2,
+        "highCount": 1,
+        "mediumCount": 1,
+        "lowCount": 0,
+        "visibleFlaggedCount": 1,
+        "hiddenFlaggedCount": 1
+      },
+      "items": [
+        {
+          "reviewId": "6742b9c0d1e2f3a4b5c6d7e8",
+          "dishId": 9,
+          "dishName": "Salad rong nho mè rang",
+          "accountId": 6,
+          "customerName": "Khách Bí Ẩn",
+          "rating": 1,
+          "comment": "Đồ ăn đ.m quá dở, giao hàng lâu vcl.",
+          "status": "HIDDEN",
+          "moderation": {
+            "isFlagged": true,
+            "severity": "HIGH",
+            "categories": ["PROFANITY"],
+            "matchedTerms": ["dm", "vcl"],
+            "reason": "Phát hiện ngôn từ tục tĩu/chửi thề — mức độ nghiêm trọng (tự động ẩn).",
+            "checkedBy": "RULE_ENGINE",
+            "checkedAt": "2026-11-24T15:10:00+07:00"
+          },
+          "adminReply": null,
+          "createdAt": "2026-11-24T15:10:00+07:00",
+          "updatedAt": "2026-11-24T15:10:00+07:00"
+        }
+      ],
+      "pagination": {
+        "currentPage": 1,
+        "perPage": 10,
+        "totalItems": 2,
+        "lastPage": 1,
+        "totalPages": 1
+      }
+    }
+  }
+  ```
+
+---
+
+### `REV-11`: Ẩn Hàng Loạt Bình Luận Vi Phạm Đang Hiển Thị
+- **URL:** `POST /api/v1/admin/reviews/flagged/auto-hide`
+- **Headers:** `Authorization: Bearer <admin_or_staff_token>`
+- **Request Body (tùy chọn):**
+  ```json
+  {
+    "severities": ["HIGH", "MEDIUM"]
+  }
+  ```
+  *(Bỏ trống body `{}` sẽ tự động ẩn toàn bộ bình luận vi phạm `HIGH`, `MEDIUM`, `LOW` đang có `status = VISIBLE`.)*
+- **Response `200 OK`:**
+  ```json
+  {
+    "success": true,
+    "code": 200,
+    "message": "Đã tự động ẩn 1 bình luận chứa ngôn từ không phù hợp.",
+    "data": {
+      "hiddenCount": 1,
+      "appliedSeverities": ["HIGH", "MEDIUM"],
+      "summary": {
+        "totalFlagged": 2,
+        "highCount": 1,
+        "mediumCount": 1,
+        "lowCount": 0,
+        "visibleFlaggedCount": 0,
+        "hiddenFlaggedCount": 2
+      }
+    }
+  }
+  ```
 
 ---
 

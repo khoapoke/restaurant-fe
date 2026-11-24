@@ -21,9 +21,9 @@ Mỗi module sở hữu một tài liệu đặc tả độc lập chuẩn Softw
 | **7** | **`Report`** | [report.md](modules/report.md) | 5 APIs | Dashboard tổng quan 4 nhóm chỉ số, Doanh thu thực thu, Thống kê đơn hàng, Món ăn bán chạy, Tỷ lệ lấp đầy bàn ăn. |
 | **8** | **`Recommendation`** | [recommendation.md](modules/recommendation.md) | 3 APIs | Đồ thị tri thức Neo4j Bolt, Gợi ý món bán kèm (Market Basket Analysis), Gợi ý cá nhân hóa (Collaborative Filtering) + Lọc dị ứng/dinh dưỡng & MySQL Fallback. |
 | **9** | **`Chat`** | [chat.md](modules/chat.md) | 13 APIs | Trợ lý ảo Google Gemini AI (`gemini-3.5-flash-lite`) kết hợp bàn giao Nhân viên CSKH trực tuyến (`BOT` → `WAITING_STAFF` → `STAFF_CONNECTED` → `CLOSED`). |
-| **10** | **`Review`** | [review.md](modules/review.md) | 9 APIs | Đánh giá & nhận xét món ăn lưu trên MongoDB (`dish_reviews`), Aggregation Pipeline 1–5 sao, Verified Purchase & phản hồi quản trị. |
+| **10** | **`Review`** | [review.md](modules/review.md) | 11 APIs | Đánh giá & nhận xét món ăn trên MongoDB (`dish_reviews`), Aggregation 1–5 sao, Verified Purchase, lọc ngôn từ tục tĩu & auto-hide. |
 
-*Tổng cộng toàn hệ thống:* **10 Business Modules** với **112 API Endpoints chính** (111 client-facing + 1 webhook cổng thanh toán) và **11 route aliases** tương thích ngược.
+*Tổng cộng toàn hệ thống:* **10 Business Modules** với **114 API Endpoints chính** (113 client-facing + 1 webhook cổng thanh toán) và **11 route aliases** tương thích ngược.
 
 ---
 

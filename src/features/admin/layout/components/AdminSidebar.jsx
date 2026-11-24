@@ -14,6 +14,7 @@ import {
   Shield,
   X,
   ChefHat,
+  MessageSquareQuote,
 } from 'lucide-react'
 
 const navGroups = [
@@ -36,6 +37,7 @@ const navGroups = [
     items: [
       { to: '/admin/dishes', icon: UtensilsCrossed, label: 'Quản lý Món ăn' },
       { to: '/admin/categories', icon: FolderTree, label: 'Quản lý Danh mục' },
+      { to: '/admin/reviews', icon: MessageSquareQuote, label: 'Đánh giá Món ăn' },
     ],
   },
   {

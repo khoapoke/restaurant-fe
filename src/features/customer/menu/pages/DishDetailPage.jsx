@@ -6,6 +6,7 @@ import { useAuth } from '../../../../contexts/AuthContext'
 import { useCart } from '../../../../contexts/CartContext'
 import PairedDishesSection from '../components/PairedDishesSection'
 import DishActionSection from '../components/DishActionSection'
+import DishReviewsSection from '../../review/components/DishReviewsSection'
 import Skeleton from '../../../../components/ui/Skeleton'
 import Alert from '../../../../components/ui/Alert'
 import Button from '../../../../components/ui/Button'
@@ -184,6 +185,14 @@ export default function DishDetailPage() {
               <PairedDishesSection
                 dishId={dish.dishId || dish.id}
                 onSelectDish={(id) => navigate(`/menu/${id}`)}
+              />
+            </div>
+
+            {/* Đánh giá & Nhận xét từ Thực khách (REV-01 -> REV-05) */}
+            <div className="pt-10 border-t border-border-subtle">
+              <DishReviewsSection
+                dishId={dish.dishId || dish.id}
+                dishName={dish.dishName || dish.name}
               />
             </div>
           </>

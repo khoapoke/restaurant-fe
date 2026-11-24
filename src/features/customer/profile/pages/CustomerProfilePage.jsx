@@ -9,6 +9,7 @@ import ProfileOverviewCard from '../components/ProfileOverviewCard'
 import ProfileInfoTab from '../components/ProfileInfoTab'
 import AllergiesPreferencesTab from '../components/AllergiesPreferencesTab'
 import SavedAddressesTab from '../components/SavedAddressesTab'
+import MyReviewsTab from '../components/MyReviewsTab'
 import Button from '../../../../components/ui/Button'
 import Alert from '../../../../components/ui/Alert'
 import Skeleton from '../../../../components/ui/Skeleton'
@@ -43,6 +44,7 @@ export default function CustomerProfilePage() {
   const [savedAddresses, setSavedAddresses] = useState([])
   const [allergies, setAllergies] = useState([])
   const [dietaryPreferences, setDietaryPreferences] = useState([])
+  const [reviewsCount, setReviewsCount] = useState(0)
 
   const fetchProfile = useCallback(async () => {
     setLoading(true); setFetchError(null)
@@ -174,6 +176,7 @@ export default function CustomerProfilePage() {
               <ProfileOverviewCard
                 formData={formData} activeTab={activeTab} onSelectTab={setActiveTab}
                 allergiesCount={allergies.length} addressesCount={savedAddresses.length}
+                reviewsCount={reviewsCount}
               />
             </div>
 
@@ -181,15 +184,18 @@ export default function CustomerProfilePage() {
               {activeTab === 'info' && <ProfileInfoTab formData={formData} onChange={handleInfoChange} errors={fieldErrors} disabled={isSaving} />}
               {activeTab === 'allergies' && <AllergiesPreferencesTab allergies={allergies} dietaryPreferences={dietaryPreferences} onToggleAllergy={handleToggleAllergy} onTogglePreference={handleTogglePreference} disabled={isSaving} />}
               {activeTab === 'addresses' && <SavedAddressesTab addresses={savedAddresses} onAddAddress={handleAddAddress} onUpdateAddress={handleUpdateAddress} onDeleteAddress={handleDeleteAddress} onSetDefault={handleSetDefaultAddress} disabled={isSaving} />}
+              {activeTab === 'reviews' && <MyReviewsTab onCountChange={setReviewsCount} />}
 
-              <div className="pt-5 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
-                <span className="text-xs text-text-muted">
-                  {isDirty ? <span className="text-brand-primary font-medium animate-pulse">● Có thay đổi chưa lưu</span> : 'Tất cả thông tin đã được đồng bộ'}
-                </span>
-                <Button variant="primary" size="md" icon={Save} onClick={handleSaveProfile} loading={isSaving} disabled={!isDirty || isSaving} className={!isDirty ? 'opacity-50' : 'shadow-lg shadow-brand-primary/10'}>
-                  Lưu thay đổi hồ sơ
-                </Button>
-              </div>
+              {activeTab !== 'reviews' && (
+                <div className="pt-5 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <span className="text-xs text-text-muted">
+                    {isDirty ? <span className="text-brand-primary font-medium animate-pulse">● Có thay đổi chưa lưu</span> : 'Tất cả thông tin đã được đồng bộ'}
+                  </span>
+                  <Button variant="primary" size="md" icon={Save} onClick={handleSaveProfile} loading={isSaving} disabled={!isDirty || isSaving} className={!isDirty ? 'opacity-50' : 'shadow-lg shadow-brand-primary/10'}>
+                    Lưu thay đổi hồ sơ
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}

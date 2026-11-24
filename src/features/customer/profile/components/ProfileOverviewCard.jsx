@@ -1,16 +1,17 @@
-import { User, ShieldAlert, MapPin, Award } from 'lucide-react'
+import { User, ShieldAlert, MapPin, Award, MessageSquareQuote } from 'lucide-react'
 
 const TABS = [
   { key: 'info', label: 'Thông tin cá nhân', icon: User },
   { key: 'allergies', label: 'Dị ứng & Dinh dưỡng', icon: ShieldAlert },
   { key: 'addresses', label: 'Sổ địa chỉ nhận hàng', icon: MapPin },
+  { key: 'reviews', label: 'Đánh giá của tôi', icon: MessageSquareQuote },
 ]
 
 /**
  * Thẻ Tổng Quan Hồ Sơ Khách Hàng (ProfileOverviewCard)
  * - Sidebar bên trái hiển thị avatar monogram, thông tin & điều hướng tab
  * - Đồng bộ Centralized Design Tokens
- * - Độ dài < 110 dòng
+ * - Độ dài < 115 dòng
  */
 export default function ProfileOverviewCard({
   formData = {},
@@ -18,6 +19,7 @@ export default function ProfileOverviewCard({
   onSelectTab,
   allergiesCount = 0,
   addressesCount = 0,
+  reviewsCount = 0,
 }) {
   const displayName = formData.fullName || formData.username || 'Khách hàng'
   const initial = displayName.trim().charAt(0).toUpperCase() || 'U'
@@ -65,7 +67,14 @@ export default function ProfileOverviewCard({
         {TABS.map((tab) => {
           const Icon = tab.icon
           const isSelected = activeTab === tab.key
-          const badgeCount = tab.key === 'allergies' ? allergiesCount : tab.key === 'addresses' ? addressesCount : 0
+          const badgeCount =
+            tab.key === 'allergies'
+              ? allergiesCount
+              : tab.key === 'addresses'
+              ? addressesCount
+              : tab.key === 'reviews'
+              ? reviewsCount
+              : 0
 
           return (
             <button
