@@ -14,9 +14,9 @@
 
 | STT | Nhóm Hạng Mục Theo Dõi | Đã Hoàn Thành (`X`) | Đang Làm (`O`) | Chưa Làm *(để trống)* | Tổng Cộng | Tỷ Lệ Hoàn Thành (%) |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| **1** | **API Endpoints Chính (Core Routes)** | **103** | **0** | **0** | **103** *(+11 aliases)* | **100%** |
-| **2** | **Module Nghiệp vụ (Business Modules)** | **9** | **0** | **0** | **9** *(+ Core)* | **100%** |
-| **3** | **Lộ trình Refactor Kiến Trúc Module** | **10** | **0** | **0** | **10** *(9 + Core)* | **100%** |
+| **1** | **API Endpoints Chính (Core Routes)** | **112** | **0** | **0** | **112** *(+11 aliases)* | **100%** |
+| **2** | **Module Nghiệp vụ (Business Modules)** | **10** | **0** | **0** | **10** *(+ Core)* | **100%** |
+| **3** | **Lộ trình Refactor Kiến Trúc Module** | **11** | **0** | **0** | **11** *(10 + Core)* | **100%** |
 
 ---
 
@@ -33,9 +33,10 @@
 | **7** | **`Report`** | Báo cáo & Dashboard Admin | 5 APIs | [report.md](modules/report.md) | `X` | `X` | Tổng hợp Aggregates SQL hiệu năng cao (`DB::table`) |
 | **8** | **`Recommendation`** | Gợi ý đồ thị Neo4j | 3 APIs | [recommendation.md](modules/recommendation.md) | `X` | `X` | Market Basket Analysis & Collaborative Filtering + MySQL Fallback |
 | **9** | **`Chat`** | AI Chatbot Gemini & Live CSKH | 13 APIs | [chat.md](modules/chat.md) | `X` | `X` | Hybrid Gemini AI (`gemini-3.5-flash-lite`) + Staff Handoff |
-| **10** | **`Core` / `Shared`** | Enums, Middlewares, Exceptions | Hạ tầng | (Xem mục 4 bên dưới) | `X` | `X` | Unified JSON Envelope, 11 Backed Enums, Exception Shielding |
+| **10** | **`Review`** | Đánh giá & Nhận xét món ăn (MongoDB) | 9 APIs | [review.md](modules/review.md) | `X` | `X` | MongoDB `dish_reviews`, Aggregation 1–5 sao, Verified Purchase |
+| **11** | **`Core` / `Shared`** | Enums, Middlewares, Exceptions | Hạ tầng | (Xem mục 4 bên dưới) | `X` | `X` | Unified JSON Envelope, 11 Backed Enums, MongoClientService |
 
-*Tổng số API Endpoint thực tế theo `routes/api.php` và `app/Modules/*/Routes/api.php`:* **103 APIs chính** (102 client-facing + 1 webhook) và **11 route aliases** tương thích ngược *(chưa tính route test `GET /api/v1/user`)*.
+*Tổng số API Endpoint thực tế theo `routes/api.php` và `app/Modules/*/Routes/api.php`:* **112 APIs chính** (111 client-facing + 1 webhook) và **11 route aliases** tương thích ngược *(chưa tính route test `GET /api/v1/user`)*.
 
 ---
 
@@ -204,6 +205,22 @@
 | `STAFF-04` | `POST` | `/api/v1/staff/chat/sessions/{id}/messages` | Nhân viên gửi tin nhắn trực tiếp cho khách hàng | `X` |
 | `STAFF-05` | `POST` | `/api/v1/staff/chat/sessions/{id}/close` | Nhân viên kết thúc và đóng phiên hỗ trợ | `X` |
 | `STAFF-06` | `GET` | `/api/v1/staff/chat/pending` | Danh sách phiên chat đang ở hàng đợi `WAITING_STAFF` | `X` |
+
+---
+
+### ⭐ MODULE 10: REVIEW (Đánh Giá & Nhận Xét Món Ăn — MongoDB — 9 APIs) – [`be_docs/modules/review.md`](modules/review.md)
+
+| Mã API | Method | Endpoint URL | Tên tính năng | Trạng thái |
+| :---: | :---: | :--- | :--- | :---: |
+| `REV-01` | `GET` | `/api/v1/customer/dishes/{dishId}/reviews` | Danh sách đánh giá `VISIBLE` + `summary` điểm sao (Aggregation) | `X` |
+| `REV-02` | `POST` | `/api/v1/customer/dishes/{dishId}/reviews` | Khách gửi đánh giá mới (tự gắn `isVerifiedPurchase`) | `X` |
+| `REV-03` | `GET` | `/api/v1/customer/reviews/my` | Lịch sử đánh giá của chính khách hàng | `X` |
+| `REV-04` | `PUT` | `/api/v1/customer/reviews/{reviewId}` | Khách tự sửa đánh giá của mình (chống IDOR) | `X` |
+| `REV-05` | `DELETE` | `/api/v1/customer/reviews/{reviewId}` | Khách tự xóa đánh giá của mình (chống IDOR) | `X` |
+| `REV-06` | `GET` | `/api/v1/admin/reviews` | Danh sách đánh giá quản trị kèm bộ lọc & `stats` | `X` |
+| `REV-07` | `POST` | `/api/v1/admin/reviews/{reviewId}/reply` | Admin/Staff phản hồi đánh giá khách (`adminReply`) | `X` |
+| `REV-08` | `PATCH` | `/api/v1/admin/reviews/{reviewId}/visibility` | Ẩn / Hiện đánh giá (`VISIBLE` ↔ `HIDDEN`) | `X` |
+| `REV-09` | `DELETE` | `/api/v1/admin/reviews/{reviewId}` | Admin/Staff xóa vĩnh viễn đánh giá vi phạm | `X` |
 
 ---
 

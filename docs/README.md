@@ -19,10 +19,11 @@ Mỗi module sở hữu một tài liệu đặc tả độc lập chuẩn Softw
 | **5** | **`Reservation`** | [reservation.md](modules/reservation.md) | 19 APIs *(+1 alias)* | Tìm bàn trống, Đặt bàn trước (Redis Lock 5s), Xung đột khung giờ $\pm 119$ phút, Đặt cọc giờ cao điểm (15 phút), Quản lý bàn ăn & khung giờ. |
 | **6** | **`Payment`** | [payment.md](modules/payment.md) | 10 APIs *(+1 alias)* | Thanh toán 1-1 đơn hàng, VietQR Napas 247, Xác nhận thủ công Staff/Admin, Mock thanh toán, Đối soát, Hoàn tiền, Callback Logs & Webhook. |
 | **7** | **`Report`** | [report.md](modules/report.md) | 5 APIs | Dashboard tổng quan 4 nhóm chỉ số, Doanh thu thực thu, Thống kê đơn hàng, Món ăn bán chạy, Tỷ lệ lấp đầy bàn ăn. |
-| **8** | **`Recommendation`** | [recommendation.md](modules/recommendation.md) | 3 APIs | Đồ thị tri thức Neo4j Bolt, Gợi ý món bán kèm (Market Basket Analysis), Gợi ý cá nhân hóa (Collaborative Filtering) + MySQL Fallback. *(Lưu ý: lọc dị ứng hiện áp dụng tại `Menu` Weather/Filter).* |
+| **8** | **`Recommendation`** | [recommendation.md](modules/recommendation.md) | 3 APIs | Đồ thị tri thức Neo4j Bolt, Gợi ý món bán kèm (Market Basket Analysis), Gợi ý cá nhân hóa (Collaborative Filtering) + Lọc dị ứng/dinh dưỡng & MySQL Fallback. |
 | **9** | **`Chat`** | [chat.md](modules/chat.md) | 13 APIs | Trợ lý ảo Google Gemini AI (`gemini-3.5-flash-lite`) kết hợp bàn giao Nhân viên CSKH trực tuyến (`BOT` → `WAITING_STAFF` → `STAFF_CONNECTED` → `CLOSED`). |
+| **10** | **`Review`** | [review.md](modules/review.md) | 9 APIs | Đánh giá & nhận xét món ăn lưu trên MongoDB (`dish_reviews`), Aggregation Pipeline 1–5 sao, Verified Purchase & phản hồi quản trị. |
 
-*Tổng cộng toàn hệ thống:* **9 Business Modules** với **103 API Endpoints chính** (102 client-facing + 1 webhook cổng thanh toán) và **11 route aliases** tương thích ngược.
+*Tổng cộng toàn hệ thống:* **10 Business Modules** với **112 API Endpoints chính** (111 client-facing + 1 webhook cổng thanh toán) và **11 route aliases** tương thích ngược.
 
 ---
 
@@ -33,9 +34,9 @@ Mỗi module sở hữu một tài liệu đặc tả độc lập chuẩn Softw
 | **Quy Ước Hệ Thống Cốt Lõi** | [system_conventions.md](system_conventions.md) | Bảng tra cứu nhanh quy tắc bất biến: 11 Backed Enums, Redis keys, Soft Delete, Pivot rules, Polyglot Ports. |
 | **Bản đồ Module & Tiến độ** | [modules.md](modules.md) | Bảng theo dõi tiến độ 9 Modules + Core và danh mục đầy đủ 103 API thực tế. |
 | **Chuẩn Giao Tiếp API** | [api_protocol_specification.md](api_protocol_specification.md) | Quy ước Response Envelopes (`ApiResponse`), Mã lỗi HTTP chuẩn, Headers và mẫu Axios Interceptor. |
-| **Từ Điển Thuật Ngữ & Eloquent Mapping** | `be_docs/glossary_and_laravel_eloquent_mapping.md` *(chỉ lưu ở repo BE)* | Ánh xạ 14 Models Eloquent với cơ sở dữ liệu MySQL `restaurant_laravel`, 11 Backed Enums và quan hệ quan trọng. |
-| **Quyết Định Kiến Trúc (ADR)** | `be_docs/memory/architectural-decisions.md` *(chỉ lưu ở repo BE)* | Lưu trữ các quyết định kỹ thuật lớn (ADR-001 đến ADR-027) của dự án. |
-| **Bài Học & Lỗi Môi Trường** | `be_docs/memory/lessons-learned.md` *(chỉ lưu ở repo BE)* | Tổng kết các sự cố, nguyên nhân và giải pháp kỹ thuật đã ghi nhận. |
+| **Từ Điển Thuật Ngữ & Eloquent Mapping** | [glossary_and_laravel_eloquent_mapping.md](glossary_and_laravel_eloquent_mapping.md) | Ánh xạ 14 Models Eloquent với cơ sở dữ liệu MySQL `restaurant_laravel`, 11 Backed Enums và quan hệ quan trọng. |
+| **Quyết Định Kiến Trúc (ADR)** | [memory/architectural-decisions.md](memory/architectural-decisions.md) | Lưu trữ các quyết định kỹ thuật lớn (ADR-001 đến ADR-027) của dự án. |
+| **Bài Học & Lỗi Môi Trường** | [memory/lessons-learned.md](memory/lessons-learned.md) | Tổng kết các sự cố, nguyên nhân và giải pháp kỹ thuật đã ghi nhận. |
 
 ---
 

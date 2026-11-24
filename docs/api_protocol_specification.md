@@ -19,8 +19,9 @@
 | **7** | **`Report`** | [`modules/report.md`](modules/report.md) | Dashboard tổng quan, Báo cáo Doanh thu, Đơn hàng, Món bán chạy, Lấp đầy bàn |
 | **8** | **`Recommendation`** | [`modules/recommendation.md`](modules/recommendation.md) | Gợi ý món bán kèm (Cross-sell / Market Basket Analysis) & Cá nhân hóa (Collaborative Filtering) qua Đồ thị Neo4j |
 | **9** | **`Chat`** | [`modules/chat.md`](modules/chat.md) | Trợ lý ảo Google Gemini AI & Hỗ trợ trực tuyến bàn giao nhân viên CSKH (`BOT` / `WAITING_STAFF` / `STAFF_CONNECTED` / `CLOSED`) |
+| **10** | **`Review`** | [`modules/review.md`](modules/review.md) | Đánh giá & Nhận xét món ăn lưu trữ trên MongoDB (`dish_reviews`), Aggregation 1–5 sao, Verified Purchase & phản hồi quản trị |
 
-*Tổng cộng toàn hệ thống:* **9 Modules — 103 API Endpoints chính** (+ 11 route aliases tương thích ngược). Xem bảng kê chi tiết tại [`modules.md`](modules.md).
+*Tổng cộng toàn hệ thống:* **10 Modules — 112 API Endpoints chính** (+ 11 route aliases tương thích ngược). Xem bảng kê chi tiết tại [`modules.md`](modules.md).
 
 ---
 
