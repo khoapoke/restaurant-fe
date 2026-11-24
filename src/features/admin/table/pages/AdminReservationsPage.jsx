@@ -54,16 +54,17 @@ export const AdminReservationsPage = () => {
     setTimeout(() => setSuccessToast(null), 3000)
   }
 
-  useEffect(() => {
-    const loadTables = async () => {
-      try {
-        const res = await getAdminTablesApi()
-        const list = res.data?.items || res.data || []
-        setTables(Array.isArray(list) ? list : [])
-      } catch {}
-    }
-    loadTables()
+  const loadTables = useCallback(async () => {
+    try {
+      const res = await getAdminTablesApi()
+      const list = res.data?.items || res.data || []
+      setTables(Array.isArray(list) ? list : [])
+    } catch {}
   }, [])
+
+  useEffect(() => {
+    loadTables()
+  }, [loadTables])
 
   const fetchReservations = useCallback(
     async (page = 1) => {
@@ -107,6 +108,7 @@ export const AdminReservationsPage = () => {
   }, [fetchReservations])
 
   const handleOpenAction = (reservation, type) => {
+    loadTables()
     setSelectedReservation(reservation)
     setActionType(type)
   }

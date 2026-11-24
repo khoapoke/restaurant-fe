@@ -1,11 +1,11 @@
-import { Users, MapPin, Edit2, QrCode } from 'lucide-react'
+import { Users, MapPin, Edit2, QrCode, CalendarClock } from 'lucide-react'
 import { TABLE_STATUS_CONFIG } from '../constants'
 
 /**
  * Thẻ Hiển Thị Bàn Ăn (TableCard)
  * - 100% Centralized Design Tokens
- * - Hỗ trợ thao tác Mở bàn QR tại chỗ
- * - Độ dài < 100 dòng
+ * - Hỗ trợ thao tác Mở bàn QR tại chỗ & Cảnh báo lịch đặt sắp tới
+ * - Độ dài < 130 dòng
  */
 export const TableCard = ({ table, onEdit, onQuickStatusChange, onOpenDineIn }) => {
   const id = table.tableId || table.ma_ban
@@ -13,8 +13,10 @@ export const TableCard = ({ table, onEdit, onQuickStatusChange, onOpenDineIn }) 
   const capacity = table.capacity || table.suc_chua || 4
   const location = table.location || table.vi_tri || 'Sảnh chính'
   const status = table.status || table.trang_thai || 'AVAILABLE'
+  const upcoming = table.upcomingReservation
 
   const cfg = TABLE_STATUS_CONFIG[status] || TABLE_STATUS_CONFIG.AVAILABLE
+  const isBlockedByUpcoming = status === 'AVAILABLE' && !!upcoming
 
   return (
     <div
@@ -34,12 +36,29 @@ export const TableCard = ({ table, onEdit, onQuickStatusChange, onOpenDineIn }) 
           {(status === 'AVAILABLE' || status === 'OCCUPIED') && onOpenDineIn && (
             <button
               type="button"
-              onClick={() => onOpenDineIn(table)}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-surface-bg transition-colors cursor-pointer"
-              title={status === 'AVAILABLE' ? 'Mở bàn gọi món QR tại chỗ' : 'Xem mã QR phục vụ'}
+              disabled={isBlockedByUpcoming}
+              onClick={() => !isBlockedByUpcoming && onOpenDineIn(table)}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+                isBlockedByUpcoming
+                  ? 'bg-status-warning/15 text-status-warning border border-status-warning/30 cursor-not-allowed opacity-85'
+                  : 'bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-surface-bg cursor-pointer'
+              }`}
+              title={
+                isBlockedByUpcoming
+                  ? `Bàn đang có đơn đặt #${upcoming.reservationId} lúc ${upcoming.timeFormatted}. Vui lòng xử lý tại Quản lý Đặt bàn trước.`
+                  : status === 'AVAILABLE'
+                  ? 'Mở bàn gọi món QR tại chỗ'
+                  : 'Xem mã QR phục vụ'
+              }
             >
               <QrCode className="w-3 h-3" />
-              <span>{status === 'AVAILABLE' ? 'Mở bàn' : 'Mã QR'}</span>
+              <span>
+                {isBlockedByUpcoming
+                  ? `Đặt ${upcoming.timeFormatted}`
+                  : status === 'AVAILABLE'
+                  ? 'Mở bàn'
+                  : 'Mã QR'}
+              </span>
             </button>
           )}
 
@@ -53,6 +72,21 @@ export const TableCard = ({ table, onEdit, onQuickStatusChange, onOpenDineIn }) 
           </button>
         </div>
       </div>
+
+      {upcoming && (
+        <div className="mb-2.5 px-2.5 py-1.5 rounded-xl bg-status-warning/10 border border-status-warning/30 flex items-center gap-1.5 text-[11px] text-status-warning">
+          <CalendarClock className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate font-medium">
+            Đơn #{upcoming.reservationId} lúc <strong>{upcoming.timeFormatted}</strong> (
+            {upcoming.status === 'CONFIRMED'
+              ? 'Đã duyệt'
+              : upcoming.status === 'PENDING_DEPOSIT'
+              ? 'Chờ cọc'
+              : 'Chờ duyệt'}
+            )
+          </span>
+        </div>
+      )}
 
       <div className="space-y-2 pt-2 border-t border-border-subtle">
         <div className="flex items-center justify-between text-xs text-text-body">

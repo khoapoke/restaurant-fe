@@ -46,10 +46,29 @@ export const ReservationActionModal = ({
   const isOccupiedAction = actionType === 'OCCUPIED' || actionType === 'SEATED'
   const isCompleteAction = actionType === 'COMPLETED'
 
+  const resTimeMs = reservation.reservationTime ? new Date(reservation.reservationTime).getTime() : 0
+  const diffMins = resTimeMs ? (resTimeMs - Date.now()) / 60000 : 999
+  const isImminentSlot = diffMins <= 120 && diffMins >= -120
+
+  const selectedTableObj = tables.find(
+    (t) => Number(t.tableId || t.ma_ban) === Number(selectedTableId)
+  )
+  const selectedTableStatus = selectedTableObj?.status || selectedTableObj?.trang_thai
+  const isSelectedTableOccupiedConflict =
+    (isConfirmAction || isOccupiedAction) &&
+    selectedTableStatus === 'OCCUPIED' &&
+    (isImminentSlot || isOccupiedAction)
+
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (isConfirmAction && !selectedTableId) {
+    if ((isConfirmAction || isOccupiedAction) && !selectedTableId) {
       setError('Vui lòng chọn bàn ăn để gán cho lượt đặt này')
+      return
+    }
+    if (isSelectedTableOccupiedConflict) {
+      setError(
+        `Bàn #${selectedTableId} hiện đang có khách ngồi dùng bữa (OCCUPIED). Vui lòng chọn một bàn trống (AVAILABLE) khác trong danh sách!`
+      )
       return
     }
     if ((isRejectAction || isCancelAction) && !adminNote.trim()) {
@@ -108,9 +127,9 @@ export const ReservationActionModal = ({
           )}
         </div>
 
-        {/* Khi duyệt: Chọn bàn ăn */}
-        {isConfirmAction && (
-          <div className="space-y-1">
+        {/* Khi duyệt hoặc vào bàn: Chọn / đổi bàn ăn */}
+        {(isConfirmAction || isOccupiedAction) && (
+          <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-text-muted">
               Bàn ăn gán cho khách <span className="text-status-error">*</span>
             </label>
@@ -127,14 +146,29 @@ export const ReservationActionModal = ({
                 const tLoc = t.location || t.vi_tri || ''
                 const tStatus = t.status || t.trang_thai
                 const isSuit = tCap >= guestCount
+                const isOccupiedConflict = tStatus === 'OCCUPIED' && (isImminentSlot || isOccupiedAction)
+                const statusBadge =
+                  tStatus === 'AVAILABLE'
+                    ? '🟢 Trống'
+                    : tStatus === 'OCCUPIED'
+                    ? '🔴 Đang có khách'
+                    : tStatus === 'RESERVED'
+                    ? '🟡 Đã đặt trước'
+                    : `(${tStatus})`
                 return (
-                  <option key={tId} value={tId}>
-                    {tName} ({tCap} ghế - {tLoc}) {tStatus === 'AVAILABLE' ? '🟢 Trống' : `(${tStatus})`}
+                  <option key={tId} value={tId} disabled={isOccupiedConflict}>
+                    {tName} ({tCap} ghế - {tLoc}) {statusBadge}
+                    {isOccupiedConflict ? ' — Không thể gán' : ''}
                     {!isSuit ? ' ⚠️ Ít ghế hơn khách' : ''}
                   </option>
                 )
               })}
             </select>
+            {isSelectedTableOccupiedConflict && (
+              <p className="text-[11px] text-status-error font-medium">
+                ⚠️ Bàn này hiện đang có khách dùng bữa tại chỗ. Vui lòng chọn bàn trống khác cho khách!
+              </p>
+            )}
           </div>
         )}
 
